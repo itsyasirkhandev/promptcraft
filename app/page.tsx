@@ -4,9 +4,13 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { GoogleLogo } from "@phosphor-icons/react";
+import useFirebaseAuth from "../hooks/useFirebaseAuth";
+import UserProfile from "@/components/UserProfile";
 
 export default function Home() {
+  const { user, isAuthenticated, loginWithGoogle, logout, isLoading } = useFirebaseAuth();
+
   return (
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md p-4 border-b border-slate-200 dark:border-slate-700 flex flex-row justify-between items-center shadow-sm">
@@ -33,7 +37,22 @@ export default function Home() {
             Convex + Next.js
           </h1>
         </div>
-        <AuthPopoverButton />
+
+        <div className="flex items-center gap-4">
+          {isLoading ? (
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-emerald-500 animate-spin"></div>
+          ) : isAuthenticated && user ? (
+            <UserProfile user={user} onLogout={logout} />
+          ) : (
+            <button
+              onClick={loginWithGoogle}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-full cursor-pointer transition-all duration-200 shadow-sm active:scale-[0.98]"
+            >
+              <GoogleLogo size={16} weight="bold" />
+              <span>Sign in with Google</span>
+            </button>
+          )}
+        </div>
       </header>
       <main className="p-8 flex flex-col gap-8">
         <Content />
@@ -206,123 +225,3 @@ function ResourceCard({
   );
 }
 
-function AuthPopoverButton() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedAuth, setSelectedAuth] = useState<
-    "authkit" | "clerk" | "convexauth"
-  >("authkit");
-  const [copied, setCopied] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  const commands = {
-    authkit: "npm create convex@latest -- --template nextjs-authkit",
-    clerk: "npm create convex@latest -- --template nextjs-clerk",
-    convexauth: "npm create convex@latest -- --template nextjs-convexauth",
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(commands[selectedAuth]);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  return (
-    <div className="relative" ref={popoverRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md"
-      >
-        Want Auth?
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-[560px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl shadow-xl z-50 p-6">
-          <p className="text-slate-700 dark:text-slate-300 text-sm mb-4">
-            You can create a copy of this project with auth integrated by using
-            this command.
-          </p>
-
-          <div className="flex flex-col gap-3 mb-4">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="auth"
-                value="authkit"
-                checked={selectedAuth === "authkit"}
-                onChange={(e) => setSelectedAuth(e.target.value as "authkit")}
-                className="w-4 h-4 cursor-pointer"
-              />
-              <Image src="/workos.svg" alt="WorkOS" width={20} height={20} />
-              <span className="text-slate-700 dark:text-slate-300 text-sm">
-                WorkOS AuthKit
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="auth"
-                value="clerk"
-                checked={selectedAuth === "clerk"}
-                onChange={(e) => setSelectedAuth(e.target.value as "clerk")}
-                className="w-4 h-4 cursor-pointer"
-              />
-              <Image src="/clerk.svg" alt="Clerk" width={20} height={20} />
-              <span className="text-slate-700 dark:text-slate-300 text-sm">
-                Clerk
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="auth"
-                value="convexauth"
-                checked={selectedAuth === "convexauth"}
-                onChange={(e) =>
-                  setSelectedAuth(e.target.value as "convexauth")
-                }
-                className="w-4 h-4 cursor-pointer"
-              />
-              <Image src="/convex.svg" alt="Convex" width={20} height={20} />
-              <span className="text-slate-700 dark:text-slate-300 text-sm">
-                Convex Auth
-              </span>
-            </label>
-          </div>
-
-          <div className="bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-3 flex items-center justify-between gap-2">
-            <code className="text-xs text-slate-700 dark:text-slate-300 font-mono break-all">
-              {commands[selectedAuth]}
-            </code>
-            <button
-              onClick={handleCopy}
-              className="bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors flex-shrink-0"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
