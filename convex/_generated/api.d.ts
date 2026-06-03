@@ -9,6 +9,7 @@
  */
 
 import type * as authed_demo from "../authed/demo.js";
+import type * as authed_errors from "../authed/errors.js";
 import type * as authed_helpers from "../authed/helpers.js";
 import type * as authed_numbers from "../authed/numbers.js";
 import type * as authed_users from "../authed/users.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "authed/demo": typeof authed_demo;
+  "authed/errors": typeof authed_errors;
   "authed/helpers": typeof authed_helpers;
   "authed/numbers": typeof authed_numbers;
   "authed/users": typeof authed_users;
