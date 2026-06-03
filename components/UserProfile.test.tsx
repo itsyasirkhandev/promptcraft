@@ -1,14 +1,15 @@
 import React from "react";
+import { User } from "firebase/auth";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import UserProfile from "./UserProfile";
 
 test("renders user initials when no photoURL is provided", () => {
-  const mockUser: any = {
+  const mockUser = {
     displayName: "Test User",
     email: "test@example.com",
     photoURL: null,
-  };
+  } as unknown as User;
   const mockOnLogout = vi.fn();
 
   render(<UserProfile user={mockUser} onLogout={mockOnLogout} />);
@@ -18,11 +19,11 @@ test("renders user initials when no photoURL is provided", () => {
 });
 
 test("calls onLogout when sign out button is clicked", () => {
-  const mockUser: any = {
+  const mockUser = {
     displayName: "Test User",
     email: "test@example.com",
     photoURL: null,
-  };
+  } as unknown as User;
   const mockOnLogout = vi.fn();
 
   render(<UserProfile user={mockUser} onLogout={mockOnLogout} />);

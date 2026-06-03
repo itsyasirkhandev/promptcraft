@@ -1,3 +1,19 @@
+## Project guidelines
+
+- use pnpm for the package manager
+- when installing new packages, use 'pnpm add' instead of manually editing the package.json file
+- use effect v4 for all backend code and use the effect ts skill for the update v4 syntax
+- use modern React and Nextjs patterns and primitives
+- when defining convex actions, queries, and mutations that are exposed to the client use the
+  authed' setup in 'convex/authed'
+- when defining convex actions, queries, and mutations that are called from the backend use the
+  'private' setup in 'convex/private
+- use the convex service for calling convex queries, actions, and mutations from the backend
+- avoid 'as any' at all costs, try to infer types from functions as much as possible
+- use tailwindcss for styling whenever possible, only resort to custom css if needed
+- after making changes to convex, run 'pnpm run convex:gen' to generate the new api 
+- run 'pnpm run lint' to check for linting errors, run 'pnpm run typecheck' 
+
 
 
 

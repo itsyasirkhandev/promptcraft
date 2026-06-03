@@ -5,8 +5,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   signOut,
-  getRedirectResult,
-  Auth
+  getRedirectResult
 } from "firebase/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import app from "../firebaseConfig";
@@ -14,11 +13,9 @@ import app from "../firebaseConfig";
 export default function useFirebaseAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
 
   useEffect(() => {
     const auth = getAuth(app);
-    setAuthInstance(auth);
 
     // Capture and handle the result of the redirect flow on mount
     getRedirectResult(auth)
@@ -48,24 +45,24 @@ export default function useFirebaseAuth() {
   );
 
   const loginWithGoogle = useCallback(async () => {
-    if (!authInstance) return;
+    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     try {
-      await signInWithPopup(authInstance, provider);
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google popup:", error);
     }
-  }, [authInstance]);
+  }, []);
 
   const logout = useCallback(async () => {
-    if (!authInstance) return;
+    const auth = getAuth(app);
     try {
-      await signOut(authInstance);
+      await signOut(auth);
     } catch (error) {
       console.error("Error signing out:", error);
     }
-  }, [authInstance]);
+  }, []);
 
   return useMemo(
     () => ({

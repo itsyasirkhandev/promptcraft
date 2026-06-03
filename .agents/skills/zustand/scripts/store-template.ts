@@ -327,7 +327,7 @@ export const useAppStore = create<StoreState>()(
       }),
 
       // Handle schema migrations
-      migrate: (persisted: unknown, version: number) => {
+      migrate: (persisted: unknown) => {
         const state = persisted as Partial<StoreState>;
 
         // Add migration logic here as schema evolves

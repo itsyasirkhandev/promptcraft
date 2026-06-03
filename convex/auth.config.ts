@@ -1,4 +1,4 @@
-export default {
+const authConfig = {
   providers: [
     {
       domain: "https://securetoken.google.com/jobly-job",
@@ -6,3 +6,4 @@ export default {
     },
   ],
 };
+export default authConfig;
