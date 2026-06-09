@@ -1,7 +1,7 @@
 # ADR 0003: Effect-TS in Convex function handlers
 
 **Status**: Updated (supersedes original v3 constraint)  
-**Date**: 2025-01-01 (revised 2026-06)
+**Date**: 2025-01-01 (revised 2026-06-09)
 
 ## Context
 
@@ -16,18 +16,18 @@ The canonical pattern is `Effect.gen + Effect.tryPromise` for all async work —
 ## Pattern
 
 ```typescript
-export const myMutation = authedMutation({
+export const myMutation = effectAuthedMutation({
   args: { value: v.number() },
-  handler: async (ctx, args) => Effect.runPromise(
-    Effect.gen(function* () {
-      yield* Effect.logInfo(`Operation for: ${ctx.identity.name}`);
+  handler: (args) => Effect.gen(function* () {
+    const { identity } = yield* AuthedContext;
+    yield* Effect.logInfo(`Operation for: ${identity.name}`);
 
-      // Convex db calls are wrapped in Effect.tryPromise
-      yield* Effect.tryPromise(() =>
-        ctx.db.insert('table', { value: args.value })
-      );
-    })
-  ),
+    // Convex db calls are wrapped in Effect.tryPromise
+    const { db } = yield* ConvexDB;
+    yield* Effect.tryPromise(() =>
+      (db as GenericDatabaseWriter<DataModel>).insert('table', { value: args.value })
+    );
+  })
 });
 ```
 
@@ -54,6 +54,6 @@ all it needs. There is no conflict with Convex's transaction semantics.
 ## Consequences
 
 - `effect` is a production dependency
-- Every Convex function handler uses `Effect.gen + Effect.runPromise`
+- Every Convex function handler uses `effectAuthed` or `effectPrivate` wrappers returning an `Effect`
 - Demo files (`authed/demo.ts`, `private/demo.ts`) show the same pattern as real feature files
 
