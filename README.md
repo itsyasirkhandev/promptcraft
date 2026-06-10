@@ -11,17 +11,18 @@ After the initial setup (<2 minutes) you'll have a working full-stack app using:
 
 ## Get started
 
-If you just cloned this codebase and didn't use `npm create convex`, run:
+To get this template up and running quickly, please follow our detailed **[Getting Started Guide](file:///I:/sonysangha%20bigginers%20series/projects/jobly-job/GETTING_STARTED.md)** which covers:
+- Installing dependencies and running the local server.
+- Linking your Convex backend.
+- Creating and configuring your Firebase app.
+- Enabling authentication providers (like Google Login).
+- Whitelisting authorized domains for production.
 
-```
-npm install
-npm run dev
-```
-
-If you're reading this README on GitHub and want to use this template, run:
-
-```
-npm create convex@latest -- -t nextjs
+For a quick summary run:
+```bash
+pnpm install
+pnpm run convex:gen
+pnpm run dev
 ```
 
 ## Learn more
