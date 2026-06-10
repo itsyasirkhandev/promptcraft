@@ -8,7 +8,7 @@ A convention-heavy starter template for building real apps.
 |-------|------------|
 | Frontend framework | Next.js (App Router) |
 | Backend / database | Convex |
-| Auth provider | Firebase Auth (Google OAuth) |
+| Auth provider | Clerk |
 | State management | Zustand with Immer + Persist |
 | Backend effects | Effect-TS (structured logging, typed errors) |
 | Styling | Tailwind CSS |
@@ -20,7 +20,7 @@ A convention-heavy starter template for building real apps.
 | Term | Definition |
 |------|------------|
 | **Viewer** | The currently authenticated user, derived server-side from the JWT token |
-| **User** | A Convex document in the `users` table, synced from the Firebase identity |
+| **User** | A Convex document in the `users` table, synced from Clerk via Webhooks |
 | **Number** | A demo entity stored in Convex — represents any simple data record |
 | **Auth Guard** | A `customCtxAndArgs` wrapper that validates the JWT and injects `ctx.identity` |
 | **Authed function** | A Convex query/mutation/action protected by the auth guard (client-facing) |
@@ -30,10 +30,10 @@ A convention-heavy starter template for building real apps.
 
 ### Route Groups
 - `(public)` — Routes accessible without authentication (landing page)
-- `(authed)` — Routes requiring Firebase authentication (dashboard, features)
+- `(authed)` — Routes requiring Clerk authentication (dashboard, features)
 
 ### Convex Function Organization
-- `convex/authed/` — Client-facing functions protected by Firebase JWT
+- `convex/authed/` — Client-facing functions protected by Clerk JWT
 - `convex/private/` — Server-to-server functions protected by API key
 - Each feature gets its own file (e.g., `numbers.ts`, `users.ts`)
 - Demo files (`demo.ts`) are kept as AI-readable convention references

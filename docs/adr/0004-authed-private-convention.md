@@ -13,7 +13,7 @@ Two guard patterns via `convex-helpers/server/customFunctions`:
 
 ### Authed guard (`convex/authed/helpers.ts`)
 - For **client-facing** functions
-- Validates the Firebase JWT via `ctx.auth.getUserIdentity()`
+- Validates the Clerk JWT via `ctx.auth.getUserIdentity()`
 - Injects `ctx.identity` into the handler as `AuthedContext` Effect Service
 - Use: `effectAuthedQuery`, `effectAuthedMutation`, `effectAuthedAction`
 
