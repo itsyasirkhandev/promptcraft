@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 
+/** @expected-unused */
 export class ClientConfig extends Context.Service<
   ClientConfig,
   {

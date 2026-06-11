@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "convex/_generated/**"
+  ],
+  "ignoreDependencies": [
+    "@hookform/resolvers",
+    "immer",
+    "react-hook-form",
+    "convex-test"
+  ],
+  "health": {
+    "maxCrap": 250.0,
+    "maxCognitive": 25.0
+  },
+  "duplicates": {
+    "minOccurrences": 2
+  },
+  "rules": {
+    "unused-dependencies": "error"
+  }
+}

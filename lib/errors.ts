@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file
 import { ConvexError } from 'convex/values';
 
 export interface SerializedTaggedError {

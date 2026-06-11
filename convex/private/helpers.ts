@@ -31,21 +31,12 @@ export const privateQuery = customQuery(query, apiKeyGuard);
 export const privateMutation = customMutation(mutation, apiKeyGuard);
 export const privateAction = customAction(action, apiKeyGuard);
 
+import { runEffect } from "../effectHelpers";
+
 export async function runPrivateEffect<Result, Error>(
 	effect: Effect.Effect<Result, Error, never>
 ): Promise<Result> {
-	try {
-		return await Effect.runPromise(effect);
-	} catch (error) {
-		if (error && typeof error === 'object' && '_tag' in error) {
-			const taggedError = error as { _tag: string; [key: string]: unknown };
-			throw new ConvexError({
-				tag: taggedError._tag,
-				data: taggedError as unknown as Record<string, string | number | boolean | null>
-			});
-		}
-		throw error;
-	}
+	return runEffect(effect);
 }
 
 export const effectPrivateQuery = <Args extends PropertyValidators, R, E>(options: {

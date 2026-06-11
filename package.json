@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "convex:gen": "convex codegen",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "fallow": "fallow",
+    "fallow:audit": "fallow audit"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.3",
