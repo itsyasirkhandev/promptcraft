@@ -4,6 +4,7 @@ import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -46,7 +47,11 @@ export default function RootLayout({
       )}
     >
       <body className="antialiased">
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ConvexClientProvider>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+        </ConvexClientProvider>
         <Toaster />
       </body>
     </html>
