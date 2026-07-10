@@ -1,5 +1,6 @@
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
+import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -21,7 +22,9 @@ export default function NextoLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
         />
       </head>
-      <body className={`${dmSans.variable} min-h-screen`}>{children}</body>
+      <body className={`${dmSans.variable} min-h-screen`}>
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
     </html>
   );
 }
