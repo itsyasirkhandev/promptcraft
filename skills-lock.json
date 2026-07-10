@@ -5,7 +5,19 @@
       "source": "clerk/skills",
       "sourceType": "github",
       "skillPath": "skills/core/clerk/SKILL.md",
-      "computedHash": "9a7ea0a999381471bb8f783260b295360a2a937d61c9d1c3163cede96b39c229"
+      "computedHash": "18c44e7714ea228f1285c70b3b02a80d7d8491bfc3370906ffad5d14d7a2c6af"
+    },
+    "clerk-backend-api": {
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/core/clerk-backend-api/SKILL.md",
+      "computedHash": "cbcad1341a7d32fed789abe864c829f27a2858dc8ba68b92254e9beb53467148"
+    },
+    "clerk-cli": {
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/core/clerk-cli/SKILL.md",
+      "computedHash": "65eb4d512aabfac55c7bf91cdc1edbac10cbd34dfeb815cbfa0fa7a1ff35cd5c"
     },
     "clerk-custom-ui": {
       "source": "clerk/skills",
@@ -23,7 +35,7 @@
       "source": "clerk/skills",
       "sourceType": "github",
       "skillPath": "skills/core/clerk-setup/SKILL.md",
-      "computedHash": "bbf0711ddcc8d8d0dcd148c0061ab83c7d66225a60a28caba62ef76e4384fa54"
+      "computedHash": "f2bc3ff90fe8697c99a8228eecf1e718ff396f530eac648bcab20265090dc6dc"
     },
     "clerk-webhooks": {
       "source": "clerk/skills",
@@ -53,7 +65,7 @@
       "source": "get-convex/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/convex-performance-audit/SKILL.md",
-      "computedHash": "d4f372ad6bed01b3a83983f5e8386017606e1bf8a97833c016af07f277157f96"
+      "computedHash": "2eaf22b20f74ab39f336b41845b834b8796b6d2b380bc078a1ab54769c3f233c"
     },
     "convex-quickstart": {
       "source": "get-convex/agent-skills",
