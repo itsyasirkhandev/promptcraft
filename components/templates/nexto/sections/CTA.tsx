@@ -1,3 +1,6 @@
+import { SignInButton, Show } from "@clerk/nextjs";
+import Link from "next/link";
+
 function ChevronArrow() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -27,40 +30,54 @@ export default function CTA() {
           >
             <div>
               <span className="nexto-eyebrow bg-white/[0.12] text-white">
-                let&apos;s build
+                GET STARTED
               </span>
               <h2 className="mt-[18px] text-[clamp(34px,4vw,54px)] font-medium tracking-[-1.6px] leading-[1.05]">
-                Got an idea
+                Build better
                 <br />
-                that won&apos;t{" "}
+                prompts{" "}
                 <em className="italic font-light nexto-gradient-text">
-                  sit still?
+                  today.
                 </em>
               </h2>
               <p className="text-[15px] leading-[1.6] mt-[18px] max-w-[380px] text-white/70">
-                Tell us where you&apos;re stuck. We&apos;ll send back a
-                one-pager within 48 hours — what we&apos;d do, how long, and
-                what it&apos;d cost. No deck, no follow-ups.
+                Join thousands of creators and developers who save hours every single day.
               </p>
             </div>
 
             <div className="flex flex-col gap-[14px] items-start">
-              <a
-                href="#"
-                className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
-              >
-                <span
-                  className="w-8 h-8 rounded-full bg-[#111] text-white inline-flex items-center justify-center"
+              <Show when="signed-out">
+                <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
+                  <button
+                    className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
+                  >
+                    <span
+                      className="w-8 h-8 rounded-full bg-[#111] text-white inline-flex items-center justify-center"
+                    >
+                      <ChevronArrow />
+                    </span>
+                    Sign In / Sign Up
+                  </button>
+                </SignInButton>
+              </Show>
+              <Show when="signed-in">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
                 >
-                  <ChevronArrow />
-                </span>
-                Book a 30-min chat
-              </a>
+                  <span
+                    className="w-8 h-8 rounded-full bg-[#111] text-white inline-flex items-center justify-center"
+                  >
+                    <ChevronArrow />
+                  </span>
+                  Go to Dashboard
+                </Link>
+              </Show>
               <a
-                href="mailto:hello@nexto.studio"
+                href="mailto:hello@promptcrafts.com"
                 className="inline-flex items-center gap-2 text-[13.5px] opacity-70 hover:opacity-100 transition-opacity text-white"
               >
-                or write to hello@nexto.studio
+                or write to hello@promptcrafts.com
                 <ChevronArrow />
               </a>
             </div>

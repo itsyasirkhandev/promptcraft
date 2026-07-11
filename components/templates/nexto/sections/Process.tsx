@@ -1,27 +1,21 @@
 const steps = [
   {
-    icon: "chat_bubble",
-    title: "Say hi",
-    body: "A 30-minute chat. No deck, no jargon — just figuring out if we're a fit.",
-    meta: "30 min",
-  },
-  {
     icon: "explore",
     title: "Discover",
-    body: "We pair with your team for a week of interviews, audits and rough sketches.",
-    meta: "1 week",
+    body: "Browse our marketplace or build your custom prompt template in seconds.",
+    meta: "Step 1",
   },
   {
-    icon: "draw",
-    title: "Design",
-    body: "Two cycles of design, each ending in a working prototype you can click through.",
-    meta: "2–3 weeks",
+    icon: "content_copy",
+    title: "Copy",
+    body: "Save your favorite prompts directly to your clipboard with a single click.",
+    meta: "Step 2",
   },
   {
-    icon: "rocket_launch",
-    title: "Ship",
-    body: "Engineering, QA, and a hand-off doc that won't make your devs cry.",
-    meta: "Ongoing",
+    icon: "bolt",
+    title: "Use",
+    body: "Paste your prompt into Claude or ChatGPT and get perfect outputs instantly.",
+    meta: "Step 3",
   },
 ];
 
@@ -31,15 +25,14 @@ export default function Process() {
       <div className="nexto-wrap">
         <div className="nexto-section-head">
           <div>
-            <span className="nexto-eyebrow">how we work</span>
+            <span className="nexto-eyebrow">PROCESS</span>
             <h2 className="mt-[18px]">
-              Four steps.{" "}
-              <em className="italic font-light">No mystery.</em>
+              Three steps.{" "}
+              <em className="italic font-light">Done.</em>
             </h2>
           </div>
           <p className="nexto-section-lede">
-            Same playbook, every engagement — refined over six years and
-            roughly two hundred coffees.
+            Simple workflows that save you hours. Copy, paste, and run.
           </p>
         </div>
 

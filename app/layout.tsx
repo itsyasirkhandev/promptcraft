@@ -1,6 +1,9 @@
-import { DM_Sans } from "next/font/google";
+import { DM_Sans, Raleway } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
+import { cn } from "@/lib/utils";
+
+const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -15,7 +18,7 @@ export default function NextoLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", raleway.variable)}>
       <head>
         <link
           rel="stylesheet"

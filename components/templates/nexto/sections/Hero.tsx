@@ -1,3 +1,6 @@
+import { SignInButton, Show } from "@clerk/nextjs";
+import Link from "next/link";
+
 function ChevronArrow() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -24,7 +27,7 @@ export default function Hero() {
     <section className="flex flex-col items-center justify-center text-center relative min-h-[calc(100vh-84px)] px-5 pt-10 pb-[60px]">
       <div className="max-w-[700px] w-full flex flex-col items-center">
         <p className="text-[15px] text-[#888] font-normal mb-[14px]">
-          A studio for curious teams · est. 2019
+          Better AI inputs. Better AI outputs.
         </p>
 
         <div className="relative inline-block mb-[18px]">
@@ -35,39 +38,43 @@ export default function Hero() {
             favorite
           </span>
           <h1 className="text-[clamp(34px,5vw,52px)] font-medium tracking-[-1.5px] leading-[1.08] text-[#0f0f0f]">
-            Big ideas, made
+            Craft prompts.
             <br />
-            small enough to ship.
+            Save hours.
           </h1>
         </div>
 
         <p className="text-[14px] text-[#888] leading-[1.7] max-w-[470px] mx-auto mb-7">
-          We partner with founders and product teams on{" "}
-          <span className="inline-flex items-center bg-[#E0E2E7] text-[12.5px] font-semibold px-3 py-[2px] rounded-[6px] text-[#3a3a3a]">
-            brand
-          </span>
-          , product and engineering — turning fuzzy bets into shipped work that earns its keep, in{" "}
-          <span className="inline-flex items-center bg-[#E0E2E7] text-[12.5px] font-semibold px-3 py-[2px] rounded-[6px] text-[#3a3a3a]">
-            weeks
-          </span>
-          , not quarters.
+          Stop wrestling with AI instructions. Create, organize, and copy your perfect prompts. Free for up to 30 prompts.
         </p>
 
         <div className="flex items-center gap-[18px] flex-wrap justify-center mb-9">
-          <a href="#contact" className="nexto-pill-dark lg">
-            <span className="nexto-arrow-circ lg">
-              <ChevronArrow />
-            </span>
-            Start a project
-          </a>
+          <Show when="signed-out">
+            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
+              <button className="nexto-pill-dark lg">
+                <span className="nexto-arrow-circ lg">
+                  <ChevronArrow />
+                </span>
+                Sign In / Sign Up
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/dashboard" className="nexto-pill-dark lg">
+              <span className="nexto-arrow-circ lg">
+                <ChevronArrow />
+              </span>
+              Go to Dashboard
+            </Link>
+          </Show>
           <a
-            href="#showcase"
+            href="#marketplace"
             className="inline-flex items-center gap-[10px] text-[14px] font-medium text-[#1a1a1a] hover:opacity-70 transition-opacity"
           >
             <span className="nexto-icon w-[30px] h-[30px] rounded-full bg-white border border-black/8 inline-flex items-center justify-center text-[18px] text-[#111] shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
-              play_arrow
+              shopping_bag
             </span>
-            See our work
+            Browse marketplace
           </a>
         </div>
 
@@ -85,10 +92,10 @@ export default function Hero() {
           </div>
           <div className="flex flex-col leading-[1.3]">
             <strong className="text-[12.5px] font-semibold text-[#0f0f0f]">
-              86 projects shipped
+              1,200+ prompts created
             </strong>
             <span className="text-[11.5px] text-[#888]">
-              for teams like Halcyon, Sundae &amp; Folio.
+              by developers and creators worldwide.
             </span>
           </div>
         </div>

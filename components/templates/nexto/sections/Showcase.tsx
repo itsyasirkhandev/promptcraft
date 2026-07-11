@@ -1,18 +1,18 @@
 const works = [
   {
-    title: "Maru — banking, softened.",
-    tags: ["fintech", "app"],
+    title: "SEO Content Writer — Write high-ranking articles in minutes.",
+    tags: ["Marketing", "SEO"],
     bg: "linear-gradient(135deg,#FFE9D6 0%,#F7B2FB 60%,#786EF1 100%)",
     tall: true,
   },
   {
-    title: "Folio — a library that reads you.",
-    tags: ["product", "brand"],
+    title: "Code Refactorer — Clean code buddy.",
+    tags: ["Coding", "Development"],
     bg: "linear-gradient(135deg,#DDF3FF 0%,#5588FB 100%)",
   },
   {
-    title: "Sundae — DTC ice cream.",
-    tags: ["brand", "ecomm"],
+    title: "Cold Emailer — High conversion template.",
+    tags: ["Sales", "Email"],
     bg: "linear-gradient(135deg,#FFF1B6 0%,#FF9A5E 100%)",
   },
 ];
@@ -33,21 +33,20 @@ function ChevronArrow() {
 
 export default function Showcase() {
   return (
-    <section className="nexto-section" id="showcase">
+    <section className="nexto-section" id="marketplace">
       <div className="nexto-wrap">
         <div className="nexto-section-head">
           <div>
-            <span className="nexto-eyebrow">showcase</span>
+            <span className="nexto-eyebrow">MARKETPLACE</span>
             <h2 className="mt-[18px]">
-              Recent work we&apos;re{" "}
+              Ready to use{" "}
               <em className="italic font-light">
-                quietly proud
-              </em>{" "}
-              of.
+                prompts.
+              </em>
             </h2>
           </div>
           <a href="#" className="nexto-pill-light">
-            All case studies <ChevronArrow />
+            All prompts <ChevronArrow />
           </a>
         </div>
 

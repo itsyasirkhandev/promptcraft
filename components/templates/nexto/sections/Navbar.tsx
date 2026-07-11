@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 
 const LOGO_URL =
   "https://pub-f170a2592d2c4a1485466404c36807be.r2.dev/Tests/logoipsum-415.svg";
@@ -22,10 +23,10 @@ function ChevronArrow() {
 
 function Logo() {
   return (
-    <Link href="#" className="flex items-center gap-[9px]" aria-label="nexto home">
+    <Link href="#" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO_URL} alt="" className="h-7 brightness-0" />
-      <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">nexto.</span>
+      <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
     </Link>
   );
 }
@@ -40,6 +41,14 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    const element = document.getElementById(targetId);
+    if (element) {
+      e.preventDefault();
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-50 backdrop-saturate-[180%] backdrop-blur-[10px] bg-[rgba(245,245,245,0.7)]">
@@ -50,10 +59,11 @@ export default function Navbar() {
           <Logo />
 
           <ul className="hidden md:flex items-center gap-9 list-none">
-            {["Our Team", "Solutions", "Showcase", "News"].map((item) => (
+            {["Marketplace", "Pricing", "Process"].map((item) => (
               <li key={item}>
                 <a
                   href={`#${item.toLowerCase().replace(/\s/g, "-")}`}
+                  onClick={(e) => handleScroll(e, item.toLowerCase().replace(/\s/g, "-"))}
                   className="text-[14px] font-normal text-[#1a1a1a] opacity-65 hover:opacity-100 transition-opacity"
                 >
                   {item}
@@ -62,16 +72,41 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <a
-            href="#contact"
-            className="nexto-pill-dark hidden md:inline-flex"
-            aria-label="Let's Connect"
-          >
-            <span className="nexto-arrow-circ">
-              <ChevronArrow />
-            </span>
-            Let&apos;s Connect
-          </a>
+          <ClerkLoading>
+            <button className="nexto-pill-dark hidden md:inline-flex opacity-0 pointer-events-none" aria-hidden="true">
+              <span className="nexto-arrow-circ">
+                <ChevronArrow />
+              </span>
+              Sign In / Sign Up
+            </button>
+          </ClerkLoading>
+          <ClerkLoaded>
+            <Show when="signed-out">
+              <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
+                <button
+                  className="nexto-pill-dark hidden md:inline-flex"
+                  aria-label="Sign In / Sign Up"
+                >
+                  <span className="nexto-arrow-circ">
+                    <ChevronArrow />
+                  </span>
+                  Sign In / Sign Up
+                </button>
+              </SignInButton>
+            </Show>
+            <Show when="signed-in">
+              <Link
+                href="/dashboard"
+                className="nexto-pill-dark hidden md:inline-flex"
+                aria-label="Go to Dashboard"
+              >
+                <span className="nexto-arrow-circ">
+                  <ChevronArrow />
+                </span>
+                Go to Dashboard
+              </Link>
+            </Show>
+          </ClerkLoaded>
 
           {/* Hamburger */}
           <button
@@ -96,26 +131,54 @@ export default function Navbar() {
       <div
         className={`fixed inset-0 bg-[#F5F5F5] z-[60] flex flex-col px-8 pt-[90px] pb-10 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        {["Our Team", "Solutions", "Showcase", "News"].map((item) => (
+        {["Marketplace", "Pricing", "Process"].map((item) => (
           <a
             key={item}
             href={`#${item.toLowerCase().replace(/\s/g, "-")}`}
             className="text-[38px] font-black tracking-[-1.5px] text-[#0f0f0f] py-6 border-b border-dashed border-black/15"
-            onClick={() => setMenuOpen(false)}
+            onClick={(e) => {
+              setMenuOpen(false);
+              handleScroll(e, item.toLowerCase().replace(/\s/g, "-"));
+            }}
           >
             {item}
           </a>
         ))}
-        <a
-          href="#contact"
-          className="nexto-pill-dark lg mt-6 self-start"
-          onClick={() => setMenuOpen(false)}
-        >
-          <span className="nexto-arrow-circ lg">
-            <ChevronArrow />
-          </span>
-          Let&apos;s Connect
-        </a>
+        <ClerkLoading>
+          <button className="nexto-pill-dark lg mt-6 self-start opacity-0 pointer-events-none" aria-hidden="true">
+            <span className="nexto-arrow-circ lg">
+              <ChevronArrow />
+            </span>
+            Sign In / Sign Up
+          </button>
+        </ClerkLoading>
+        <ClerkLoaded>
+          <Show when="signed-out">
+            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
+              <button
+                className="nexto-pill-dark lg mt-6 self-start"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="nexto-arrow-circ lg">
+                  <ChevronArrow />
+                </span>
+                Sign In / Sign Up
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              href="/dashboard"
+              className="nexto-pill-dark lg mt-6 self-start"
+              onClick={() => setMenuOpen(false)}
+            >
+              <span className="nexto-arrow-circ lg">
+                <ChevronArrow />
+              </span>
+              Go to Dashboard
+            </Link>
+          </Show>
+        </ClerkLoaded>
       </div>
     </>
   );
