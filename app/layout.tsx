@@ -2,6 +2,7 @@ import { DM_Sans, Raleway } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -26,7 +27,11 @@ export default function NextoLayout({
         />
       </head>
       <body className={`${dmSans.variable} min-h-screen`}>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ConvexClientProvider>
+          <TooltipProvider delayDuration={0}>
+            {children}
+          </TooltipProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   );

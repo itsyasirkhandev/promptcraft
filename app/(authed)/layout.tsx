@@ -3,101 +3,76 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton, Show } from "@clerk/nextjs";
-import { useAppStore } from "@/store";
 import {
   House,
   List,
-  Desktop,
-  X,
+  PlusCircle,
+  Folders
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: House },
-  { href: "/server-demo", label: "Server Demo", icon: Desktop },
+  { href: "/dashboard", label: "Home", icon: House },
+  { href: "/dashboard/prompts", label: "Prompts", icon: List },
+  { href: "/dashboard/create", label: "Create", icon: PlusCircle },
+  { href: "/dashboard/workspace", label: "Workspace", icon: Folders },
 ];
 
-function Sidebar() {
-  const sidebarOpen = useAppStore((s) => s.sidebarOpen);
-  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
-          onClick={toggleSidebar}
-        />
-      )}
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const isActuallyActive = item.href === "/dashboard" 
+                  ? pathname === "/dashboard" 
+                  : pathname.startsWith(item.href);
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
-          <Link href="/" className="text-lg font-bold text-slate-800 dark:text-slate-200 font-heading">
-            Starter Template
-          </Link>
-          <button
-            onClick={toggleSidebar}
-            className="lg:hidden p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X size={18} className="text-slate-500" />
-          </button>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => {
-                  if (sidebarOpen) toggleSidebar();
-                }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                  isActive
-                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                <Icon size={18} weight={isActive ? "fill" : "regular"} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center">
-            Starter Template v0.1.0
-          </p>
-        </div>
-      </aside>
-    </>
+                return (
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton asChild isActive={isActuallyActive}>
+                      <Link href={item.href}>
+                        <item.icon weight={isActuallyActive ? "fill" : "regular"} />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 }
 
 function Header() {
-  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
-
   return (
-    <header className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
-      <button
-        onClick={toggleSidebar}
-        className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-      >
-        <List size={20} className="text-slate-600 dark:text-slate-400" />
-      </button>
-
-      <div className="flex-1" />
+    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <SidebarTrigger />
+        <h1 className="text-lg font-bold font-heading">Dashboard</h1>
+      </div>
 
       <div className="flex items-center gap-3">
         <ThemeToggle />
@@ -116,13 +91,15 @@ export default function AuthedLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-background">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-auto p-6">{children}</main>
-        </div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex-1 flex flex-col h-screen overflow-hidden">
+            <Header />
+            <main className="flex-1 overflow-auto p-6">{children}</main>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </AuthGuard>
   );
 }
