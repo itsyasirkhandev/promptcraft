@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PromptPreview } from '@/components/prompts/PromptPreview';
+import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PageProps {
@@ -229,16 +230,19 @@ export default function UsePromptPage({ params }: PageProps) {
                 <CardTitle className="text-lg">Live Preview</CardTitle>
                 <CardDescription>Visual rendering with filled fields highlighted.</CardDescription>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleCopy}
-                className="gap-2 rounded-xl h-8 border-slate-200 dark:border-slate-800 shadow-sm"
-              >
-                {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <OpenInAIButton content={interpolated} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopy}
+                  className="gap-2 rounded-xl h-8 border-slate-200 dark:border-slate-800 shadow-sm"
+                >
+                  {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[450px]">
