@@ -9,7 +9,7 @@ import {
 	customQuery
 } from 'convex-helpers/server/customFunctions';
 import { action, mutation, query } from '../_generated/server';
-import { ConvexError, ObjectType, PropertyValidators } from 'convex/values';
+import { ObjectType, PropertyValidators } from 'convex/values';
 import { Effect } from 'effect';
 import { ConvexDB } from '../services/ConvexDB';
 import { ServerConfig } from '../services/ServerConfig';

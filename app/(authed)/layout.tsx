@@ -28,7 +28,7 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Home", icon: House },
   { href: "/dashboard/prompts", label: "Prompts", icon: List },
-  { href: "/dashboard/create", label: "Create", icon: PlusCircle },
+  { href: "/prompt/create", label: "Create", icon: PlusCircle },
   { href: "/dashboard/workspace", label: "Workspace", icon: Folders },
 ];
 

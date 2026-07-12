@@ -48,9 +48,9 @@
 
 @theme inline {
   --color-page: var(--bg-page);
-  --color-card: var(--card-bg);
+  --color-card: var(--card);
   --color-main: var(--text-main);
-  --color-secondary: var(--text-secondary);
+  --color-secondary: var(--secondary);
   --font-sans: var(--font-sans);
   --radius-card: 22px;
   --radius-pill: 40px;
