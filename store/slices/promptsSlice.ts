@@ -18,6 +18,8 @@ export interface Prompt {
 export interface PromptsSlice {
   prompts: Prompt[];
   addPrompt: (data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  deletePrompt: (id: string) => void;
+  editPrompt: (id: string, data: Omit<Prompt, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
 export const createPromptsSlice: StateCreator<
@@ -36,5 +38,20 @@ export const createPromptsSlice: StateCreator<
         updatedAt: now,
         ...data,
       });
+    }),
+  deletePrompt: (id) =>
+    set((state) => {
+      state.prompts = state.prompts.filter((p) => p.id !== id);
+    }),
+  editPrompt: (id, data) =>
+    set((state) => {
+      const idx = state.prompts.findIndex((p) => p.id === id);
+      if (idx !== -1) {
+        state.prompts[idx] = {
+          ...state.prompts[idx],
+          ...data,
+          updatedAt: Date.now(),
+        };
+      }
     }),
 });

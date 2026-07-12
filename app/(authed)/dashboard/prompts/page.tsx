@@ -19,6 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   MagnifyingGlass,
   Plus,
@@ -28,10 +37,28 @@ import {
   Globe,
   Notebook,
   Lightning,
+  PencilSimple,
+  Trash,
+  Copy,
 } from '@phosphor-icons/react';
 
 export default function PromptsDashboardPage() {
   const prompts = useAppStore((state) => state.prompts);
+  const deletePrompt = useAppStore((state) => state.deletePrompt);
+  const [promptToDelete, setPromptToDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const handleDeletePrompt = (id: string, title: string) => {
+    setPromptToDelete({ id, title });
+  };
+
+  const handleCopyContent = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success('Copied prompt content to clipboard');
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'static' | 'dynamic'>('all');
@@ -244,6 +271,53 @@ export default function PromptsDashboardPage() {
                     </pre>
                   </div>
 
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-2 border-y border-slate-100 dark:border-slate-800/65 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyContent(prompt.content)}
+                        className="text-xs h-8 gap-1.5 px-3 rounded-xl border-slate-200 dark:border-slate-800 shadow-sm"
+                      >
+                        <Copy className="size-3.5" />
+                        <span>Copy</span>
+                      </Button>
+                      {prompt.templateMode && (
+                        <Button
+                          asChild
+                          size="sm"
+                          className="text-xs h-8 gap-1.5 px-3 rounded-xl shadow-sm"
+                        >
+                          <Link href={`/prompt/${prompt.id}/use`}>
+                            <Lightning className="size-3.5" />
+                            <span>Use Prompt</span>
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                        className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                      >
+                        <Link href={`/prompt/${prompt.id}/edit`}>
+                          <PencilSimple className="size-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeletePrompt(prompt.id, prompt.title)}
+                        className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
+                      >
+                        <Trash className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+
                   {/* Footer details */}
                   <div className="flex flex-col gap-2.5">
                     {/* Tags */}
@@ -279,6 +353,39 @@ export default function PromptsDashboardPage() {
           })}
         </div>
       )}
+
+      <Dialog open={!!promptToDelete} onOpenChange={(open) => !open && setPromptToDelete(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Delete Prompt</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the prompt <span className="font-semibold text-slate-900 dark:text-slate-100">&ldquo;{promptToDelete?.title}&rdquo;</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setPromptToDelete(null)}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (promptToDelete) {
+                  deletePrompt(promptToDelete.id);
+                  toast.success('Prompt deleted!');
+                  setPromptToDelete(null);
+                }
+              }}
+              className="rounded-xl"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
