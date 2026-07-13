@@ -6,7 +6,8 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { promptSchema, type PromptFormValues, type TemplateFieldType } from '@/lib/schemas/prompt.schema';
-import { useAppStore } from '@/store';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
   FieldGroup,
@@ -60,7 +61,7 @@ export default function CreatePromptPage() {
     },
   });
 
-  const addPrompt = useAppStore((s) => s.addPrompt);
+  const createPrompt = useMutation(api.authed.prompts.create);
 
   // useWatch is React Compiler-safe (unlike the watch() function returned by useForm)
   const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
@@ -83,7 +84,15 @@ export default function CreatePromptPage() {
 
   async function onSubmit(data: PromptFormValues) {
     try {
-      addPrompt(data);
+      await createPrompt({
+        title: data.title,
+        content: data.content,
+        templateMode: data.templateMode,
+        isPublic: data.isPublic,
+        category: data.category || undefined,
+        tags: data.tags,
+        templateFields: data.templateFields,
+      });
       toast.success('Prompt created!', { description: 'Your prompt has been saved.' });
       router.push('/dashboard/prompts');
     } catch (error) {

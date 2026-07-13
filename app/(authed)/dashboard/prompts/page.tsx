@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useAppStore } from '@/store';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -46,7 +48,6 @@ import {
   Palette,
   GraduationCap,
 } from '@phosphor-icons/react';
-import type { Prompt } from '@/store/slices/promptsSlice';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_MAP: Record<
@@ -63,8 +64,8 @@ const CATEGORY_MAP: Record<
 };
 
 interface PromptCardProps {
-  prompt: Prompt;
-  onDelete: (id: string, title: string) => void;
+  prompt: Doc<'prompts'>;
+  onDelete: (id: Id<'prompts'>, title: string) => void;
   formatDate: (timestamp: number) => string;
 }
 
@@ -240,7 +241,7 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
             <div className="flex items-center gap-1.5">
               {prompt.templateMode ? (
                 <Button asChild size="sm" className="text-xs h-8 gap-1.5 px-3.5 rounded-xl shadow-sm bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white border-0 transition-transform active:scale-[0.98]">
-                  <Link href={`/prompt/${prompt.id}/use`}>
+                  <Link href={`/prompt/${prompt._id}/use`}>
                     <Lightning className="size-3.5" />
                     <span>Use Prompt</span>
                   </Link>
@@ -265,14 +266,14 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
                 asChild
                 className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-white/5"
               >
-                <Link href={`/prompt/${prompt.id}/edit`}>
+                <Link href={`/prompt/${prompt._id}/edit`}>
                   <PencilSimple className="size-4" />
                 </Link>
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(prompt.id, prompt.title)}
+                onClick={() => onDelete(prompt._id, prompt.title)}
                 className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash className="size-4" />
@@ -297,11 +298,11 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
 }
 
 export default function PromptsDashboardPage() {
-  const prompts = useAppStore((state) => state.prompts);
-  const deletePrompt = useAppStore((state) => state.deletePrompt);
-  const [promptToDelete, setPromptToDelete] = useState<{ id: string; title: string } | null>(null);
+  const prompts = useQuery(api.authed.prompts.list);
+  const deletePrompt = useMutation(api.authed.prompts.remove);
+  const [promptToDelete, setPromptToDelete] = useState<{ id: Id<'prompts'>; title: string } | null>(null);
 
-  const handleDeletePrompt = (id: string, title: string) => {
+  const handleDeletePrompt = (id: Id<'prompts'>, title: string) => {
     setPromptToDelete({ id, title });
   };
 
@@ -310,15 +311,16 @@ export default function PromptsDashboardPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'updated_desc' | 'updated_asc'>('newest');
 
   const filteredAndSortedPrompts = useMemo(() => {
+    if (!prompts) return [];
     // 1. Filtering
-    const result = prompts.filter((prompt) => {
+    const result = [...prompts].filter((prompt) => {
       // Search query filter
       const query = search.toLowerCase().trim();
       const matchesSearch =
         !query ||
         prompt.title.toLowerCase().includes(query) ||
         prompt.content.toLowerCase().includes(query) ||
-        (prompt.tags && prompt.tags.some((tag) => tag.toLowerCase().includes(query)));
+        (prompt.tags && prompt.tags.some((tag: string) => tag.toLowerCase().includes(query)));
 
       // Type filter
       let matchesType = true;
@@ -361,6 +363,60 @@ export default function PromptsDashboardPage() {
       year: 'numeric',
     });
   };
+
+  // Handle loading state
+  if (prompts === undefined) {
+    return (
+      <div className="flex flex-col gap-6 max-w-5xl mx-auto p-1 animate-pulse">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="h-9 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+            <div className="h-4 w-72 bg-slate-100 dark:bg-slate-800/50 rounded mt-2"></div>
+          </div>
+          <div className="h-9 w-32 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+        </div>
+
+        <div className="h-px bg-slate-200 dark:bg-slate-800" />
+
+        {/* Filter and Search Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="w-full md:max-w-sm h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+          <div className="flex gap-3 w-full md:w-auto items-center">
+            <div className="w-full sm:w-44 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+            <div className="w-full sm:w-44 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+          </div>
+        </div>
+
+        {/* Grid of skeleton cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="flex flex-col overflow-hidden bg-card text-card-foreground border border-border/60 rounded-2xl shadow-sm h-64 p-5 gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 bg-slate-200 dark:bg-slate-850 rounded-lg"></div>
+                  <div className="h-5 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                </div>
+                <div className="h-5 w-20 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
+              </div>
+              <div className="flex-1 bg-slate-50/50 dark:bg-black/35 rounded-xl p-4 flex flex-col gap-2">
+                <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-3 w-4/6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                <div className="flex gap-2">
+                  <div className="size-8 bg-slate-200 dark:bg-slate-850 rounded-xl"></div>
+                  <div className="size-8 bg-slate-200 dark:bg-slate-850 rounded-xl"></div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto p-1 animate-in fade-in duration-300">
@@ -457,7 +513,7 @@ export default function PromptsDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredAndSortedPrompts.map((prompt) => (
             <PromptCard
-              key={prompt.id}
+              key={prompt._id}
               prompt={prompt}
               onDelete={handleDeletePrompt}
               formatDate={formatDate}
@@ -484,10 +540,14 @@ export default function PromptsDashboardPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (promptToDelete) {
-                  deletePrompt(promptToDelete.id);
-                  toast.success('Prompt deleted!');
+                  try {
+                    await deletePrompt({ id: promptToDelete.id });
+                    toast.success('Prompt deleted!');
+                  } catch {
+                    toast.error('Failed to delete prompt');
+                  }
                   setPromptToDelete(null);
                 }
               }}

@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { promptSchema, type PromptFormValues, type TemplateFieldType } from '@/lib/schemas/prompt.schema';
-import { useAppStore } from '@/store';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
   FieldGroup,
@@ -48,8 +50,8 @@ export default function EditPromptPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = React.use(params);
 
-  const prompt = useAppStore((state) => state.prompts.find((p) => p.id === id));
-  const editPrompt = useAppStore((state) => state.editPrompt);
+  const prompt = useQuery(api.authed.prompts.get, { id: id as Id<'prompts'> });
+  const updatePrompt = useMutation(api.authed.prompts.update);
 
   const {
     register,
@@ -118,7 +120,16 @@ export default function EditPromptPage({ params }: PageProps) {
 
   async function onSubmit(data: PromptFormValues) {
     try {
-      editPrompt(id, data);
+      await updatePrompt({
+        id: id as Id<'prompts'>,
+        title: data.title,
+        content: data.content,
+        templateMode: data.templateMode,
+        isPublic: data.isPublic,
+        category: data.category || undefined,
+        tags: data.tags,
+        templateFields: data.templateFields,
+      });
       toast.success('Prompt updated!', { description: 'Your changes have been saved.' });
       router.push('/dashboard/prompts');
     } catch (error) {
@@ -174,7 +185,27 @@ export default function EditPromptPage({ params }: PageProps) {
     setCreateFieldDialogOpen(false);
   }
 
-  if (!prompt) {
+  if (prompt === undefined) {
+    return (
+      <div className="max-w-2xl mx-auto animate-pulse">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="size-9 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+          <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+        </div>
+        <Card className="p-6">
+          <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
+          <div className="h-4 w-72 bg-slate-100 dark:bg-slate-800/50 rounded mb-8"></div>
+          <div className="space-y-4">
+            <div className="h-10 w-full bg-slate-200 dark:bg-slate-850 rounded"></div>
+            <div className="h-24 w-full bg-slate-200 dark:bg-slate-850 rounded"></div>
+            <div className="h-10 w-full bg-slate-200 dark:bg-slate-850 rounded"></div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (prompt === null) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
         <h2 className="text-xl font-semibold mb-2">Prompt Not Found</h2>
