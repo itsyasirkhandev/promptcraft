@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { TagInput } from '@/components/ui/tag-input';
+import { CategorySelector } from '@/components/prompts/CategorySelector';
 import { TemplateFieldsPanel } from '../../create/_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from '../../create/_components/CreateTemplateFieldDialog';
 
@@ -64,10 +65,20 @@ export default function EditPromptPage({ params }: PageProps) {
       content: '',
       templateMode: false,
       isPublic: false,
+      category: undefined,
       tags: [],
       templateFields: [],
     },
   });
+
+  const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
+  const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
+  const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
+  const watchedTemplateFields = useWatch({ control, name: 'templateFields', defaultValue: [] });
+  const watchedIsPublic = useWatch({ control, name: 'isPublic', defaultValue: false });
+
+  const isResettingRef = React.useRef(true);
+  const prevIsPublicRef = React.useRef<boolean>(watchedIsPublic);
 
   React.useEffect(() => {
     if (prompt) {
@@ -76,16 +87,31 @@ export default function EditPromptPage({ params }: PageProps) {
         content: prompt.content,
         templateMode: prompt.templateMode,
         isPublic: prompt.isPublic,
+        category: prompt.category ?? (prompt.isPublic ? 'other' : undefined),
         tags: prompt.tags ?? [],
         templateFields: prompt.templateFields ?? [],
       });
+      isResettingRef.current = true;
     }
   }, [prompt, reset]);
 
-  const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
-  const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
-  const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
-  const watchedTemplateFields = useWatch({ control, name: 'templateFields', defaultValue: [] });
+  React.useEffect(() => {
+    if (isResettingRef.current) {
+      prevIsPublicRef.current = watchedIsPublic;
+      isResettingRef.current = false;
+      return;
+    }
+
+    const prevIsPublic = prevIsPublicRef.current;
+    if (prevIsPublic !== watchedIsPublic) {
+      if (watchedIsPublic) {
+        setValue('category', 'other');
+      } else {
+        setValue('category', undefined);
+      }
+      prevIsPublicRef.current = watchedIsPublic;
+    }
+  }, [watchedIsPublic, setValue]);
 
   const [selection, setSelection] = React.useState<Selection | null>(null);
   const [createFieldDialogOpen, setCreateFieldDialogOpen] = React.useState(false);
@@ -277,6 +303,24 @@ export default function EditPromptPage({ params }: PageProps) {
                   )}
                 />
               </Field>
+
+              {/* Category selection */}
+              {watchedIsPublic && (
+                <Field orientation="vertical">
+                  <FieldLabel className="text-foreground">Category</FieldLabel>
+                  <Controller
+                    control={control}
+                    name="category"
+                    render={({ field }) => (
+                      <CategorySelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.category?.message}
+                      />
+                    )}
+                  />
+                </Field>
+              )}
 
               {/* Tags */}
               <Field orientation="vertical">

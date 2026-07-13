@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { TagInput } from '@/components/ui/tag-input';
+import { CategorySelector } from '@/components/prompts/CategorySelector';
 import { TemplateFieldsPanel } from './_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from './_components/CreateTemplateFieldDialog';
 
@@ -53,6 +54,7 @@ export default function CreatePromptPage() {
       content: '',
       templateMode: false,
       isPublic: false,
+      category: undefined,
       tags: [],
       templateFields: [],
     },
@@ -65,6 +67,15 @@ export default function CreatePromptPage() {
   const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
   const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
   const watchedTemplateFields = useWatch({ control, name: 'templateFields', defaultValue: [] });
+  const watchedIsPublic = useWatch({ control, name: 'isPublic', defaultValue: false });
+
+  useEffect(() => {
+    if (watchedIsPublic) {
+      setValue('category', 'other');
+    } else {
+      setValue('category', undefined);
+    }
+  }, [watchedIsPublic, setValue]);
 
   // Selection state for "Convert to Dynamic" button
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -233,6 +244,24 @@ export default function CreatePromptPage() {
                   )}
                 />
               </Field>
+
+              {/* Category selection */}
+              {watchedIsPublic && (
+                <Field orientation="vertical">
+                  <FieldLabel className="text-foreground">Category</FieldLabel>
+                  <Controller
+                    control={control}
+                    name="category"
+                    render={({ field }) => (
+                      <CategorySelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.category?.message}
+                      />
+                    )}
+                  />
+                </Field>
+              )}
 
               {/* Tags */}
               <Field orientation="vertical">

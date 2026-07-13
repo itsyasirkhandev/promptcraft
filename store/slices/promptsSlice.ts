@@ -12,6 +12,7 @@ export interface Prompt {
   templateFields: TemplateField[];
   createdAt: number;    // Date.now()
   updatedAt?: number;
+  category?: string;
 }
 
 

@@ -10,7 +10,17 @@ export const templateFieldSchema = z.object({
 export type TemplateField = z.infer<typeof templateFieldSchema>;
 export type TemplateFieldType = TemplateField['type'];
 
-export const promptSchema = z.object({
+const allowedCategories: readonly string[] = [
+  'coding',
+  'writing',
+  'marketing',
+  'analysis',
+  'design',
+  'education',
+  'other',
+];
+
+const basePromptSchema = z.object({
   title: z.string().min(1, 'Title is required').max(300, 'Title must be 300 characters or less'),
   content: z
     .string()
@@ -27,6 +37,35 @@ export const promptSchema = z.object({
       message: 'Duplicate tags are not allowed',
     }),
   templateFields: z.array(templateFieldSchema),
+  category: z.string().optional(),
 });
 
-export type PromptFormValues = z.infer<typeof promptSchema>;
+export type PromptFormValues = z.infer<typeof basePromptSchema>;
+
+export const promptSchema: z.ZodEffects<z.ZodTypeAny, PromptFormValues, PromptFormValues> = z.preprocess(
+  (input) => {
+    if (input && typeof input === 'object') {
+      const data = input as Record<string, unknown>;
+      if (data.isPublic === true && !data.category) {
+        return {
+          ...data,
+          category: 'other',
+        };
+      }
+    }
+    return input;
+  },
+  basePromptSchema.superRefine((data, ctx) => {
+    if (data.isPublic) {
+      if (!data.category || !allowedCategories.includes(data.category)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['category'],
+          message: 'Category is required for public prompts and must be one of: coding, writing, marketing, analysis, design, education, other',
+        });
+      }
+    }
+  })
+) as unknown as z.ZodEffects<z.ZodTypeAny, PromptFormValues, PromptFormValues>;
+
+
