@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { X } from '@phosphor-icons/react';
 import { promptSchema, type PromptFormValues, type TemplateFieldType } from '@/lib/schemas/prompt.schema';
 import { useAppStore } from '@/store';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -22,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { TagInput } from '@/components/ui/tag-input';
 import { TemplateFieldsPanel } from './_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from './_components/CreateTemplateFieldDialog';
 
@@ -64,11 +63,8 @@ export default function CreatePromptPage() {
   // useWatch is React Compiler-safe (unlike the watch() function returned by useForm)
   const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
   const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
-  const watchedTags = useWatch({ control, name: 'tags', defaultValue: [] });
   const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
   const watchedTemplateFields = useWatch({ control, name: 'templateFields', defaultValue: [] });
-
-  const tagInputRef = useRef<HTMLInputElement>(null);
 
   // Selection state for "Convert to Dynamic" button
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -84,23 +80,6 @@ export default function CreatePromptPage() {
         description: error instanceof Error ? error.message : 'An unknown error occurred.',
       });
     }
-  }
-
-  function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const raw = tagInputRef.current?.value.trim() ?? '';
-      if (!raw) return;
-      if (raw.length > 30) return;
-      if (watchedTags.includes(raw)) return;
-      if (watchedTags.length >= 20) return;
-      setValue('tags', [...watchedTags, raw], { shouldValidate: true });
-      if (tagInputRef.current) tagInputRef.current.value = '';
-    }
-  }
-
-  function removeTag(tag: string) {
-    setValue('tags', watchedTags.filter((t) => t !== tag), { shouldValidate: true });
   }
 
   // ── Selection detection ────────────────────────────────────────────────────
@@ -258,28 +237,17 @@ export default function CreatePromptPage() {
               {/* Tags */}
               <Field orientation="vertical">
                 <FieldLabel className="text-foreground">Tags</FieldLabel>
-                <Input
-                  ref={tagInputRef}
-                  placeholder="Type a tag and press Enter or comma..."
-                  onKeyDown={handleTagKeyDown}
+                <Controller
+                  control={control}
+                  name="tags"
+                  render={({ field }) => (
+                    <TagInput
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                      error={errors.tags?.message}
+                    />
+                  )}
                 />
-                {watchedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-1 p-2 rounded-md bg-muted/40 dark:bg-muted/20 border border-border">
-                    {watchedTags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="gap-1 pr-1">
-                        <span className="text-secondary-foreground">{tag}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="ml-0.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors"
-                          aria-label={`Remove tag ${tag}`}
-                        >
-                          <X size={10} />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
                 <FieldError errors={[errors.tags as { message?: string } | undefined]} />
               </Field>
             </FieldGroup>
