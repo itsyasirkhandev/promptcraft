@@ -6,7 +6,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { X } from '@phosphor-icons/react';
-import { promptSchema, type PromptFormValues } from '@/lib/schemas/prompt.schema';
+import { promptSchema, type PromptFormValues, type TemplateFieldType } from '@/lib/schemas/prompt.schema';
 import { useAppStore } from '@/store';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TemplateFieldsPanel } from './_components/TemplateFieldsPanel';
+import { CreateTemplateFieldDialog } from './_components/CreateTemplateFieldDialog';
 
 function charCountClass(current: number, max: number): string {
   if (current >= max) return 'text-xs text-destructive text-right';
@@ -71,6 +72,7 @@ export default function CreatePromptPage() {
 
   // Selection state for "Convert to Dynamic" button
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
 
   async function onSubmit(data: PromptFormValues) {
     try {
@@ -103,46 +105,53 @@ export default function CreatePromptPage() {
 
   // ── Selection detection ────────────────────────────────────────────────────
 
-  function handleContentPointerUp(e: React.PointerEvent<HTMLTextAreaElement>) {
-    const textarea = e.currentTarget;
+  function updateSelection(textarea: HTMLTextAreaElement) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    if (start !== end) {
-      setSelection({ start, end, text: textarea.value.slice(start, end) });
-    } else {
-      setSelection(null);
-    }
+    setSelection({
+      start,
+      end,
+      text: textarea.value.slice(start, end),
+    });
+  }
+
+  function handleContentPointerUp(e: React.PointerEvent<HTMLTextAreaElement>) {
+    updateSelection(e.currentTarget);
+  }
+
+  function handleContentKeyUp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    updateSelection(e.currentTarget);
   }
 
   // ── Convert to Dynamic ─────────────────────────────────────────────────────
 
-  function handleConvertToDynamic() {
-    if (!selection || !selection.text.trim()) return;
+  function handleSaveNewField(fieldConfig: {
+    name: string;
+    type: TemplateFieldType;
+    options?: string[];
+  }) {
+    const start = selection ? selection.start : watchedContent.length;
+    const end = selection ? selection.end : watchedContent.length;
 
-    const fieldName = selection.text.trim().toLowerCase().replace(/\s+/g, '_');
-    const before = watchedContent.slice(0, selection.start);
-    const after = watchedContent.slice(selection.end);
-    const newContent = `${before}{{${fieldName}}}${after}`;
+    const before = watchedContent.slice(0, start);
+    const after = watchedContent.slice(end);
+    const newContent = `${before}{{${fieldConfig.name}}}${after}`;
 
     setValue('content', newContent, { shouldValidate: true });
 
-    // Only add a new field if one with the same name doesn't already exist
-    const alreadyExists = watchedTemplateFields.some((f) => f.name === fieldName);
-    if (!alreadyExists) {
-      const newField = {
-        id: crypto.randomUUID(),
-        name: fieldName,
-        type: 'text' as const,
-        options: undefined,
-      };
-      setValue('templateFields', [...watchedTemplateFields, newField], { shouldValidate: true });
-    }
+    const newField = {
+      id: crypto.randomUUID(),
+      name: fieldConfig.name,
+      type: fieldConfig.type,
+      options: fieldConfig.options,
+    };
+    setValue('templateFields', [...watchedTemplateFields, newField], { shouldValidate: true });
 
     setSelection(null);
+    setCreateFieldDialogOpen(false);
   }
 
-  const showConvertButton =
-    watchedTemplateMode && selection !== null && selection.text.trim() !== '';
+  const showConvertButton = watchedTemplateMode;
 
   const showTemplatePanel =
     watchedTemplateMode && watchedTemplateFields.length > 0;
@@ -186,20 +195,22 @@ export default function CreatePromptPage() {
                   className="min-h-48"
                   aria-invalid={!!errors.content}
                   onPointerUp={handleContentPointerUp}
+                  onKeyUp={handleContentKeyUp}
                 />
                 <p className={charCountClass(watchedContent.length, 10000)}>
                   {watchedContent.length}/10,000
                 </p>
-                {/* Convert to Dynamic button — below char count, above error */}
                 {showConvertButton && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleConvertToDynamic}
+                    onClick={() => setCreateFieldDialogOpen(true)}
                     className="self-start text-xs"
                   >
-                    Convert &ldquo;{selection!.text}&rdquo; to Dynamic
+                    {selection && selection.text.trim()
+                      ? `Convert "${selection.text.trim().slice(0, 15)}${selection.text.trim().length > 15 ? '...' : ''}" to Dynamic`
+                      : 'Add Dynamic Field'}
                   </Button>
                 )}
                 <FieldError errors={[errors.content]} />
@@ -284,6 +295,16 @@ export default function CreatePromptPage() {
           </form>
         </CardContent>
       </Card>
+
+      {createFieldDialogOpen && (
+        <CreateTemplateFieldDialog
+          open={createFieldDialogOpen}
+          onOpenChange={setCreateFieldDialogOpen}
+          initialName={selection ? selection.text : ''}
+          existingFields={watchedTemplateFields}
+          onSave={handleSaveNewField}
+        />
+      )}
     </div>
   );
 }
