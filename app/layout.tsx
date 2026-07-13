@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import { DM_Sans, Raleway } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+
+export const metadata: Metadata = {
+  title: "Prompt Crafts",
+  description: "Better AI inputs. Better AI outputs. Craft prompts. Save hours.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
+};
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 

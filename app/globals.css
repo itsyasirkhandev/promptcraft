@@ -100,10 +100,8 @@
     padding: 0;
     @apply border-border outline-ring/50;
   }
-  html,
-  body {
+  html {
     background: var(--bg-page);
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
@@ -111,6 +109,7 @@
   body {
     font-family: "DM Sans", system-ui, sans-serif;
     color: var(--text-main);
+    overflow-x: hidden;
     @apply bg-background text-foreground;
   }
   a {

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 
-const LOGO_URL =
-  "https://pub-f170a2592d2c4a1485466404c36807be.r2.dev/Tests/logoipsum-415.svg";
+const LOGO_URL = "/logo.svg";
 
 function ChevronArrow() {
   return (
@@ -23,7 +22,7 @@ function ChevronArrow() {
 
 function Logo() {
   return (
-    <Link href="#" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
+    <Link href="/" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO_URL} alt="" className="h-7 brightness-0" />
       <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
@@ -35,9 +34,22 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.height = "100%";
+      document.documentElement.style.height = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.height = "";
+      document.documentElement.style.height = "";
+    }
     return () => {
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.height = "";
+      document.documentElement.style.height = "";
     };
   }, [menuOpen]);
 
@@ -51,7 +63,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 backdrop-saturate-[180%] backdrop-blur-[10px] bg-[rgba(245,245,245,0.7)]">
+      <nav className="sticky top-0 z-[70] backdrop-saturate-[180%] backdrop-blur-[10px] bg-[rgba(245,245,245,0.7)]">
         <div className="max-w-[1100px] mx-auto px-10 py-6 flex items-center justify-between relative">
           {/* Dashed bottom border */}
           <div className="nexto-dashed absolute left-10 right-10 bottom-0" />
@@ -61,13 +73,13 @@ export default function Navbar() {
           <ul className="hidden md:flex items-center gap-9 list-none">
             {["Marketplace", "Pricing", "Process"].map((item) => (
               <li key={item}>
-                <a
-                  href={`#${item.toLowerCase().replace(/\s/g, "-")}`}
+                <Link
+                  href={`/#${item.toLowerCase().replace(/\s/g, "-")}`}
                   onClick={(e) => handleScroll(e, item.toLowerCase().replace(/\s/g, "-"))}
                   className="text-[14px] font-normal text-[#1a1a1a] opacity-65 hover:opacity-100 transition-opacity"
                 >
                   {item}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -132,9 +144,9 @@ export default function Navbar() {
         className={`fixed inset-0 bg-[#F5F5F5] z-[60] flex flex-col px-8 pt-[90px] pb-10 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {["Marketplace", "Pricing", "Process"].map((item) => (
-          <a
+          <Link
             key={item}
-            href={`#${item.toLowerCase().replace(/\s/g, "-")}`}
+            href={`/#${item.toLowerCase().replace(/\s/g, "-")}`}
             className="text-[38px] font-black tracking-[-1.5px] text-[#0f0f0f] py-6 border-b border-dashed border-black/15"
             onClick={(e) => {
               setMenuOpen(false);
@@ -142,7 +154,7 @@ export default function Navbar() {
             }}
           >
             {item}
-          </a>
+          </Link>
         ))}
         <ClerkLoading>
           <button className="nexto-pill-dark lg mt-6 self-start opacity-0 pointer-events-none" aria-hidden="true">

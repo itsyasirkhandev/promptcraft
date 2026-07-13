@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 
-const LOGO_URL =
-  "https://pub-f170a2592d2c4a1485466404c36807be.r2.dev/Tests/logoipsum-415.svg";
+const LOGO_URL = "/logo.svg";
 
 function Logo() {
   return (
-    <a href="#" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
+    <Link href="/" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO_URL} alt="" className="h-7 brightness-0" />
       <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
-    </a>
+    </Link>
   );
 }
 
