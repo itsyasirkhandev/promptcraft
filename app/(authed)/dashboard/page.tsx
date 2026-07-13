@@ -1,16 +1,12 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export default function DashboardPage() {
-  const { viewer, numbers } =
-    useQuery(api.authed.numbers.listNumbers, {
-      count: 10,
-    }) ?? {};
-  const addNumber = useMutation(api.authed.numbers.addNumber);
+  const viewer = useQuery(api.authed.users.currentUser);
 
-  if (viewer === undefined || numbers === undefined) {
+  if (viewer === undefined) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex items-center gap-2">
@@ -36,39 +32,20 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-          Welcome back{viewer ? `, ${viewer}` : ""}! This demo generates random
-          numbers and stores them in Convex.
+          Welcome back{viewer?.name ? `, ${viewer.name}` : ""}!
         </p>
       </div>
 
       <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-200">
-          Number generator
+          User Information
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Click the button below to generate a new number. The data is persisted
-          in Convex — open this page in another window and see the data sync
-          automatically!
-        </p>
-        <button
-          className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium px-6 py-3 rounded-xl cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] w-fit"
-          onClick={() => {
-            void addNumber({ value: Math.floor(Math.random() * 10) });
-          }}
-        >
-          + Generate random number
-        </button>
-        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
-          <p className="font-semibold text-slate-800 dark:text-slate-200 mb-2 text-sm">
-            Newest Numbers
-          </p>
-          <p className="text-slate-700 dark:text-slate-300 font-mono text-lg">
-            {numbers?.length === 0
-              ? "Click the button to generate a number!"
-              : (numbers?.join(", ") ?? "...")}
-          </p>
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-2 text-sm text-slate-600 dark:text-slate-400">
+          <p><span className="font-semibold text-slate-800 dark:text-slate-200">Name:</span> {viewer?.name}</p>
+          <p><span className="font-semibold text-slate-800 dark:text-slate-200">Email:</span> {viewer?.email}</p>
+          <p><span className="font-semibold text-slate-800 dark:text-slate-200">Plan:</span> <span className="capitalize font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">{viewer?.plan}</span></p>
         </div>
       </div>
 
@@ -78,13 +55,6 @@ export default function DashboardPage() {
         <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-200">
           Making changes
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Edit{" "}
-          <code className="text-sm font-semibold font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
-            convex/authed/numbers.ts
-          </code>{" "}
-          to change the backend.
-        </p>
         <p className="text-slate-500 dark:text-slate-400 text-sm">
           Edit{" "}
           <code className="text-sm font-semibold font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">

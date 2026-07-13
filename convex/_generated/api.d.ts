@@ -11,13 +11,11 @@
 import type * as authed_demo from "../authed/demo.js";
 import type * as authed_errors from "../authed/errors.js";
 import type * as authed_helpers from "../authed/helpers.js";
-import type * as authed_numbers from "../authed/numbers.js";
 import type * as authed_users from "../authed/users.js";
 import type * as effectHelpers from "../effectHelpers.js";
 import type * as http from "../http.js";
 import type * as private_demo from "../private/demo.js";
 import type * as private_helpers from "../private/helpers.js";
-import type * as public_numbers from "../public/numbers.js";
 import type * as services_ConvexDB from "../services/ConvexDB.js";
 import type * as services_ServerConfig from "../services/ServerConfig.js";
 import type * as users from "../users.js";
@@ -32,13 +30,11 @@ declare const fullApi: ApiFromModules<{
   "authed/demo": typeof authed_demo;
   "authed/errors": typeof authed_errors;
   "authed/helpers": typeof authed_helpers;
-  "authed/numbers": typeof authed_numbers;
   "authed/users": typeof authed_users;
   effectHelpers: typeof effectHelpers;
   http: typeof http;
   "private/demo": typeof private_demo;
   "private/helpers": typeof private_helpers;
-  "public/numbers": typeof public_numbers;
   "services/ConvexDB": typeof services_ConvexDB;
   "services/ServerConfig": typeof services_ServerConfig;
   users: typeof users;

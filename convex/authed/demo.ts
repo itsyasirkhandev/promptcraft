@@ -29,16 +29,16 @@ export const authedDemoQuery = effectAuthedQuery({
 
 			// 3. Convex db calls go inside Effect.tryPromise (the v4 canonical pattern)
 			const { db } = yield* ConvexDB;
-			const numbers = yield* Effect.tryPromise(() =>
+			const users = yield* Effect.tryPromise(() =>
 				db
-					.query('numbers')
+					.query('users')
 					.order('desc')
 					.take(args.count)
 			);
 
 			return {
 				viewer: identity.name ?? null,
-				count: numbers.length,
+				count: users.length,
 			};
 		}).pipe(
 			Effect.catchTag("DemoError", (error) =>

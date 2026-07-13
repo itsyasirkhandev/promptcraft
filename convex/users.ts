@@ -36,6 +36,7 @@ export const upsertFromClerk = internalMutation({
         avatarUrl,
         clerkId,
         tokenIdentifier,
+        plan: "hobby",
       });
     }
   },

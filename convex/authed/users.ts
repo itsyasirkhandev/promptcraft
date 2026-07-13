@@ -67,7 +67,8 @@ export const getOrCreateUser = effectAuthedMutation({
 						email: identity.email ?? '',
 						avatarUrl: identity.pictureUrl,
 						tokenIdentifier,
-						clerkId: identity.subject
+						clerkId: identity.subject,
+						plan: 'hobby'
 					})
 				);
 				viewer = (yield* Effect.tryPromise(() => writerDb.get(userId)))!;
