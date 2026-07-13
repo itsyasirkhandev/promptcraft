@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   InputGroup,
@@ -40,7 +39,262 @@ import {
   PencilSimple,
   Trash,
   Copy,
+  Check,
+  Code,
+  Megaphone,
+  ChartBar,
+  Palette,
+  GraduationCap,
 } from '@phosphor-icons/react';
+import type { Prompt } from '@/store/slices/promptsSlice';
+import { cn } from '@/lib/utils';
+
+const CATEGORY_MAP: Record<
+  string,
+  { label: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  coding: { label: 'Coding & Tech', icon: Code },
+  writing: { label: 'Writing & Content', icon: PencilSimple },
+  marketing: { label: 'Marketing & Growth', icon: Megaphone },
+  analysis: { label: 'Data & Analysis', icon: ChartBar },
+  design: { label: 'Design & Art', icon: Palette },
+  education: { label: 'Education & Learning', icon: GraduationCap },
+  other: { label: 'General / Other', icon: Globe },
+};
+
+interface PromptCardProps {
+  prompt: Prompt;
+  onDelete: (id: string, title: string) => void;
+  formatDate: (timestamp: number) => string;
+}
+
+function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(prompt.content);
+      setCopied(true);
+      toast.success('Copied prompt content to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const hasUpdatedAt = typeof prompt.updatedAt === 'number';
+  const displayUpdateDate = hasUpdatedAt ? prompt.updatedAt : prompt.createdAt;
+
+  const categoryInfo = prompt.category ? CATEGORY_MAP[prompt.category] : null;
+  const CategoryIcon = categoryInfo ? categoryInfo.icon : Globe;
+
+  const highlightVariables = (text: string, fields: { name: string }[]) => {
+    if (!fields || fields.length === 0) return text;
+    
+    const fieldNames = fields
+      .map((f) => f.name.trim())
+      .filter(Boolean)
+      .map((name) => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+      
+    if (fieldNames.length === 0) return text;
+
+    const pattern = new RegExp(`(\\{\\{?(?:${fieldNames.join('|')})\\}?\\})`, 'g');
+    const parts = text.split(pattern);
+
+    return parts.map((part, index) => {
+      const cleanPart = part.replace(/^\{\{?|\}\}?$/g, '').trim();
+      const match = fields.find((f) => f.name === cleanPart);
+      
+      if (match) {
+        return (
+          <span
+            key={index}
+            className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/10 dark:bg-purple-450/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-400/20 font-semibold font-sans text-[10px] select-all cursor-help"
+            title={`Variable: ${match.name}`}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  return (
+    <Card
+      className={cn(
+        "flex flex-col overflow-hidden bg-card text-card-foreground border border-border/60 rounded-2xl shadow-sm transition-all duration-300 group relative hover:-translate-y-0.5 hover:shadow-md",
+        prompt.templateMode 
+          ? "hover:border-purple-500/30 hover:shadow-[0_8px_30px_rgba(168,85,247,0.04)]" 
+          : "hover:border-blue-500/30 hover:shadow-[0_8px_30px_rgba(59,130,246,0.04)]"
+      )}
+    >
+      <CardHeader className="p-5 pb-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            {categoryInfo && (
+              <span className="flex-shrink-0 p-1.5 rounded-lg bg-slate-50 border border-slate-100/80 dark:bg-white/5 dark:border-white/5 text-slate-450 dark:text-slate-400">
+                <CategoryIcon className="size-3.5 animate-in fade-in duration-200" />
+              </span>
+            )}
+            <CardTitle className="text-base font-semibold text-slate-850 dark:text-slate-100 line-clamp-1 group-hover:text-primary transition-colors">
+              {prompt.title}
+            </CardTitle>
+          </div>
+          <div className="flex gap-1.5 shrink-0 select-none">
+            {prompt.templateMode ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30">
+                <Lightning className="size-3" />
+                <span>Dynamic</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30">
+                <Notebook className="size-3" />
+                <span>Static</span>
+              </span>
+            )}
+
+            {prompt.isPublic ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
+                <Globe className="size-3" />
+                <span>Public</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
+                <Lock className="size-3" />
+                <span>Private</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="px-5 pb-5 pt-0 flex-1 flex flex-col justify-between gap-4">
+        <div className="flex-1 flex flex-col gap-3">
+          {/* Code Preview Box */}
+          <div className="relative group/code rounded-xl overflow-hidden border border-slate-150 dark:border-white/5 bg-slate-50/40 dark:bg-black/35">
+            <pre className="text-xs text-slate-700 dark:text-slate-305 p-4 pr-12 font-mono min-h-[96px] max-h-36 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+              {highlightVariables(prompt.content, prompt.templateFields ?? [])}
+            </pre>
+            
+            {/* Fade bottom gradient overlay for long contents */}
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-slate-50/50 dark:from-black/10 to-transparent pointer-events-none" />
+            
+            {/* Top-Right Floating Copy Button */}
+            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover/code:opacity-100 transition-opacity duration-200">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className={cn(
+                  "flex items-center justify-center size-7 rounded-lg bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all transform active:scale-95",
+                  copied && "border-emerald-250 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450"
+                )}
+                title="Copy prompt content"
+              >
+                {copied ? (
+                  <Check className="size-4 text-emerald-500 stroke-[3]" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Variables and Tags */}
+          {((prompt.tags && prompt.tags.length > 0) || (prompt.templateMode && prompt.templateFields && prompt.templateFields.length > 0)) && (
+            <div className="flex flex-col gap-2">
+              {/* Variable parameters list */}
+              {prompt.templateMode && prompt.templateFields && prompt.templateFields.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider select-none">Variables:</span>
+                  {prompt.templateFields.map((field) => (
+                    <span key={field.id} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30 font-medium">
+                      {field.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Tags list */}
+              {prompt.tags && prompt.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {prompt.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 font-medium px-2 py-0.5 rounded-md text-[10px] border border-slate-150/40 dark:border-white/5 flex items-center gap-1 select-none"
+                    >
+                      <Tag className="size-2.5 opacity-60" />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Actions & Timestamps */}
+        <div className="flex flex-col gap-3 pt-3 border-t border-border/40 dark:border-white/5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              {prompt.templateMode ? (
+                <Button asChild size="sm" className="text-xs h-8 gap-1.5 px-3.5 rounded-xl shadow-sm bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white border-0 transition-transform active:scale-[0.98]">
+                  <Link href={`/prompt/${prompt.id}/use`}>
+                    <Lightning className="size-3.5" />
+                    <span>Use Prompt</span>
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="text-xs h-8 gap-1.5 px-3.5 rounded-xl border-border/60 hover:bg-slate-50 dark:hover:bg-white/5 shadow-sm transition-transform active:scale-[0.98]"
+                >
+                  {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-white/5"
+              >
+                <Link href={`/prompt/${prompt.id}/edit`}>
+                  <PencilSimple className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(prompt.id, prompt.title)}
+                className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Timestamps */}
+          <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100/50 dark:border-white/5 pt-2 flex-wrap gap-1">
+            <div className="flex items-center gap-1.25">
+              <Clock className="size-3 opacity-75 mr-1" />
+              <span>Created {formatDate(prompt.createdAt)}</span>
+            </div>
+            {hasUpdatedAt && prompt.updatedAt !== prompt.createdAt && (
+              <span>Updated {formatDate(displayUpdateDate!)}</span>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function PromptsDashboardPage() {
   const prompts = useAppStore((state) => state.prompts);
@@ -49,15 +303,6 @@ export default function PromptsDashboardPage() {
 
   const handleDeletePrompt = (id: string, title: string) => {
     setPromptToDelete({ id, title });
-  };
-
-  const handleCopyContent = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      toast.success('Copied prompt content to clipboard');
-    } catch {
-      toast.error('Failed to copy to clipboard');
-    }
   };
 
   const [search, setSearch] = useState('');
@@ -73,7 +318,7 @@ export default function PromptsDashboardPage() {
         !query ||
         prompt.title.toLowerCase().includes(query) ||
         prompt.content.toLowerCase().includes(query) ||
-        prompt.tags.some((tag) => tag.toLowerCase().includes(query));
+        (prompt.tags && prompt.tags.some((tag) => tag.toLowerCase().includes(query)));
 
       // Type filter
       let matchesType = true;
@@ -209,148 +454,15 @@ export default function PromptsDashboardPage() {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredAndSortedPrompts.map((prompt) => {
-            const hasUpdatedAt = typeof prompt.updatedAt === 'number';
-            const displayUpdateDate = hasUpdatedAt ? prompt.updatedAt : prompt.createdAt;
-
-            return (
-              <Card
-                key={prompt.id}
-                className="flex flex-col overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 group relative hover:border-slate-300 dark:hover:border-slate-700"
-              >
-                <CardHeader className="p-5 pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-primary transition-colors">
-                      {prompt.title}
-                    </CardTitle>
-                    <div className="flex gap-1.5 shrink-0">
-                      {prompt.templateMode ? (
-                        <Badge
-                          variant="secondary"
-                          className="bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50 hover:bg-purple-100/50 dark:hover:bg-purple-950/40 font-medium px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 select-none"
-                        >
-                          <Lightning className="size-3" />
-                          Dynamic
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 hover:bg-blue-100/50 dark:hover:bg-blue-950/40 font-medium px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 select-none"
-                        >
-                          <Notebook className="size-3" />
-                          Static
-                        </Badge>
-                      )}
-
-                      {prompt.isPublic ? (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-2 py-0.5 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-normal flex items-center gap-1 select-none"
-                        >
-                          <Globe className="size-3" />
-                          Public
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-2 py-0.5 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-normal flex items-center gap-1 select-none"
-                        >
-                          <Lock className="size-3" />
-                          Private
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-5 pb-5 pt-0 flex-1 flex flex-col justify-between gap-4">
-                  {/* Content snippet */}
-                  <div className="flex-1">
-                    <pre className="text-xs bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/60 text-slate-700 dark:text-slate-350 p-3.5 rounded-xl font-mono min-h-20 max-h-36 overflow-hidden line-clamp-4 whitespace-pre-wrap select-all">
-                      {prompt.content}
-                    </pre>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between gap-2 border-y border-slate-100 dark:border-slate-800/65 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyContent(prompt.content)}
-                        className="text-xs h-8 gap-1.5 px-3 rounded-xl border-slate-200 dark:border-slate-800 shadow-sm"
-                      >
-                        <Copy className="size-3.5" />
-                        <span>Copy</span>
-                      </Button>
-                      {prompt.templateMode && (
-                        <Button
-                          asChild
-                          size="sm"
-                          className="text-xs h-8 gap-1.5 px-3 rounded-xl shadow-sm"
-                        >
-                          <Link href={`/prompt/${prompt.id}/use`}>
-                            <Lightning className="size-3.5" />
-                            <span>Use Prompt</span>
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                        className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                      >
-                        <Link href={`/prompt/${prompt.id}/edit`}>
-                          <PencilSimple className="size-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeletePrompt(prompt.id, prompt.title)}
-                        className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive"
-                      >
-                        <Trash className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Footer details */}
-                  <div className="flex flex-col gap-2.5">
-                    {/* Tags */}
-                    {prompt.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {prompt.tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal px-2 py-0.5 rounded-lg text-[10px] border border-slate-200/20 dark:border-slate-700/25 flex items-center gap-1 select-none"
-                          >
-                            <Tag className="size-2.5 opacity-60" />
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Timestamps */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-850 pt-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="size-3.5 opacity-70" />
-                        <span>Created {formatDate(prompt.createdAt)}</span>
-                      </div>
-                      {hasUpdatedAt && prompt.updatedAt !== prompt.createdAt && (
-                        <span>Updated {formatDate(displayUpdateDate!)}</span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {filteredAndSortedPrompts.map((prompt) => (
+            <PromptCard
+              key={prompt.id}
+              prompt={prompt}
+              onDelete={handleDeletePrompt}
+              formatDate={formatDate}
+            />
+          ))}
         </div>
       )}
 

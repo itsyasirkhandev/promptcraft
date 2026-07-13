@@ -41,20 +41,23 @@ export default function UsePromptPage({ params }: PageProps) {
   });
   const formValues = useWatch({ control });
 
-  const interpolated = React.useMemo(() => {
-    if (!prompt) return '';
-    // Format variables: join arrays (from multiSelect checkboxes) as comma-separated strings
-    const flatValues: Record<string, string> = {};
+  const flatValues = React.useMemo(() => {
+    const flat: Record<string, string> = {};
     Object.keys(formValues).forEach((key) => {
       const val = formValues[key];
       if (Array.isArray(val)) {
-        flatValues[key] = val.filter(Boolean).join(', ');
+        flat[key] = val.filter(Boolean).join(', ');
       } else if (val !== undefined && val !== null) {
-        flatValues[key] = String(val);
+        flat[key] = String(val);
       }
     });
+    return flat;
+  }, [formValues]);
+
+  const interpolated = React.useMemo(() => {
+    if (!prompt) return '';
     return interpolateVariables(prompt.content, flatValues);
-  }, [prompt, formValues]);
+  }, [prompt, flatValues]);
 
   const handleCopy = async () => {
     try {
@@ -247,7 +250,7 @@ export default function UsePromptPage({ params }: PageProps) {
             <CardContent className="p-0">
               <ScrollArea className="h-[450px]">
                 <div className="p-6 font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-350">
-                  <PromptPreview content={interpolated} fields={templateFields} />
+                  <PromptPreview content={prompt.content} fields={templateFields} values={flatValues} />
                 </div>
               </ScrollArea>
             </CardContent>

@@ -8,6 +8,7 @@ import type { TemplateField, TemplateFieldType } from '@/lib/schemas/prompt.sche
 interface PromptPreviewProps {
   content: string;
   fields: TemplateField[];
+  values?: Record<string, string>;
 }
 
 const TYPE_COLORS: Record<TemplateFieldType, string> = {
@@ -18,7 +19,7 @@ const TYPE_COLORS: Record<TemplateFieldType, string> = {
   multiSelect: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
 };
 
-export const PromptPreview = ({ content, fields }: PromptPreviewProps) => {
+export const PromptPreview = ({ content, fields, values = {} }: PromptPreviewProps) => {
   const tokens = tokenizeTemplate(content, fields);
 
   return (
@@ -27,6 +28,8 @@ export const PromptPreview = ({ content, fields }: PromptPreviewProps) => {
         if (token.kind === 'variable') {
           const type = token.field?.type ?? 'text';
           const colorClass = TYPE_COLORS[type];
+          const hasValue = values[token.name] !== undefined && values[token.name] !== '';
+          const displayValue = hasValue ? values[token.name] : `{{${token.name}}}`;
 
           return (
             <span
@@ -36,7 +39,7 @@ export const PromptPreview = ({ content, fields }: PromptPreviewProps) => {
                 colorClass
               )}
             >
-              {`{{${token.name}}}`}
+              {displayValue}
             </span>
           );
         }
