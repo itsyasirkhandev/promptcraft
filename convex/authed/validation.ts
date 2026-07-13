@@ -34,9 +34,8 @@ export interface PromptInput {
 	category?: string;
 }
 
-export function validatePrompt(input: PromptInput): Effect.Effect<void, ValidationError> {
+function validateTitle(input: PromptInput): Effect.Effect<void, ValidationError> {
 	return Effect.gen(function* () {
-		// 1. Title validation: min 1, max 300 chars
 		if (input.title.trim().length < 1) {
 			return yield* Effect.fail(new ValidationError({ message: 'Title is required', field: 'title' }));
 		}
@@ -45,8 +44,11 @@ export function validatePrompt(input: PromptInput): Effect.Effect<void, Validati
 				new ValidationError({ message: 'Title must be 300 characters or less', field: 'title' })
 			);
 		}
+	});
+}
 
-		// 2. Content validation: min 1, max 10,000 chars
+function validateContent(input: PromptInput): Effect.Effect<void, ValidationError> {
+	return Effect.gen(function* () {
 		if (input.content.trim().length < 1) {
 			return yield* Effect.fail(new ValidationError({ message: 'Content is required', field: 'content' }));
 		}
@@ -55,8 +57,11 @@ export function validatePrompt(input: PromptInput): Effect.Effect<void, Validati
 				new ValidationError({ message: 'Content must be 10,000 characters or less', field: 'content' })
 			);
 		}
+	});
+}
 
-		// 3. Tags validation: max 20 tags, unique, each tag min 1 and max 30 chars
+function validateTags(input: PromptInput): Effect.Effect<void, ValidationError> {
+	return Effect.gen(function* () {
 		if (input.tags.length > 20) {
 			return yield* Effect.fail(new ValidationError({ message: 'Maximum 20 tags allowed', field: 'tags' }));
 		}
@@ -75,8 +80,11 @@ export function validatePrompt(input: PromptInput): Effect.Effect<void, Validati
 			}
 			seenTags.add(tag);
 		}
+	});
+}
 
-		// 4. Template fields validation mirroring Zod schema
+function validateTemplateFields(input: PromptInput): Effect.Effect<void, ValidationError> {
+	return Effect.gen(function* () {
 		for (let i = 0; i < input.templateFields.length; i++) {
 			const field = input.templateFields[i];
 			if (field.name.trim().length < 1) {
@@ -116,22 +124,34 @@ export function validatePrompt(input: PromptInput): Effect.Effect<void, Validati
 				}
 			}
 		}
+	});
+}
 
-		// 5. If isPublic is true: category must be present and one of the allowed categories
-		if (input.isPublic) {
-			if (!input.category) {
-				return yield* Effect.fail(
-					new ValidationError({ message: 'Category is required for public prompts', field: 'category' })
-				);
-			}
-			if (!(allowedCategories as readonly string[]).includes(input.category)) {
-				return yield* Effect.fail(
-					new ValidationError({
-						message: `Category must be one of: ${allowedCategories.join(', ')}`,
-						field: 'category'
-					})
-				);
-			}
+function validateCategory(input: PromptInput): Effect.Effect<void, ValidationError> {
+	return Effect.gen(function* () {
+		if (!input.isPublic) return;
+		if (!input.category) {
+			return yield* Effect.fail(
+				new ValidationError({ message: 'Category is required for public prompts', field: 'category' })
+			);
 		}
+		if (!(allowedCategories as readonly string[]).includes(input.category)) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: `Category must be one of: ${allowedCategories.join(', ')}`,
+					field: 'category'
+				})
+			);
+		}
+	});
+}
+
+export function validatePrompt(input: PromptInput): Effect.Effect<void, ValidationError> {
+	return Effect.gen(function* () {
+		yield* validateTitle(input);
+		yield* validateContent(input);
+		yield* validateTags(input);
+		yield* validateTemplateFields(input);
+		yield* validateCategory(input);
 	});
 }
