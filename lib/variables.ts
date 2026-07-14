@@ -1,6 +1,6 @@
 import type { TemplateField } from '@/lib/schemas/prompt.schema';
 
-export const VARIABLE_REGEX = /{{([^{}]{1,64})}}/g;
+const VARIABLE_REGEX = /{{([^{}]{1,64})}}/g;
 
 export type TemplateToken =
   | { kind: 'text'; content: string }
@@ -46,3 +46,22 @@ export function interpolateVariables(
     return match;
   });
 }
+
+/**
+ * Flattens form values from react-hook-form into a flat Record<string, string>.
+ */
+export function flattenFormValues(
+  formValues: Record<string, string | string[] | number | undefined>
+): Record<string, string> {
+  const flat: Record<string, string> = {};
+  Object.keys(formValues).forEach((key) => {
+    const val = formValues[key];
+    if (Array.isArray(val)) {
+      flat[key] = val.filter(Boolean).join(', ');
+    } else if (val !== undefined && val !== null) {
+      flat[key] = String(val);
+    }
+  });
+  return flat;
+}
+
