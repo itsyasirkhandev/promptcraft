@@ -21,27 +21,17 @@ import {
 } from '@phosphor-icons/react';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
-import { interpolateVariables } from '@/lib/variables';
+import { interpolateVariables, flattenFormValues } from '@/lib/variables';
 import type { TemplateField } from '@/lib/schemas/prompt.schema';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { PromptPreview } from '@/components/prompts/PromptPreview';
 import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
 import { PromptSwitcher } from '@/components/prompts/use/PromptSwitcher';
+import { DynamicFields } from '@/components/prompts/use/DynamicFields';
 import { cn } from '@/lib/utils';
 
 // ─── Loading skeleton ────────────────────────────────────────────────────────
@@ -163,131 +153,7 @@ function StaticPromptInfo({
   );
 }
 
-// ─── Dynamic variable fields ──────────────────────────────────────────────────
 
-interface DynamicFieldsProps {
-  templateFields: TemplateField[];
-  formValues: Record<string, string | string[] | number | undefined>;
-  setValue: (name: string, value: string | string[] | number | undefined) => void;
-}
-
-function DynamicFields({ templateFields, formValues, setValue }: DynamicFieldsProps) {
-  if (templateFields.length === 0) {
-    return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-        <Info className="size-4 shrink-0" />
-        <span>This template has no variables defined.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-5">
-      {templateFields.map((field) => {
-        const currentValue = formValues[field.name];
-        const valueStr =
-          typeof currentValue === 'string' || typeof currentValue === 'number'
-            ? String(currentValue)
-            : '';
-
-        return (
-          <div key={field.id} className="flex flex-col gap-2">
-            <Label
-              htmlFor={field.id}
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              {field.name.replace(/_/g, ' ')}
-            </Label>
-
-            {field.type === 'text' && (
-              <Input
-                id={field.id}
-                type="text"
-                placeholder={`Enter ${field.name.replace(/_/g, ' ')}…`}
-                value={valueStr}
-                onChange={(e) => setValue(field.name, e.target.value)}
-                className="rounded-xl border-border/60 bg-background/60 text-sm"
-              />
-            )}
-
-            {field.type === 'longText' && (
-              <Textarea
-                id={field.id}
-                placeholder={`Enter ${field.name.replace(/_/g, ' ')}…`}
-                value={valueStr}
-                onChange={(e) => setValue(field.name, e.target.value)}
-                className="rounded-xl border-border/60 bg-background/60 text-sm min-h-[96px] resize-y"
-              />
-            )}
-
-            {field.type === 'number' && (
-              <Input
-                id={field.id}
-                type="number"
-                placeholder="0"
-                value={valueStr}
-                onChange={(e) => setValue(field.name, e.target.value)}
-                className="rounded-xl border-border/60 bg-background/60 text-sm"
-              />
-            )}
-
-            {field.type === 'singleSelect' && (
-              <Select
-                value={valueStr}
-                onValueChange={(val) => setValue(field.name, val)}
-              >
-                <SelectTrigger className="rounded-xl border-border/60 bg-background/60 text-sm text-left">
-                  <SelectValue placeholder="Select an option…" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {field.options?.map((opt: string) => (
-                    <SelectItem key={opt} value={opt} className="rounded-lg">
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {field.type === 'multiSelect' && (
-              <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/40 p-3">
-                {field.options && field.options.length > 0 ? (
-                  field.options.map((opt: string) => {
-                    const list = Array.isArray(currentValue) ? currentValue : [];
-                    const isChecked = list.includes(opt);
-                    return (
-                      <div key={opt} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`${field.id}-${opt}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            const current = Array.isArray(currentValue) ? currentValue : [];
-                            const newList = checked
-                              ? [...current, opt]
-                              : current.filter((v) => v !== opt);
-                            setValue(field.name, newList);
-                          }}
-                        />
-                        <Label
-                          htmlFor={`${field.id}-${opt}`}
-                          className="text-sm font-normal cursor-pointer select-none"
-                        >
-                          {opt}
-                        </Label>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">No options defined.</span>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // ─── Preview Panel ────────────────────────────────────────────────────────────
 
@@ -394,18 +260,7 @@ export default function WorkspacePage() {
 
   const templateFields = (activePrompt?.templateFields ?? []) as TemplateField[];
 
-  const flatValues = React.useMemo(() => {
-    const flat: Record<string, string> = {};
-    Object.keys(formValues).forEach((key) => {
-      const val = formValues[key];
-      if (Array.isArray(val)) {
-        flat[key] = val.filter(Boolean).join(', ');
-      } else if (val !== undefined && val !== null) {
-        flat[key] = String(val);
-      }
-    });
-    return flat;
-  }, [formValues]);
+  const flatValues = React.useMemo(() => flattenFormValues(formValues), [formValues]);
 
   const interpolated = React.useMemo(() => {
     if (!activePrompt) return '';

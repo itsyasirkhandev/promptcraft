@@ -1,22 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { promptSchema, type PromptFormValues } from '@/lib/schemas/prompt.schema';
+import { type PromptFormValues } from '@/lib/schemas/prompt.schema';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PromptForm } from '../_components/PromptForm';
+import { usePromptForm } from '@/hooks/use-prompt-form';
 
 export default function CreatePromptPage() {
   const router = useRouter();
   const { register, handleSubmit, control, setValue, reset, formState: { errors, isSubmitting } } =
-    useForm<PromptFormValues>({
-      resolver: zodResolver(promptSchema),
-      defaultValues: { title: '', content: '', templateMode: false, isPublic: false, category: undefined, tags: [], templateFields: [] },
-    });
+    usePromptForm();
 
   const createPrompt = useMutation(api.authed.prompts.create);
 

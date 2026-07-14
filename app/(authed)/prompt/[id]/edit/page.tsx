@@ -2,12 +2,10 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link';
-import { promptSchema, type PromptFormValues } from '@/lib/schemas/prompt.schema';
+import { type PromptFormValues } from '@/lib/schemas/prompt.schema';
 import { useQuery, useMutation } from 'convex/react';
 import { useWatch } from 'react-hook-form';
 import { api } from '@/convex/_generated/api';
@@ -15,6 +13,8 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PromptForm } from '../../_components/PromptForm';
+import { PromptNotFound } from '@/components/prompts/PromptNotFound';
+import { usePromptForm } from '@/hooks/use-prompt-form';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -28,10 +28,7 @@ export default function EditPromptPage({ params }: PageProps) {
   const updatePrompt = useMutation(api.authed.prompts.update);
 
   const { register, handleSubmit, control, setValue, reset, formState: { errors, isSubmitting } } =
-    useForm<PromptFormValues>({
-      resolver: zodResolver(promptSchema),
-      defaultValues: { title: '', content: '', templateMode: false, isPublic: false, category: undefined, tags: [], templateFields: [] },
-    });
+    usePromptForm();
 
   const isResettingRef = React.useRef(true);
   const prevIsPublicRef = React.useRef(false);
@@ -108,18 +105,7 @@ export default function EditPromptPage({ params }: PageProps) {
   }
 
   if (prompt === null) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
-        <h2 className="text-xl font-semibold mb-2">Prompt Not Found</h2>
-        <p className="text-muted-foreground mb-4">The prompt you are trying to edit does not exist.</p>
-        <Button asChild>
-          <Link href="/dashboard/prompts">
-            <ArrowLeft className="mr-2 size-4" />
-            Back to Dashboard
-          </Link>
-        </Button>
-      </div>
-    );
+    return <PromptNotFound message="The prompt you are trying to edit does not exist." />;
   }
 
   return (
