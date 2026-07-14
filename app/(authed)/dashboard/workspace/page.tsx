@@ -226,6 +226,206 @@ function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPane
   );
 }
 
+// ─── Shared prompt prop type ──────────────────────────────────────────────────
+
+interface ActivePromptShape {
+  _id: string;
+  title: string;
+  content: string;
+  templateMode: boolean;
+  templateFields: TemplateField[];
+  tags: string[];
+  isPublic: boolean;
+  category?: string;
+  createdAt: number;
+}
+
+interface SharedLayoutProps {
+  activePrompt: ActivePromptShape;
+  templateFields: TemplateField[];
+  formValues: Record<string, string | string[] | number | undefined>;
+  setValue: (name: string, value: string | string[] | number | undefined) => void;
+  flatValues: Record<string, string>;
+  interpolated: string;
+}
+
+// ─── Prompt type strip ────────────────────────────────────────────────────────
+
+function PromptTypeStrip({ activePrompt }: { activePrompt: ActivePromptShape }) {
+  return (
+    <div className="flex shrink-0 items-center gap-2.5 border-b bg-muted/20 px-4 py-2">
+      <Badge
+        variant="outline"
+        className={cn(
+          'gap-1 rounded-full text-xs font-semibold',
+          activePrompt.templateMode
+            ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
+            : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/8'
+        )}
+      >
+        {activePrompt.templateMode ? (
+          <Lightning className="size-3" weight="fill" />
+        ) : (
+          <Article className="size-3" weight="fill" />
+        )}
+        {activePrompt.templateMode ? 'Dynamic prompt' : 'Static prompt'}
+      </Badge>
+      <h1 className="text-sm font-semibold truncate text-foreground/80">
+        {activePrompt.title}
+      </h1>
+    </div>
+  );
+}
+
+// ─── Left panel content (variables or static info) ────────────────────────────
+
+function LeftPanelContent({
+  activePrompt,
+  templateFields,
+  formValues,
+  setValue,
+}: Pick<SharedLayoutProps, 'activePrompt' | 'templateFields' | 'formValues' | 'setValue'>) {
+  if (activePrompt.templateMode) {
+    return (
+      <div className="p-5">
+        <DynamicFields
+          templateFields={templateFields}
+          formValues={formValues}
+          setValue={setValue}
+        />
+      </div>
+    );
+  }
+  return (
+    <StaticPromptInfo
+      prompt={{
+        title: activePrompt.title,
+        tags: activePrompt.tags,
+        isPublic: activePrompt.isPublic,
+        category: activePrompt.category,
+        createdAt: activePrompt.createdAt,
+      }}
+    />
+  );
+}
+
+// ─── Desktop two-column layout ────────────────────────────────────────────────
+
+function DesktopLayout({
+  activePrompt,
+  templateFields,
+  formValues,
+  setValue,
+  flatValues,
+  interpolated,
+}: SharedLayoutProps) {
+  return (
+    <div className="hidden flex-1 overflow-hidden lg:flex">
+      <div className="flex w-[360px] shrink-0 flex-col border-r overflow-hidden">
+        <div className="flex items-center gap-2 border-b px-4 py-3 bg-muted/10">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {activePrompt.templateMode ? 'Variables' : 'Info'}
+          </h2>
+        </div>
+        <ScrollArea className="flex-1">
+          <LeftPanelContent
+            activePrompt={activePrompt}
+            templateFields={templateFields}
+            formValues={formValues}
+            setValue={setValue}
+          />
+        </ScrollArea>
+      </div>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <PreviewPanel
+          prompt={{
+            content: activePrompt.content,
+            templateFields,
+            templateMode: activePrompt.templateMode,
+          }}
+          interpolated={interpolated}
+          flatValues={flatValues}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile tabbed layout ─────────────────────────────────────────────────────
+
+function MobileLayout({
+  activePrompt,
+  templateFields,
+  formValues,
+  setValue,
+  flatValues,
+  interpolated,
+}: SharedLayoutProps) {
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
+      <Tabs defaultValue="fill" className="flex h-full flex-col">
+        <div className="shrink-0 border-b bg-muted/20 px-3 py-2">
+          <TabsList className="grid h-9 w-full grid-cols-2 rounded-xl bg-muted/50 p-0.5">
+            <TabsTrigger
+              value="fill"
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
+                'data-[state=active]:bg-background data-[state=active]:shadow-sm'
+              )}
+            >
+              {activePrompt.templateMode ? (
+                <Lightning className="size-3" weight="fill" />
+              ) : (
+                <Info className="size-3" />
+              )}
+              {activePrompt.templateMode ? 'Variables' : 'Info'}
+            </TabsTrigger>
+            <TabsTrigger
+              value="preview"
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
+                'data-[state=active]:bg-background data-[state=active]:shadow-sm'
+              )}
+            >
+              <Copy className="size-3" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent
+          value="fill"
+          className="m-0 flex-1 overflow-y-auto p-5 data-[state=active]:flex data-[state=active]:flex-col"
+        >
+          <LeftPanelContent
+            activePrompt={activePrompt}
+            templateFields={templateFields}
+            formValues={formValues}
+            setValue={setValue}
+          />
+        </TabsContent>
+
+        <TabsContent
+          value="preview"
+          className="m-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
+        >
+          <PreviewPanel
+            prompt={{
+              content: activePrompt.content,
+              templateFields,
+              templateMode: activePrompt.templateMode,
+            }}
+            interpolated={interpolated}
+            flatValues={flatValues}
+            compact
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 // ─── Main Workspace Page ──────────────────────────────────────────────────────
 
 export default function WorkspacePage() {
@@ -259,28 +459,21 @@ export default function WorkspacePage() {
   }, [activeId, reset]);
 
   const templateFields = (activePrompt?.templateFields ?? []) as TemplateField[];
-
   const flatValues = React.useMemo(() => flattenFormValues(formValues), [formValues]);
-
   const interpolated = React.useMemo(() => {
     if (!activePrompt) return '';
     return interpolateVariables(activePrompt.content, flatValues);
   }, [activePrompt, flatValues]);
 
-  // ── Loading state ──
-  if (prompts === undefined) {
-    return <WorkspaceSkeleton />;
-  }
+  if (prompts === undefined) return <WorkspaceSkeleton />;
+  if (prompts.length === 0) return <EmptyWorkspace />;
 
-  // ── Empty state ──
-  if (prompts.length === 0) {
-    return <EmptyWorkspace />;
-  }
+  const layoutProps: SharedLayoutProps | null = activePrompt
+    ? { activePrompt, templateFields, formValues, setValue, flatValues, interpolated }
+    : null;
 
-  // ── Workspace shell ──
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Switcher header */}
       <header className="flex h-14 shrink-0 items-center justify-center border-b bg-background/80 px-4 backdrop-blur-sm">
         <PromptSwitcher
           prompts={prompts}
@@ -289,156 +482,18 @@ export default function WorkspacePage() {
         />
       </header>
 
-      {/* Prompt not found after loading */}
-      {!activePrompt ? (
+      {!layoutProps ? (
         <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
           Select a prompt from the switcher above.
         </div>
       ) : (
         <>
-          {/* ── Prompt type badge ── */}
-          <div className="flex shrink-0 items-center gap-2.5 border-b bg-muted/20 px-4 py-2">
-            <Badge
-              variant="outline"
-              className={cn(
-                'gap-1 rounded-full text-xs font-semibold',
-                activePrompt.templateMode
-                  ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
-                  : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/8'
-              )}
-            >
-              {activePrompt.templateMode ? (
-                <Lightning className="size-3" weight="fill" />
-              ) : (
-                <Article className="size-3" weight="fill" />
-              )}
-              {activePrompt.templateMode ? 'Dynamic prompt' : 'Static prompt'}
-            </Badge>
-            <h1 className="text-sm font-semibold truncate text-foreground/80">
-              {activePrompt.title}
-            </h1>
-          </div>
-
-          {/* ── Desktop two-column layout ── */}
-          <div className="hidden flex-1 overflow-hidden lg:flex">
-            {/* Left column */}
-            <div className="flex w-[360px] shrink-0 flex-col border-r overflow-hidden">
-              <div className="flex items-center gap-2 border-b px-4 py-3 bg-muted/10">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {activePrompt.templateMode ? 'Variables' : 'Info'}
-                </h2>
-              </div>
-              <ScrollArea className="flex-1">
-                {activePrompt.templateMode ? (
-                  <div className="p-5">
-                    <DynamicFields
-                      templateFields={templateFields}
-                      formValues={formValues}
-                      setValue={setValue}
-                    />
-                  </div>
-                ) : (
-                  <StaticPromptInfo
-                    prompt={{
-                      title: activePrompt.title,
-                      tags: activePrompt.tags,
-                      isPublic: activePrompt.isPublic,
-                      category: activePrompt.category,
-                      createdAt: activePrompt.createdAt,
-                    }}
-                  />
-                )}
-              </ScrollArea>
-            </div>
-
-            {/* Right column */}
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <PreviewPanel
-                prompt={{
-                  content: activePrompt.content,
-                  templateFields,
-                  templateMode: activePrompt.templateMode,
-                }}
-                interpolated={interpolated}
-                flatValues={flatValues}
-              />
-            </div>
-          </div>
-
-          {/* ── Mobile tabbed layout ── */}
-          <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
-            <Tabs defaultValue="fill" className="flex h-full flex-col">
-              <div className="shrink-0 border-b bg-muted/20 px-3 py-2">
-                <TabsList className="grid h-9 w-full grid-cols-2 rounded-xl bg-muted/50 p-0.5">
-                  <TabsTrigger
-                    value="fill"
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
-                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
-                    )}
-                  >
-                    {activePrompt.templateMode ? (
-                      <Lightning className="size-3" weight="fill" />
-                    ) : (
-                      <Info className="size-3" />
-                    )}
-                    {activePrompt.templateMode ? 'Variables' : 'Info'}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="preview"
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
-                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
-                    )}
-                  >
-                    <Copy className="size-3" />
-                    Preview
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent
-                value="fill"
-                className="m-0 flex-1 overflow-y-auto p-5 data-[state=active]:flex data-[state=active]:flex-col"
-              >
-                {activePrompt.templateMode ? (
-                  <DynamicFields
-                    templateFields={templateFields}
-                    formValues={formValues}
-                    setValue={setValue}
-                  />
-                ) : (
-                  <StaticPromptInfo
-                    prompt={{
-                      title: activePrompt.title,
-                      tags: activePrompt.tags,
-                      isPublic: activePrompt.isPublic,
-                      category: activePrompt.category,
-                      createdAt: activePrompt.createdAt,
-                    }}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent
-                value="preview"
-                className="m-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
-              >
-                <PreviewPanel
-                  prompt={{
-                    content: activePrompt.content,
-                    templateFields,
-                    templateMode: activePrompt.templateMode,
-                  }}
-                  interpolated={interpolated}
-                  flatValues={flatValues}
-                  compact
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
+          <PromptTypeStrip activePrompt={layoutProps.activePrompt} />
+          <DesktopLayout {...layoutProps} />
+          <MobileLayout {...layoutProps} />
         </>
       )}
     </div>
   );
 }
+
