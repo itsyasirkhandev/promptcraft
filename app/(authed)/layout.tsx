@@ -2,7 +2,7 @@
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
-import { UserButton, Show } from "@clerk/nextjs";
+import { UserButton, Show, useUser } from "@clerk/nextjs";
 import {
   House,
   List,
@@ -14,15 +14,18 @@ import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const navItems = [
@@ -34,9 +37,25 @@ const navItems = [
 
 function AppSidebar() {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const { user } = useUser();
+
+  const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border/50 py-4">
+        <Link href="/dashboard" className="flex items-center gap-3 px-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Logo" className="h-6 w-6" />
+          {!isCollapsed && (
+            <span className="font-bold text-sm text-slate-800 dark:text-slate-200 tracking-tight transition-all duration-200">
+              Prompt Crafts
+            </span>
+          )}
+        </Link>
+      </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
@@ -62,6 +81,22 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border/50 p-4">
+        <div className="flex items-center gap-3">
+          <UserButton />
+          {!isCollapsed && user && (
+            <div className="flex flex-col text-left min-w-0">
+              <span className="text-sm font-semibold truncate text-slate-800 dark:text-slate-200 leading-none mb-1">
+                {user.fullName || user.username || "User"}
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 truncate leading-none">
+                {user.primaryEmailAddress?.emailAddress}
+              </span>
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
