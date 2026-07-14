@@ -1,0 +1,589 @@
+'use client';
+
+import * as React from 'react';
+import { useQuery } from 'convex/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
+import Link from 'next/link';
+import {
+  PlusCircle,
+  Copy,
+  Check,
+  ArrowsLeftRight,
+  Lightning,
+  Article,
+  Info,
+  Tag,
+  CalendarBlank,
+  Globe,
+  Lock,
+} from '@phosphor-icons/react';
+import { api } from '@/convex/_generated/api';
+import { Doc } from '@/convex/_generated/dataModel';
+import { interpolateVariables } from '@/lib/variables';
+import type { TemplateField } from '@/lib/schemas/prompt.schema';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PromptPreview } from '@/components/prompts/PromptPreview';
+import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
+import { PromptSwitcher } from '@/components/prompts/use/PromptSwitcher';
+import { cn } from '@/lib/utils';
+
+// ─── Loading skeleton ────────────────────────────────────────────────────────
+
+function WorkspaceSkeleton() {
+  return (
+    <div className="flex h-full flex-col gap-0 animate-pulse">
+      <div className="flex h-14 shrink-0 items-center justify-center gap-3 border-b px-4">
+        <Skeleton className="h-9 w-[300px] rounded-xl" />
+      </div>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="hidden lg:flex flex-col border-r w-[360px] shrink-0">
+          <div className="space-y-4 p-6">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+        <div className="flex-1 p-6">
+          <Skeleton className="h-full w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyWorkspace() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+      <div className="mb-5 flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-inner ring-1 ring-primary/10">
+        <ArrowsLeftRight className="size-9 text-primary" weight="duotone" />
+      </div>
+      <h1 className="mb-2 text-2xl font-bold tracking-tight">No prompts yet</h1>
+      <p className="mb-7 max-w-sm text-sm text-muted-foreground leading-relaxed">
+        The Workspace is your home for using prompts. Create your first prompt to start
+        generating, filling, and copying in one place.
+      </p>
+      <Button asChild size="lg" className="gap-2 rounded-xl shadow-sm">
+        <Link href="/prompt/create">
+          <PlusCircle className="size-4" weight="fill" />
+          Create your first prompt
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+// ─── Static prompt info panel ─────────────────────────────────────────────────
+
+function StaticPromptInfo({
+  prompt,
+}: {
+  prompt: {
+    title: string;
+    tags: string[];
+    isPublic: boolean;
+    category?: string;
+    createdAt: number;
+  };
+}) {
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(prompt.createdAt));
+
+  return (
+    <div className="flex flex-col gap-5 p-6">
+      <div className="flex items-center gap-2.5 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5 text-sm text-blue-700 dark:text-blue-300">
+        <Info className="size-4 shrink-0" weight="fill" />
+        <span>This is a <strong>static prompt</strong> — no variables to fill in. Copy or open it directly in an AI.</span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <Tag className="size-3.5" />
+          Tags
+        </div>
+        {prompt.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {prompt.tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="rounded-full text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">No tags</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1 rounded-xl border p-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {prompt.isPublic ? (
+              <Globe className="size-3" />
+            ) : (
+              <Lock className="size-3" />
+            )}
+            Visibility
+          </div>
+          <span className="text-sm font-medium">
+            {prompt.isPublic ? 'Public' : 'Private'}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1 rounded-xl border p-3">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <CalendarBlank className="size-3" />
+            Created
+          </div>
+          <span className="text-sm font-medium">{formattedDate}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dynamic variable fields ──────────────────────────────────────────────────
+
+interface DynamicFieldsProps {
+  templateFields: TemplateField[];
+  formValues: Record<string, string | string[] | number | undefined>;
+  setValue: (name: string, value: string | string[] | number | undefined) => void;
+}
+
+function DynamicFields({ templateFields, formValues, setValue }: DynamicFieldsProps) {
+  if (templateFields.length === 0) {
+    return (
+      <div className="flex items-center gap-2.5 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+        <Info className="size-4 shrink-0" />
+        <span>This template has no variables defined.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {templateFields.map((field) => {
+        const currentValue = formValues[field.name];
+        const valueStr =
+          typeof currentValue === 'string' || typeof currentValue === 'number'
+            ? String(currentValue)
+            : '';
+
+        return (
+          <div key={field.id} className="flex flex-col gap-2">
+            <Label
+              htmlFor={field.id}
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              {field.name.replace(/_/g, ' ')}
+            </Label>
+
+            {field.type === 'text' && (
+              <Input
+                id={field.id}
+                type="text"
+                placeholder={`Enter ${field.name.replace(/_/g, ' ')}…`}
+                value={valueStr}
+                onChange={(e) => setValue(field.name, e.target.value)}
+                className="rounded-xl border-border/60 bg-background/60 text-sm"
+              />
+            )}
+
+            {field.type === 'longText' && (
+              <Textarea
+                id={field.id}
+                placeholder={`Enter ${field.name.replace(/_/g, ' ')}…`}
+                value={valueStr}
+                onChange={(e) => setValue(field.name, e.target.value)}
+                className="rounded-xl border-border/60 bg-background/60 text-sm min-h-[96px] resize-y"
+              />
+            )}
+
+            {field.type === 'number' && (
+              <Input
+                id={field.id}
+                type="number"
+                placeholder="0"
+                value={valueStr}
+                onChange={(e) => setValue(field.name, e.target.value)}
+                className="rounded-xl border-border/60 bg-background/60 text-sm"
+              />
+            )}
+
+            {field.type === 'singleSelect' && (
+              <Select
+                value={valueStr}
+                onValueChange={(val) => setValue(field.name, val)}
+              >
+                <SelectTrigger className="rounded-xl border-border/60 bg-background/60 text-sm text-left">
+                  <SelectValue placeholder="Select an option…" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {field.options?.map((opt: string) => (
+                    <SelectItem key={opt} value={opt} className="rounded-lg">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {field.type === 'multiSelect' && (
+              <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/40 p-3">
+                {field.options && field.options.length > 0 ? (
+                  field.options.map((opt: string) => {
+                    const list = Array.isArray(currentValue) ? currentValue : [];
+                    const isChecked = list.includes(opt);
+                    return (
+                      <div key={opt} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${field.id}-${opt}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            const current = Array.isArray(currentValue) ? currentValue : [];
+                            const newList = checked
+                              ? [...current, opt]
+                              : current.filter((v) => v !== opt);
+                            setValue(field.name, newList);
+                          }}
+                        />
+                        <Label
+                          htmlFor={`${field.id}-${opt}`}
+                          className="text-sm font-normal cursor-pointer select-none"
+                        >
+                          {opt}
+                        </Label>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No options defined.</span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Preview Panel ────────────────────────────────────────────────────────────
+
+interface PreviewPanelProps {
+  prompt: { content: string; templateFields: TemplateField[]; templateMode: boolean };
+  interpolated: string;
+  flatValues: Record<string, string>;
+  compact?: boolean;
+}
+
+function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPanelProps) {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(interpolated);
+      setCopied(true);
+      toast.success('Copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy.');
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <div
+        className={cn(
+          'flex shrink-0 items-center justify-between border-b px-4 py-3 bg-background/50 backdrop-blur-sm',
+          compact && 'sticky top-0 z-10'
+        )}
+      >
+        <div>
+          <h2 className="text-sm font-semibold">Live Preview</h2>
+          <p className="text-xs text-muted-foreground">
+            {prompt.templateMode ? 'Highlighted filled variables' : 'Static prompt content'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <OpenInAIButton content={interpolated} />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleCopy}
+            className="gap-1.5 rounded-xl h-8 border-border/60 shadow-sm"
+          >
+            {copied ? (
+              <Check className="size-3.5 text-emerald-500" weight="bold" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-6">
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-5 font-mono text-sm leading-relaxed text-foreground/80 shadow-inner min-h-[200px] whitespace-pre-wrap break-words">
+            <PromptPreview
+              content={prompt.content}
+              fields={prompt.templateMode ? prompt.templateFields : []}
+              values={flatValues}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// ─── Main Workspace Page ──────────────────────────────────────────────────────
+
+export default function WorkspacePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeId = searchParams.get('id');
+
+  const prompts = useQuery(api.authed.prompts.list);
+
+  const { control, setValue, reset } = useForm<
+    Record<string, string | string[] | number | undefined>
+  >({ defaultValues: {} });
+
+  const formValues = useWatch({ control });
+
+  // Auto-select first prompt if no `id` in URL
+  React.useEffect(() => {
+    if (prompts && prompts.length > 0 && !activeId) {
+      router.replace(`/dashboard/workspace?id=${prompts[0]._id}`);
+    }
+  }, [prompts, activeId, router]);
+
+  const activePrompt = React.useMemo(
+    () => (prompts ?? []).find((p: Doc<'prompts'>) => p._id === activeId) ?? null,
+    [prompts, activeId]
+  );
+
+  // Reset form when switching prompts
+  React.useEffect(() => {
+    reset({});
+  }, [activeId, reset]);
+
+  const templateFields = (activePrompt?.templateFields ?? []) as TemplateField[];
+
+  const flatValues = React.useMemo(() => {
+    const flat: Record<string, string> = {};
+    Object.keys(formValues).forEach((key) => {
+      const val = formValues[key];
+      if (Array.isArray(val)) {
+        flat[key] = val.filter(Boolean).join(', ');
+      } else if (val !== undefined && val !== null) {
+        flat[key] = String(val);
+      }
+    });
+    return flat;
+  }, [formValues]);
+
+  const interpolated = React.useMemo(() => {
+    if (!activePrompt) return '';
+    return interpolateVariables(activePrompt.content, flatValues);
+  }, [activePrompt, flatValues]);
+
+  // ── Loading state ──
+  if (prompts === undefined) {
+    return <WorkspaceSkeleton />;
+  }
+
+  // ── Empty state ──
+  if (prompts.length === 0) {
+    return <EmptyWorkspace />;
+  }
+
+  // ── Workspace shell ──
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Switcher header */}
+      <header className="flex h-14 shrink-0 items-center justify-center border-b bg-background/80 px-4 backdrop-blur-sm">
+        <PromptSwitcher
+          prompts={prompts}
+          activeId={activeId ?? undefined}
+          onSelect={(id) => router.push(`/dashboard/workspace?id=${id}`)}
+        />
+      </header>
+
+      {/* Prompt not found after loading */}
+      {!activePrompt ? (
+        <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
+          Select a prompt from the switcher above.
+        </div>
+      ) : (
+        <>
+          {/* ── Prompt type badge ── */}
+          <div className="flex shrink-0 items-center gap-2.5 border-b bg-muted/20 px-4 py-2">
+            <Badge
+              variant="outline"
+              className={cn(
+                'gap-1 rounded-full text-xs font-semibold',
+                activePrompt.templateMode
+                  ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
+                  : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/8'
+              )}
+            >
+              {activePrompt.templateMode ? (
+                <Lightning className="size-3" weight="fill" />
+              ) : (
+                <Article className="size-3" weight="fill" />
+              )}
+              {activePrompt.templateMode ? 'Dynamic prompt' : 'Static prompt'}
+            </Badge>
+            <h1 className="text-sm font-semibold truncate text-foreground/80">
+              {activePrompt.title}
+            </h1>
+          </div>
+
+          {/* ── Desktop two-column layout ── */}
+          <div className="hidden flex-1 overflow-hidden lg:flex">
+            {/* Left column */}
+            <div className="flex w-[360px] shrink-0 flex-col border-r overflow-hidden">
+              <div className="flex items-center gap-2 border-b px-4 py-3 bg-muted/10">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {activePrompt.templateMode ? 'Variables' : 'Info'}
+                </h2>
+              </div>
+              <ScrollArea className="flex-1">
+                {activePrompt.templateMode ? (
+                  <div className="p-5">
+                    <DynamicFields
+                      templateFields={templateFields}
+                      formValues={formValues}
+                      setValue={setValue}
+                    />
+                  </div>
+                ) : (
+                  <StaticPromptInfo
+                    prompt={{
+                      title: activePrompt.title,
+                      tags: activePrompt.tags,
+                      isPublic: activePrompt.isPublic,
+                      category: activePrompt.category,
+                      createdAt: activePrompt.createdAt,
+                    }}
+                  />
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Right column */}
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <PreviewPanel
+                prompt={{
+                  content: activePrompt.content,
+                  templateFields,
+                  templateMode: activePrompt.templateMode,
+                }}
+                interpolated={interpolated}
+                flatValues={flatValues}
+              />
+            </div>
+          </div>
+
+          {/* ── Mobile tabbed layout ── */}
+          <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
+            <Tabs defaultValue="fill" className="flex h-full flex-col">
+              <div className="shrink-0 border-b bg-muted/20 px-3 py-2">
+                <TabsList className="grid h-9 w-full grid-cols-2 rounded-xl bg-muted/50 p-0.5">
+                  <TabsTrigger
+                    value="fill"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
+                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                    )}
+                  >
+                    {activePrompt.templateMode ? (
+                      <Lightning className="size-3" weight="fill" />
+                    ) : (
+                      <Info className="size-3" />
+                    )}
+                    {activePrompt.templateMode ? 'Variables' : 'Info'}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="preview"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg text-xs font-semibold transition-all',
+                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                    )}
+                  >
+                    <Copy className="size-3" />
+                    Preview
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent
+                value="fill"
+                className="m-0 flex-1 overflow-y-auto p-5 data-[state=active]:flex data-[state=active]:flex-col"
+              >
+                {activePrompt.templateMode ? (
+                  <DynamicFields
+                    templateFields={templateFields}
+                    formValues={formValues}
+                    setValue={setValue}
+                  />
+                ) : (
+                  <StaticPromptInfo
+                    prompt={{
+                      title: activePrompt.title,
+                      tags: activePrompt.tags,
+                      isPublic: activePrompt.isPublic,
+                      category: activePrompt.category,
+                      createdAt: activePrompt.createdAt,
+                    }}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent
+                value="preview"
+                className="m-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
+              >
+                <PreviewPanel
+                  prompt={{
+                    content: activePrompt.content,
+                    templateFields,
+                    templateMode: activePrompt.templateMode,
+                  }}
+                  interpolated={interpolated}
+                  flatValues={flatValues}
+                  compact
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
