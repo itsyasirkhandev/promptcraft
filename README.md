@@ -1,6 +1,16 @@
-# Clerk, Convex, Nextjs Starter Template
+# Prompt Library
 
-Convention-heavy starter template with Next.js, Convex, Clerk Auth, Effect-TS, and Zustand.
+A prompt management app for creating, editing, and using AI prompts. Built on Next.js, Convex, Clerk Auth, Effect-TS, and Zustand.
+
+## Features
+
+- **Create & edit prompts** with title, content, tags, and visibility controls.
+- **Template mode** with typed fillable fields (`text`, `longText`, `number`, `singleSelect`, `multiSelect`) substituted at use-time.
+- **Public prompts** organized by category (coding, writing, marketing, analysis, design, education, other).
+- **User plans** with `hobby` and `pro` tiers.
+- **Auth-gated dashboard** with real-time prompt sync powered by Convex.
+- **Prompt analytics** for tracking usage.
+- **Open in AI** shortcut to run a filled prompt directly in an AI tool.
 
 ## Tech Stack
 
@@ -12,10 +22,14 @@ Convention-heavy starter template with Next.js, Convex, Clerk Auth, Effect-TS, a
 | **Effect-TS** | Functional Programming | Used for robust error handling, config parsing, and standard services. |
 | **Zustand** | Client State Management | Minimalist, client-side React state management. |
 | **TailwindCSS** | Component Styling | Utility-first CSS framework for modern responsive styles. |
+| **shadcn/ui** | Component Primitives | Accessible, customizable UI components built on Radix and Base UI. |
+| **react-hook-form** | Forms | Performant form handling with schema-driven validation. |
+| **Zod** | Validation | Schema validation for forms and Convex function inputs. |
+| **Recharts** | Analytics Charts | Composable charting library for the dashboard analytics views. |
 
 ## Getting Started
 
-Follow these steps to set up the template:
+Follow these steps to set up the project:
 
 1. Run the command:
    ```bash
