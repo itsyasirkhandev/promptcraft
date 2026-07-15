@@ -32,5 +32,6 @@ export default defineSchema({
 		updatedAt: v.optional(v.number())
 	})
 		.index('by_userId', ['userId'])
+		.index('by_userId_createdAt', ['userId', 'createdAt'])
 		.index('by_isPublic', ['isPublic'])
 });
