@@ -1,5 +1,6 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() }, // Using v.any() to accept the Clerk webhook event.data payload
@@ -38,6 +39,15 @@ export const upsertFromClerk = internalMutation({
         tokenIdentifier,
         plan: "hobby",
       });
+
+      if (email) {
+        await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, {
+          email,
+          name: name || undefined,
+        });
+      } else {
+        console.warn("Skipping welcome email: user has no email address.");
+      }
     }
   },
 });

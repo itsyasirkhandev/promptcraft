@@ -16,6 +16,7 @@ import type * as authed_prompts from "../authed/prompts.js";
 import type * as authed_users from "../authed/users.js";
 import type * as authed_validation from "../authed/validation.js";
 import type * as effectHelpers from "../effectHelpers.js";
+import type * as emails from "../emails.js";
 import type * as http from "../http.js";
 import type * as private_demo from "../private/demo.js";
 import type * as private_helpers from "../private/helpers.js";
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   "authed/users": typeof authed_users;
   "authed/validation": typeof authed_validation;
   effectHelpers: typeof effectHelpers;
+  emails: typeof emails;
   http: typeof http;
   "private/demo": typeof private_demo;
   "private/helpers": typeof private_helpers;
