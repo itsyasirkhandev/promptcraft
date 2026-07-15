@@ -25,6 +25,8 @@ A convention-heavy starter template for building real apps.
 | **Auth Guard** | A `customCtxAndArgs` wrapper that validates the JWT and injects `ctx.identity` |
 | **Authed function** | A Convex query/mutation/action protected by the auth guard (client-facing) |
 | **Private function** | A Convex function protected by an API key guard (server-to-server) |
+| **Prompt Inventory Analytics** | Aggregate facts derived from the prompts currently owned by a Viewer, excluding usage events such as views, copies, or provider opens |
+| **UTC Daily Bucket** | A calendar day from 00:00:00 through 23:59:59 UTC used to group prompt creation timestamps consistently |
 
 ## Conventions
 

@@ -1,37 +1,56 @@
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+const pulse = "animate-pulse rounded-md bg-muted";
+
 export default function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto animate-pulse">
-      {/* Title skeleton */}
-      <div>
-        <div className="h-7 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-        <div className="h-4 w-72 bg-slate-100 dark:bg-slate-800/50 rounded mt-2"></div>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6" aria-label="Loading dashboard">
+      <div className="space-y-2">
+        <div className={`${pulse} h-7 w-36`} />
+        <div className={`${pulse} h-4 w-56`} />
       </div>
 
-      <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
-
-      {/* Section heading */}
-      <div className="flex flex-col gap-4">
-        <div className="h-5 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
-        <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/50 rounded"></div>
-
-        {/* Button skeleton */}
-        <div className="h-12 w-56 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-
-        {/* Numbers box skeleton */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
-          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-3"></div>
-          <div className="h-6 w-64 bg-slate-100 dark:bg-slate-700/50 rounded"></div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Card key={index}>
+            <CardHeader className="flex-row items-center justify-between">
+              <div className={`${pulse} h-4 w-32`} />
+              <div className={`${pulse} size-5 rounded-full`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`${pulse} h-9 w-16`} />
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="h-px bg-slate-200 dark:bg-slate-800"></div>
-
-      {/* Making changes skeleton */}
-      <div className="flex flex-col gap-3">
-        <div className="h-5 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-        <div className="h-4 w-80 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
-        <div className="h-4 w-72 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
+      <ChartPlaceholder className="h-96" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartPlaceholder className="h-96" />
+        <ChartPlaceholder className="h-96" />
       </div>
+      <ChartPlaceholder className="h-[26rem]" />
     </div>
   );
 }
+
+function ChartPlaceholder({ className }: { className: string }) {
+  return (
+    <Card className={className}>
+      <CardHeader className="space-y-2">
+        <div className={`${pulse} h-5 w-40`} />
+        <div className={`${pulse} h-4 w-64 max-w-full`} />
+      </CardHeader>
+      <CardContent className="flex flex-1 items-end gap-3">
+        {Array.from({ length: 8 }, (_, index) => (
+          <div
+            key={index}
+            className={`${pulse} flex-1`}
+            style={{ height: `${28 + ((index * 17) % 58)}%` }}
+          />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
