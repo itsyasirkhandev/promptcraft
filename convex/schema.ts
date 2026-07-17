@@ -8,10 +8,14 @@ export default defineSchema({
 		avatarUrl: v.optional(v.string()),
 		tokenIdentifier: v.string(),
 		clerkId: v.optional(v.string()),
-		plan: v.union(v.literal('hobby'), v.literal('pro'))
+		plan: v.union(v.literal('hobby'), v.literal('pro')),
+		polarCustomerId: v.optional(v.string()),
+		polarSubscriptionId: v.optional(v.string()),
+		polarSubscriptionStatus: v.optional(v.string())
 	})
 		.index('by_token', ['tokenIdentifier'])
-		.index('by_clerk_id', ['clerkId']),
+		.index('by_clerk_id', ['clerkId'])
+		.index('by_polar_customer_id', ['polarCustomerId']),
 	prompts: defineTable({
 		userId: v.id('users'),
 		title: v.string(),

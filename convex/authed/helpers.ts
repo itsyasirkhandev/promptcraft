@@ -10,7 +10,7 @@ import { ConvexError, ObjectType, PropertyValidators } from 'convex/values';
 import { Context, Effect } from 'effect';
 import { UserIdentity } from 'convex/server';
 import { Doc } from '../_generated/dataModel';
-import { ConvexDB } from '../services/ConvexDB';
+import { ConvexDB, ConvexScheduler } from '../services/ConvexDB';
 
 /** @effect-leakable-service */
 export class AuthedContext extends Context.Service<
@@ -103,7 +103,7 @@ export const effectAuthedQuery = <Args extends PropertyValidators, R, E>(options
 
 export const effectAuthedMutation = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
-	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexDB>;
+	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexDB | ConvexScheduler>;
 }) => {
 	return authedMutation({
 		args: options.args,
@@ -112,7 +112,8 @@ export const effectAuthedMutation = <Args extends PropertyValidators, R, E>(opti
 			return runAuthedEffect(
 				options.handler(args as unknown as ObjectType<Args>).pipe(
 					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: ctx.viewer }),
-					Effect.provideService(ConvexDB, { db: ctx.db })
+					Effect.provideService(ConvexDB, { db: ctx.db }),
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
 				)
 			) as Promise<R>;
 		}
@@ -121,7 +122,7 @@ export const effectAuthedMutation = <Args extends PropertyValidators, R, E>(opti
 
 export const effectAuthedAction = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
-	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext>;
+	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexScheduler>;
 }) => {
 	return authedAction({
 		args: options.args,
@@ -129,7 +130,8 @@ export const effectAuthedAction = <Args extends PropertyValidators, R, E>(option
 		handler: async (ctx, args) => {
 			return runAuthedEffect(
 				options.handler(args as unknown as ObjectType<Args>).pipe(
-					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: null })
+					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: null }),
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
 				)
 			) as Promise<R>;
 		}

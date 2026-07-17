@@ -11,7 +11,7 @@ import {
 import { action, mutation, query } from '../_generated/server';
 import { ObjectType, PropertyValidators } from 'convex/values';
 import { Effect } from 'effect';
-import { ConvexDB } from '../services/ConvexDB';
+import { ConvexDB, ConvexScheduler } from '../services/ConvexDB';
 import { ServerConfig } from '../services/ServerConfig';
 
 const apiKeyGuard = customCtxAndArgs({
@@ -58,7 +58,7 @@ export const effectPrivateQuery = <Args extends PropertyValidators, R, E>(option
 
 export const effectPrivateMutation = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
-	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexDB>;
+	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexDB | ConvexScheduler>;
 }) => {
 	return privateMutation({
 		args: options.args,
@@ -66,7 +66,8 @@ export const effectPrivateMutation = <Args extends PropertyValidators, R, E>(opt
 		handler: async (ctx, args) => {
 			return runPrivateEffect(
 				options.handler(args as unknown as ObjectType<Args>).pipe(
-					Effect.provideService(ConvexDB, { db: ctx.db })
+					Effect.provideService(ConvexDB, { db: ctx.db }),
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
 				)
 			) as Promise<R>;
 		}
@@ -75,14 +76,16 @@ export const effectPrivateMutation = <Args extends PropertyValidators, R, E>(opt
 
 export const effectPrivateAction = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
-	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, never>;
+	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexScheduler>;
 }) => {
 	return privateAction({
 		args: options.args,
 		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
 		handler: async (ctx, args) => {
 			return runPrivateEffect(
-				options.handler(args as unknown as ObjectType<Args>)
+				options.handler(args as unknown as ObjectType<Args>).pipe(
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
+				)
 			) as Promise<R>;
 		}
 	});
