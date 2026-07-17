@@ -3,14 +3,12 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton, Show, useUser } from "@clerk/nextjs";
-import {
-  House,
-  List,
-  PlusCircle,
-  Folders
-} from "@phosphor-icons/react";
+import { House, List, PlusCircle, Folders } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +32,20 @@ const navItems = [
   { href: "/prompt/create", label: "Create", icon: PlusCircle },
   { href: "/dashboard/workspace", label: "Workspace", icon: Folders },
 ];
+
+function PlanBadge() {
+  const user = useQuery(api.authed.users.currentUser);
+
+  if (!user) return null;
+
+  const isPro = user.plan === "pro";
+
+  return (
+    <Badge variant={isPro ? "default" : "secondary"}>
+      {isPro ? "Pro" : "Hobby"}
+    </Badge>
+  );
+}
 
 function AppSidebar() {
   const pathname = usePathname();
@@ -62,15 +74,18 @@ function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const isActuallyActive = item.href === "/dashboard" 
-                  ? pathname === "/dashboard" 
-                  : pathname.startsWith(item.href);
+                const isActuallyActive =
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(item.href);
 
                 return (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton asChild isActive={isActuallyActive}>
                       <Link href={item.href}>
-                        <item.icon weight={isActuallyActive ? "fill" : "regular"} />
+                        <item.icon
+                          weight={isActuallyActive ? "fill" : "regular"}
+                        />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -87,8 +102,9 @@ function AppSidebar() {
           <UserButton />
           {!isCollapsed && user && (
             <div className="flex flex-col text-left min-w-0">
-              <span className="text-sm font-semibold truncate text-slate-800 dark:text-slate-200 leading-none mb-1">
+              <span className="flex items-center gap-1.5 text-sm font-semibold truncate text-slate-800 dark:text-slate-200 leading-none mb-1">
                 {user.fullName || user.username || "User"}
+                <PlanBadge />
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400 truncate leading-none">
                 {user.primaryEmailAddress?.emailAddress}
@@ -107,6 +123,7 @@ function Header() {
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <h1 className="text-lg font-bold font-heading">Dashboard</h1>
+        <PlanBadge />
       </div>
 
       <div className="flex items-center gap-3">
