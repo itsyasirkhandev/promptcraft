@@ -11,14 +11,14 @@ import { Context, Effect } from 'effect';
 import { UserIdentity } from 'convex/server';
 import { Doc } from '../_generated/dataModel';
 import { ConvexDB, ConvexScheduler, ConvexActions } from '../services/ConvexDB';
+import { runEffect, effectHandler } from "../effectHelpers";
+import { queryUserByClerkId, queryUserByToken } from "../userQueries";
 
 /** @effect-leakable-service */
 export class AuthedContext extends Context.Service<
 	AuthedContext,
 	{ identity: UserIdentity; viewer: Doc<'users'> | null }
 >()('AuthedContext') {}
-
-import { runEffect } from "../effectHelpers";
 
 export async function runAuthedEffect<Result, Error>(
 	effect: Effect.Effect<Result, Error, never>
@@ -38,37 +38,29 @@ async function requireIdentity(ctx: { auth: { getUserIdentity: () => Promise<Use
 }
 
 async function getViewer(ctx: QueryCtx | MutationCtx, identity: UserIdentity) {
-	let viewer = await ctx.db
-		.query('users')
-		.withIndex('by_token', (q) => q.eq('tokenIdentifier', identity.tokenIdentifier))
-		.unique();
-
+	let viewer = await queryUserByToken(ctx.db, identity.tokenIdentifier);
 	if (!viewer && identity.subject) {
-		viewer = await ctx.db
-			.query('users')
-			.withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-			.unique();
+		viewer = await queryUserByClerkId(ctx.db, identity.subject);
 	}
-
 	return viewer;
+}
+
+// Shared query + mutation guard input: require the Clerk identity and resolve the
+// viewer, then augment the ctx. The two guards differ only in their ctx type.
+async function authedInput<Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) {
+	const identity = await requireIdentity(ctx);
+	const viewer = await getViewer(ctx, identity);
+	return { ctx: { ...ctx, identity, viewer }, args: {} };
 }
 
 const authQueryGuard = customCtxAndArgs({
 	args: {},
-	input: async (ctx: QueryCtx) => {
-		const identity = await requireIdentity(ctx);
-		const viewer = await getViewer(ctx, identity);
-		return { ctx: { ...ctx, identity, viewer }, args: {} };
-	}
+	input: async (ctx: QueryCtx) => authedInput(ctx)
 });
 
 const authMutationGuard = customCtxAndArgs({
 	args: {},
-	input: async (ctx: MutationCtx) => {
-		const identity = await requireIdentity(ctx);
-		const viewer = await getViewer(ctx, identity);
-		return { ctx: { ...ctx, identity, viewer }, args: {} };
-	}
+	input: async (ctx: MutationCtx) => authedInput(ctx)
 });
 
 const authActionGuard = customCtxAndArgs({
@@ -86,57 +78,54 @@ export const authedAction = customAction(action, authActionGuard);
 export const effectAuthedQuery = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexDB>;
-}) => {
-	return authedQuery({
+}) =>
+	authedQuery({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runAuthedEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
+		handler: effectHandler(
+			runAuthedEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(
 					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: ctx.viewer }),
-					Effect.provideService(ConvexDB, { db: ctx.db })
-				)
-			) as Promise<R>;
-		}
+					Effect.provideService(ConvexDB, { db: ctx.db }),
+				),
+		),
 	});
-};
 
 export const effectAuthedMutation = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexDB | ConvexScheduler>;
-}) => {
-	return authedMutation({
+}) =>
+	authedMutation({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runAuthedEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
+		handler: effectHandler(
+			runAuthedEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(
 					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: ctx.viewer }),
 					Effect.provideService(ConvexDB, { db: ctx.db }),
-					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
-				)
-			) as Promise<R>;
-		}
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler }),
+				),
+		),
 	});
-};
 
 // [Phase 4] Actions can't use ctx.db; ConvexActions exposes runQuery/runMutation so
 // authed action handlers can reach DB-backed internal queries/mutations.
 export const effectAuthedAction = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexScheduler | ConvexActions>;
-}) => {
-	return authedAction({
+}) =>
+	authedAction({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runAuthedEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
+		handler: effectHandler(
+			runAuthedEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(
 					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: null }),
 					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler }),
 					Effect.provideService(ConvexActions, { runQuery: ctx.runQuery, runMutation: ctx.runMutation }),
-				)
-			) as Promise<R>;
-		}
+				),
+		),
 	});
-};

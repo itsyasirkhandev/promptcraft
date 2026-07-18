@@ -76,17 +76,51 @@ function verifySignature(
 function extractCustomer(
   customer: unknown,
 ): PolarSubscriptionEventData["customer"] {
-  if (typeof customer !== "object" || customer === null) return undefined;
-  const c = customer as Record<string, unknown>;
+  const c = asRecord(customer);
+  if (!c) return undefined;
   return {
-    id: typeof c.id === "string" ? c.id : undefined,
-    externalId:
-      typeof c.external_id === "string" ? c.external_id : undefined,
-    metadata:
-      typeof c.metadata === "object" && c.metadata !== null
-        ? (c.metadata as Record<string, unknown>)
-        : undefined,
+    id: readString(c, "id"),
+    externalId: readString(c, "external_id"),
+    metadata: readRecord(c, "metadata"),
   };
+}
+
+// Narrow an unknown value to a plain string-keyed record, or null.
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return typeof v === "object" && v !== null
+    ? (v as Record<string, unknown>)
+    : null;
+}
+
+// Read a string-valued field, or undefined if absent / non-string.
+function readString(
+  rec: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const v = rec[key];
+  return typeof v === "string" ? v : undefined;
+}
+
+// Read a nested record-valued field, or undefined if absent / non-object.
+function readRecord(
+  rec: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | undefined {
+  const v = rec[key];
+  return typeof v === "object" && v !== null
+    ? (v as Record<string, unknown>)
+    : undefined;
+}
+
+// Validate the subscription payload's required string fields. Returns the
+// narrowed record, or null if the event is malformed (not an error).
+function parseSubscriptionData(data: unknown): Record<string, unknown> | null {
+  const rec = asRecord(data);
+  if (!rec) return null;
+  if (typeof rec.id !== "string") return null;
+  if (typeof rec.status !== "string") return null;
+  if (typeof rec.product_id !== "string") return null;
+  return rec;
 }
 
 // Validate + normalize a verified webhook payload into a subscription event.
@@ -94,46 +128,23 @@ function extractCustomer(
 function parseSubscriptionEvent(
   parsed: unknown,
 ): PolarSubscriptionEvent | null {
-  if (typeof parsed !== "object" || parsed === null || !("type" in parsed)) {
-    return null;
-  }
-  const event = parsed as Record<string, unknown>;
-  if (
-    typeof event.type !== "string" ||
-    !event.type.startsWith("subscription.")
-  ) {
-    return null;
-  }
-  const data = event.data;
-  if (
-    typeof data !== "object" ||
-    data === null ||
-    !("id" in data) ||
-    typeof data.id !== "string" ||
-    !("status" in data) ||
-    typeof data.status !== "string" ||
-    !("product_id" in data) ||
-    typeof data.product_id !== "string"
-  ) {
-    return null;
-  }
-  const d = data as Record<string, unknown>;
+  const event = asRecord(parsed);
+  if (!event) return null;
+  const type = readString(event, "type");
+  if (!type || !type.startsWith("subscription.")) return null;
+  const d = parseSubscriptionData(event.data);
+  if (!d) return null;
+  const timestamp = event.timestamp ? new Date(String(event.timestamp)) : new Date();
   return {
-    type: event.type,
-    timestamp: event.timestamp ? new Date(String(event.timestamp)) : new Date(),
+    type,
+    timestamp,
     data: {
       id: d.id as string,
       status: d.status as string,
       productId: d.product_id as string,
-      customerId:
-        "customer_id" in d && typeof d.customer_id === "string"
-          ? (d.customer_id as string)
-          : undefined,
+      customerId: readString(d, "customer_id"),
       customer: extractCustomer(d.customer),
-      metadata:
-        typeof d.metadata === "object" && d.metadata !== null
-          ? (d.metadata as Record<string, unknown>)
-          : undefined,
+      metadata: readRecord(d, "metadata"),
     },
   };
 }

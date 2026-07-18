@@ -13,6 +13,7 @@ import { ObjectType, PropertyValidators } from 'convex/values';
 import { Effect } from 'effect';
 import { ConvexDB, ConvexScheduler } from '../services/ConvexDB';
 import { ServerConfig } from '../services/ServerConfig';
+import { runEffect, effectHandler } from "../effectHelpers";
 
 const apiKeyGuard = customCtxAndArgs({
 	args: { apiKey: v.string() },
@@ -31,8 +32,6 @@ export const privateQuery = customQuery(query, apiKeyGuard);
 export const privateMutation = customMutation(mutation, apiKeyGuard);
 export const privateAction = customAction(action, apiKeyGuard);
 
-import { runEffect } from "../effectHelpers";
-
 export async function runPrivateEffect<Result, Error>(
 	effect: Effect.Effect<Result, Error, never>
 ): Promise<Result> {
@@ -42,51 +41,44 @@ export async function runPrivateEffect<Result, Error>(
 export const effectPrivateQuery = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexDB>;
-}) => {
-	return privateQuery({
+}) =>
+	privateQuery({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runPrivateEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
-					Effect.provideService(ConvexDB, { db: ctx.db })
-				)
-			) as Promise<R>;
-		}
+		handler: effectHandler(
+			runPrivateEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(Effect.provideService(ConvexDB, { db: ctx.db })),
+		),
 	});
-};
 
 export const effectPrivateMutation = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexDB | ConvexScheduler>;
-}) => {
-	return privateMutation({
+}) =>
+	privateMutation({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runPrivateEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
+		handler: effectHandler(
+			runPrivateEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(
 					Effect.provideService(ConvexDB, { db: ctx.db }),
-					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
-				)
-			) as Promise<R>;
-		}
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler }),
+				),
+		),
 	});
-};
 
 export const effectPrivateAction = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
 	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, ConvexScheduler>;
-}) => {
-	return privateAction({
+}) =>
+	privateAction({
 		args: options.args,
-		// @ts-expect-error - Convex customQuery generic wrapper TS mismatch
-		handler: async (ctx, args) => {
-			return runPrivateEffect(
-				options.handler(args as unknown as ObjectType<Args>).pipe(
-					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
-				)
-			) as Promise<R>;
-		}
+		handler: effectHandler(
+			runPrivateEffect,
+			options,
+			(ctx) => (effect) =>
+				effect.pipe(Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })),
+		),
 	});
-};

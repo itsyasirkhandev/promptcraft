@@ -177,6 +177,30 @@ function createCustomer(
   });
 }
 
+// Run a Polar call that returns a URL-bearing result, validate the URL is
+// Polar-hosted HTTPS, and return it. Shared by checkout + portal (spec 3.5).
+function polarUrlEffect<T>(
+  polar: Polar,
+  tryCall: () => Promise<T>,
+  getUrl: (result: T) => string | undefined,
+  failVerb: string,
+): Effect.Effect<string, PolarBillingError, never> {
+  return Effect.gen(function* () {
+    const result = yield* Effect.tryPromise({
+      try: tryCall,
+      catch: (e) =>
+        new PolarBillingError({ message: `Polar ${failVerb} failed: ${String(e)}` }),
+    });
+    const url = getUrl(result);
+    if (!url || !isPolarUrl(url)) {
+      return yield* new PolarBillingError({
+        message: `Polar returned an invalid ${failVerb} URL.`,
+      });
+    }
+    return url;
+  });
+}
+
 /**
  * Create a Polar checkout for a single product bound to an existing customer.
  * The client-supplied success URL must be HTTPS or localhost. The returned Polar URL
@@ -192,23 +216,17 @@ export function createCheckout(
       return yield* new PolarBillingError({ message: "Invalid checkout success URL." });
     }
     const polar = yield* getPolarClient();
-    const checkout = yield* Effect.tryPromise({
-      try: () =>
-        polar.checkouts.create({
-          products: [productId],
-          customerId: polarCustomerId,
-          successUrl,
-          metadata: { clerkCustomerId: polarCustomerId },
-        }),
-      catch: (e) =>
-        new PolarBillingError({ message: `Polar checkout failed: ${String(e)}` }),
-    });
-    if (!checkout.url || !isPolarUrl(checkout.url)) {
-      return yield* new PolarBillingError({
-        message: "Polar returned an invalid checkout URL.",
-      });
-    }
-    return checkout.url;
+    return yield* polarUrlEffect(
+      polar,
+      () => polar.checkouts.create({
+        products: [productId],
+        customerId: polarCustomerId,
+        successUrl,
+        metadata: { clerkCustomerId: polarCustomerId },
+      }),
+      (c) => c.url,
+      "checkout",
+    );
   });
 }
 
@@ -219,17 +237,12 @@ export function createCheckout(
 export function createPortal(polarCustomerId: string) {
   return Effect.gen(function* () {
     const polar = yield* getPolarClient();
-    const session = yield* Effect.tryPromise({
-      try: () => polar.customerSessions.create({ customerId: polarCustomerId }),
-      catch: (e) =>
-        new PolarBillingError({ message: `Polar portal session failed: ${String(e)}` }),
-    });
-    if (!session.customerPortalUrl || !isPolarUrl(session.customerPortalUrl)) {
-      return yield* new PolarBillingError({
-        message: "Polar returned an invalid portal URL.",
-      });
-    }
-    return session.customerPortalUrl;
+    return yield* polarUrlEffect(
+      polar,
+      () => polar.customerSessions.create({ customerId: polarCustomerId }),
+      (s) => s.customerPortalUrl,
+      "portal",
+    );
   });
 }
 
@@ -262,3 +275,4 @@ export function syncCustomerProfile(
     );
   });
 }
+

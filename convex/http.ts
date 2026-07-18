@@ -1,10 +1,10 @@
 import { httpRouter } from "convex/server";
-import { httpAction } from "./_generated/server";
+import { httpAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";
-import { verifyPolarWebhook } from "./billing/webhooks";
-import { mapSubscriptionToPlan } from "./billing/lifecycle";
+import { verifyPolarWebhook, type PolarSubscriptionEvent } from "./billing/webhooks";
+import { mapSubscriptionToPlan, type Plan } from "./billing/lifecycle";
 
 const http = httpRouter();
 
@@ -75,89 +75,130 @@ function resolveClerkId(data: {
   return undefined;
 }
 
+// Polar webhook config: both env vars are required. Logs the specific missing
+// var and returns null so the route handler can emit a single 500.
+function getPolarConfig(): {
+  webhookSecret: string;
+  productId: string;
+} | null {
+  const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("polar-webhook: missing POLAR_WEBHOOK_SECRET");
+    return null;
+  }
+  const productId = process.env.POLAR_PRODUCT_ID;
+  if (!productId) {
+    console.error("polar-webhook: missing POLAR_PRODUCT_ID");
+    return null;
+  }
+  return { webhookSecret, productId };
+}
+
+// Verify + read the Polar event. Returns the verified event (which may be null
+// for a non-subscription event) or a 400 response on signature failure.
+async function readPolarEvent(
+  request: Request,
+  secret: string,
+): Promise<
+  | { ok: true; event: PolarSubscriptionEvent | null }
+  | { ok: false; response: Response }
+> {
+  try {
+    const event = await verifyPolarWebhook(request, secret);
+    return { ok: true, event };
+  } catch {
+    console.error("polar-webhook: signature verification failed");
+    return { ok: false, response: new Response("Invalid signature", { status: 400 }) };
+  }
+}
+
+// Filter to subscription events for the configured product with a mappable
+// plan. Returns the resolved identifiers, or null to ignore the event (200).
+function filterRelevantSubscription(
+  event: PolarSubscriptionEvent,
+  configuredProductId: string,
+):
+  | { plan: Plan; polarCustomerId: string | undefined; clerkId: string | undefined }
+  | null {
+  const data = event.data;
+  if (data.productId !== configuredProductId) {
+    console.log("polar-webhook: ignored event for unrelated product", event.type, {
+      receivedProductId: data.productId,
+      configuredProductId,
+    });
+    return null;
+  }
+  const plan = mapSubscriptionToPlan(data.status);
+  if (!plan) {
+    console.log(
+      "polar-webhook: status maps to no plan change, preserving existing",
+      event.type,
+      data.status,
+    );
+    return null;
+  }
+  return {
+    plan,
+    polarCustomerId: data.customerId ?? data.customer?.id ?? undefined,
+    clerkId: resolveClerkId(data),
+  };
+}
+
+// Resolve whether a Convex user exists for either identifier (clerkId first,
+// then polarCustomerId). Polar webhook may arrive before Clerk sync lands.
+async function resolvePolarUser(
+  ctx: ActionCtx,
+  clerkId: string | undefined,
+  polarCustomerId: string | undefined,
+): Promise<boolean> {
+  if (clerkId) {
+    const info = await ctx.runQuery(
+      internal.private.users.getUserInfoForPolar,
+      { clerkId },
+    );
+    if (info) return true;
+  }
+  if (polarCustomerId) {
+    const user = await ctx.runQuery(
+      internal.private.users.getByPolarCustomerId,
+      { polarCustomerId },
+    );
+    if (user) return true;
+  }
+  return false;
+}
+
 http.route({
   path: "/polar-webhook",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
-    const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.error("polar-webhook: missing POLAR_WEBHOOK_SECRET");
-      return new Response("Webhook not configured", { status: 500 });
-    }
-    const configuredProductId = process.env.POLAR_PRODUCT_ID;
-    if (!configuredProductId) {
-      console.error("polar-webhook: missing POLAR_PRODUCT_ID");
-      return new Response("Webhook not configured", { status: 500 });
-    }
+    const cfg = getPolarConfig();
+    if (!cfg) return new Response("Webhook not configured", { status: 500 });
 
-    let event;
-    try {
-      event = await verifyPolarWebhook(request, webhookSecret);
-    } catch {
-      console.error("polar-webhook: signature verification failed");
-      return new Response("Invalid signature", { status: 400 });
-    }
+    const ev = await readPolarEvent(request, cfg.webhookSecret);
+    if (!ev.ok) return ev.response;
+    if (!ev.event) return new Response(null, { status: 200 });
 
-    if (!event) {
-      return new Response(null, { status: 200 });
-    }
+    const sub = filterRelevantSubscription(ev.event, cfg.productId);
+    if (!sub) return new Response(null, { status: 200 });
 
-    const type = event.type;
-    const data = event.data;
-
-    if (data.productId !== configuredProductId) {
-      console.log("polar-webhook: ignored event for unrelated product", type, {
-        receivedProductId: data.productId,
-        configuredProductId,
-      });
-      return new Response(null, { status: 200 });
-    }
-
-    const plan = mapSubscriptionToPlan(data.status);
-    if (!plan) {
-      console.log(
-        "polar-webhook: status maps to no plan change, preserving existing",
-        type,
-        data.status,
-      );
-      return new Response(null, { status: 200 });
-    }
-
-    const polarCustomerId = data.customerId ?? data.customer?.id ?? undefined;
-    const clerkId = resolveClerkId(data);
-
-    let userResolved = false;
-    if (clerkId) {
-      const info = await ctx.runQuery(
-        internal.private.users.getUserInfoForPolar,
-        { clerkId },
-      );
-      if (info) userResolved = true;
-    }
-    if (!userResolved && polarCustomerId) {
-      const user = await ctx.runQuery(
-        internal.private.users.getByPolarCustomerId,
-        { polarCustomerId },
-      );
-      if (user) userResolved = true;
-    }
-
+    const userResolved = await resolvePolarUser(ctx, sub.clerkId, sub.polarCustomerId);
     if (!userResolved) {
       console.warn("polar-webhook: unknown user, returning retryable response", {
-        type,
-        hasClerkId: Boolean(clerkId),
-        hasPolarCustomerId: Boolean(polarCustomerId),
+        type: ev.event.type,
+        hasClerkId: Boolean(sub.clerkId),
+        hasPolarCustomerId: Boolean(sub.polarCustomerId),
       });
       return new Response("User not yet synchronized", { status: 409 });
     }
 
     try {
       await ctx.runMutation(internal.users.updateSubscriptionFromPolar, {
-        clerkId,
-        polarCustomerId,
-        polarSubscriptionId: data.id,
-        polarSubscriptionStatus: data.status,
-        plan,
+        clerkId: sub.clerkId,
+        polarCustomerId: sub.polarCustomerId,
+        polarSubscriptionId: ev.event.data.id,
+        polarSubscriptionStatus: ev.event.data.status,
+        plan: sub.plan,
       });
     } catch (error) {
       console.error("polar-webhook: transient database error", error);
@@ -169,5 +210,3 @@ http.route({
 });
 
 export default http;
-
-
