@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as authed_billing from "../authed/billing.js";
 import type * as authed_demo from "../authed/demo.js";
 import type * as authed_errors from "../authed/errors.js";
 import type * as authed_helpers from "../authed/helpers.js";
@@ -19,6 +20,7 @@ import type * as billing_lifecycle from "../billing/lifecycle.js";
 import type * as billing_polarClient from "../billing/polarClient.js";
 import type * as billing_provider from "../billing/provider.js";
 import type * as billing_sync from "../billing/sync.js";
+import type * as billing_webhooks from "../billing/webhooks.js";
 import type * as effectHelpers from "../effectHelpers.js";
 import type * as emails from "../emails.js";
 import type * as http from "../http.js";
@@ -36,6 +38,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "authed/billing": typeof authed_billing;
   "authed/demo": typeof authed_demo;
   "authed/errors": typeof authed_errors;
   "authed/helpers": typeof authed_helpers;
@@ -47,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   "billing/polarClient": typeof billing_polarClient;
   "billing/provider": typeof billing_provider;
   "billing/sync": typeof billing_sync;
+  "billing/webhooks": typeof billing_webhooks;
   effectHelpers: typeof effectHelpers;
   emails: typeof emails;
   http: typeof http;

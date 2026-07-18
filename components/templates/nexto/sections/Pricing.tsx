@@ -1,11 +1,13 @@
 "use client";
 
 import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
-import Link from "next/link";
+import { useQuery, useAction } from "convex/react";
+import { useState } from "react";
+import { api } from "@/convex/_generated/api";
 
 function ChevronArrow() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M5 12h14M13 6l6 6-6 6"
         stroke="currentColor"
@@ -14,6 +16,167 @@ function ChevronArrow() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+const UPGRADE_PATH = "/upgrade";
+
+type BillingActionName = "checkout" | "portal";
+
+function useBillingRedirect() {
+  const [pending, setPending] = useState<BillingActionName | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const generateCheckoutUrl = useAction(api.authed.billing.generateCheckoutUrl);
+  const generatePortalUrl = useAction(api.authed.billing.generatePortalUrl);
+
+  async function run(name: BillingActionName) {
+    if (pending) return;
+    setPending(name);
+    setError(null);
+    try {
+      const result =
+        name === "checkout"
+          ? await generateCheckoutUrl()
+          : await generatePortalUrl();
+      if (!result?.url) {
+        throw new Error("No URL returned");
+      }
+      window.location.assign(result.url);
+    } catch {
+      setError(
+        name === "checkout"
+          ? "Couldn't start checkout. Please try again."
+          : "Couldn't open the subscription portal. Please try again."
+      );
+      setPending(null);
+    }
+  }
+
+  return { pending, error, run, clearError: () => setError(null) };
+}
+
+function HobbyCardCta({ isPro }: { isPro: boolean }) {
+  if (isPro) {
+    return (
+      <button
+        className="nexto-pill-dark w-full justify-center opacity-60 cursor-default"
+        disabled
+        aria-disabled="true"
+      >
+        <span className="nexto-arrow-circ">
+          <ChevronArrow />
+        </span>
+        Hobby Plan
+      </button>
+    );
+  }
+  return (
+    <button
+      className="nexto-pill-dark w-full justify-center opacity-60 cursor-default"
+      disabled
+      aria-disabled="true"
+    >
+      <span className="nexto-arrow-circ">
+        <ChevronArrow />
+      </span>
+      Current Plan
+    </button>
+  );
+}
+
+function ProCardCta() {
+  const user = useQuery(api.authed.users.currentUser);
+  const billing = useBillingRedirect();
+  const isPro = user?.plan === "pro";
+  const loading = user === undefined;
+  const pendingCheckout = billing.pending === "checkout";
+  const pendingPortal = billing.pending === "portal";
+
+  if (loading) {
+    return (
+      <button
+        className="nexto-pill-dark w-full justify-center opacity-60"
+        disabled
+        aria-disabled="true"
+        aria-busy="true"
+      >
+        <span className="nexto-arrow-circ">
+          <ChevronArrow />
+        </span>
+        Loading…
+      </button>
+    );
+  }
+
+  const onUpgrade = () => billing.run("checkout");
+  const onManage = () => billing.run("portal");
+
+  return (
+    <div>
+      {isPro ? (
+        <button
+          className="nexto-pill-dark w-full justify-center disabled:opacity-60"
+          onClick={onManage}
+          disabled={pendingPortal}
+          aria-disabled={pendingPortal}
+          aria-busy={pendingPortal}
+        >
+          <span className="nexto-arrow-circ">
+            <ChevronArrow />
+          </span>
+          {pendingPortal ? "Loading portal…" : "Manage Subscription"}
+        </button>
+      ) : (
+        <button
+          className="nexto-pill-dark w-full justify-center disabled:opacity-60"
+          onClick={onUpgrade}
+          disabled={pendingCheckout}
+          aria-disabled={pendingCheckout}
+          aria-busy={pendingCheckout}
+        >
+          <span className="nexto-arrow-circ">
+            <ChevronArrow />
+          </span>
+          {pendingCheckout ? "Securing checkout…" : "Upgrade to Pro"}
+        </button>
+      )}
+      {billing.error && (
+        <p
+          role="alert"
+          aria-live="polite"
+          className="mt-2 text-[12.5px] text-red-600 text-center"
+        >
+          {billing.error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AuthedPricing() {
+  const user = useQuery(api.authed.users.currentUser);
+  const isPro = user?.plan === "pro";
+  const loading = user === undefined;
+
+  return (
+    <>
+      <div className="mt-8">
+        {loading ? (
+          <button
+            className="nexto-pill-dark w-full justify-center opacity-60"
+            disabled
+            aria-hidden="true"
+          >
+            <span className="nexto-arrow-circ">
+              <ChevronArrow />
+            </span>
+            Loading…
+          </button>
+        ) : (
+          <HobbyCardCta isPro={isPro} />
+        )}
+      </div>
+    </>
   );
 }
 
@@ -85,12 +248,7 @@ export default function Pricing() {
                   </SignInButton>
                 </Show>
                 <Show when="signed-in">
-                  <Link href="/dashboard" className="nexto-pill-dark w-full justify-center">
-                    <span className="nexto-arrow-circ">
-                      <ChevronArrow />
-                    </span>
-                    Go to Dashboard
-                  </Link>
+                  <AuthedPricing />
                 </Show>
               </ClerkLoaded>
             </div>
@@ -143,7 +301,11 @@ export default function Pricing() {
               </ClerkLoading>
               <ClerkLoaded>
                 <Show when="signed-out">
-                  <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
+                  <SignInButton
+                    mode="modal"
+                    fallbackRedirectUrl={UPGRADE_PATH}
+                    signUpFallbackRedirectUrl={UPGRADE_PATH}
+                  >
                     <button className="nexto-pill-dark w-full justify-center">
                       <span className="nexto-arrow-circ">
                         <ChevronArrow />
@@ -153,12 +315,7 @@ export default function Pricing() {
                   </SignInButton>
                 </Show>
                 <Show when="signed-in">
-                  <Link href="/dashboard" className="nexto-pill-dark w-full justify-center">
-                    <span className="nexto-arrow-circ">
-                      <ChevronArrow />
-                    </span>
-                    Get Pro Access
-                  </Link>
+                  <ProCardCta />
                 </Show>
               </ClerkLoaded>
             </div>

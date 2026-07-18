@@ -6,7 +6,8 @@ import { UserButton, Show, useUser } from "@clerk/nextjs";
 import { House, List, PlusCircle, Folders } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
+import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,6 +45,79 @@ function PlanBadge() {
     <Badge variant={isPro ? "default" : "secondary"}>
       {isPro ? "Pro" : "Hobby"}
     </Badge>
+  );
+}
+
+function PlanControl() {
+  const user = useQuery(api.authed.users.currentUser);
+  const isPro = user?.plan === "pro";
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const generateCheckoutUrl = useAction(api.authed.billing.generateCheckoutUrl);
+  const generatePortalUrl = useAction(api.authed.billing.generatePortalUrl);
+
+  if (!user) return null;
+
+  const handleCheckout = async () => {
+    if (pending) return;
+    setPending("checkout");
+    setError(null);
+    try {
+      const result = await generateCheckoutUrl();
+      if (!result?.url) throw new Error("No URL returned");
+      window.location.assign(result.url);
+    } catch {
+      setError("Couldn't start checkout. Please try again.");
+      setPending(null);
+    }
+  };
+
+  const handlePortal = async () => {
+    if (pending) return;
+    setPending("portal");
+    setError(null);
+    try {
+      const result = await generatePortalUrl();
+      if (!result?.url) throw new Error("No URL returned");
+      window.location.assign(result.url);
+    } catch {
+      setError("Couldn't open the subscription portal. Please try again.");
+      setPending(null);
+    }
+  };
+
+  const pendingCheckout = pending === "checkout";
+  const pendingPortal = pending === "portal";
+
+  return (
+    <div className="flex items-center gap-2">
+      {isPro ? (
+        <button
+          onClick={handlePortal}
+          disabled={pendingPortal}
+          aria-disabled={pendingPortal}
+          aria-busy={pendingPortal}
+          className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+        >
+          {pendingPortal ? "Loading portal…" : "Manage Subscription"}
+        </button>
+      ) : (
+        <button
+          onClick={handleCheckout}
+          disabled={pendingCheckout}
+          aria-disabled={pendingCheckout}
+          aria-busy={pendingCheckout}
+          className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] disabled:opacity-60 transition-colors"
+        >
+          {pendingCheckout ? "Securing checkout…" : "Upgrade to Pro"}
+        </button>
+      )}
+      {error && (
+        <span role="alert" aria-live="polite" className="text-[10px] text-red-600">
+          {error}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -124,6 +198,7 @@ function Header() {
         <SidebarTrigger />
         <h1 className="text-lg font-bold font-heading">Dashboard</h1>
         <PlanBadge />
+        <PlanControl />
       </div>
 
       <div className="flex items-center gap-3">

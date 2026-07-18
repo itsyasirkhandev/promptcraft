@@ -10,7 +10,7 @@ import { ConvexError, ObjectType, PropertyValidators } from 'convex/values';
 import { Context, Effect } from 'effect';
 import { UserIdentity } from 'convex/server';
 import { Doc } from '../_generated/dataModel';
-import { ConvexDB, ConvexScheduler } from '../services/ConvexDB';
+import { ConvexDB, ConvexScheduler, ConvexActions } from '../services/ConvexDB';
 
 /** @effect-leakable-service */
 export class AuthedContext extends Context.Service<
@@ -120,9 +120,11 @@ export const effectAuthedMutation = <Args extends PropertyValidators, R, E>(opti
 	});
 };
 
+// [Phase 4] Actions can't use ctx.db; ConvexActions exposes runQuery/runMutation so
+// authed action handlers can reach DB-backed internal queries/mutations.
 export const effectAuthedAction = <Args extends PropertyValidators, R, E>(options: {
 	args: Args;
-	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexScheduler>;
+	handler: (args: ObjectType<Args>) => Effect.Effect<R, E, AuthedContext | ConvexScheduler | ConvexActions>;
 }) => {
 	return authedAction({
 		args: options.args,
@@ -131,7 +133,8 @@ export const effectAuthedAction = <Args extends PropertyValidators, R, E>(option
 			return runAuthedEffect(
 				options.handler(args as unknown as ObjectType<Args>).pipe(
 					Effect.provideService(AuthedContext, { identity: ctx.identity, viewer: null }),
-					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler })
+					Effect.provideService(ConvexScheduler, { scheduler: ctx.scheduler }),
+					Effect.provideService(ConvexActions, { runQuery: ctx.runQuery, runMutation: ctx.runMutation }),
 				)
 			) as Promise<R>;
 		}
