@@ -124,9 +124,9 @@ function subEvent(
 		data: {
 			id: "sub_abc",
 			status,
-			productId: overrides.productId ?? PRODUCT_ID,
-			customerId: "pol_c_1",
-			customer: { id: "pol_c_1", externalId, metadata: { clerkId: externalId } },
+			product_id: overrides.productId ?? PRODUCT_ID,
+			customer_id: "pol_c_1",
+			customer: { id: "pol_c_1", external_id: externalId, metadata: { clerkId: externalId } },
 			metadata: { clerkId: externalId },
 		},
 	};
@@ -202,6 +202,8 @@ describe("verifyPolarWebhook", () => {
 		expect(result?.type).toBe("subscription.active");
 		expect(result?.data.status).toBe("active");
 		expect(result?.data.productId).toBe(PRODUCT_ID);
+		expect(result?.data.customerId).toBe("pol_c_1");
+		expect(result?.data.customer?.externalId).toBe(CLERK_ID);
 	});
 
 	test("rejects a tampered payload", async () => {

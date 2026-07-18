@@ -65,13 +65,53 @@ export async function verifyPolarWebhook(
   if (typeof event.type !== "string" || !event.type.startsWith("subscription.")) {
     return null;
   }
-  const data = event.data as PolarSubscriptionEventData | undefined;
-  if (!data || typeof data.id !== "string" || typeof data.status !== "string") {
+  const data = event.data;
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !("id" in data) ||
+    typeof data.id !== "string" ||
+    !("status" in data) ||
+    typeof data.status !== "string" ||
+    !("product_id" in data) ||
+    typeof data.product_id !== "string"
+  ) {
     return null;
   }
+  const customer =
+    "customer" in data && typeof data.customer === "object" && data.customer !== null
+      ? data.customer
+      : undefined;
   return {
     type: event.type,
     timestamp: event.timestamp ? new Date(String(event.timestamp)) : new Date(),
-    data,
+    data: {
+      id: data.id,
+      status: data.status,
+      productId: data.product_id,
+      customerId:
+        "customer_id" in data && typeof data.customer_id === "string"
+          ? data.customer_id
+          : undefined,
+      customer: customer
+        ? {
+            id: "id" in customer && typeof customer.id === "string" ? customer.id : undefined,
+            externalId:
+              "external_id" in customer && typeof customer.external_id === "string"
+                ? customer.external_id
+                : undefined,
+            metadata:
+              "metadata" in customer &&
+              typeof customer.metadata === "object" &&
+              customer.metadata !== null
+                ? (customer.metadata as Record<string, unknown>)
+                : undefined,
+          }
+        : undefined,
+      metadata:
+        "metadata" in data && typeof data.metadata === "object" && data.metadata !== null
+          ? (data.metadata as Record<string, unknown>)
+          : undefined,
+    },
   };
 }
