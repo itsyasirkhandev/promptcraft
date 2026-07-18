@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { type PromptFormValues } from '@/lib/schemas/prompt.schema';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { catchTag } from '@/lib/errors';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PromptForm } from '../_components/PromptForm';
 import { usePromptForm } from '@/hooks/use-prompt-form';
@@ -31,7 +32,7 @@ export default function CreatePromptPage() {
       router.push('/dashboard/prompts');
     } catch (error) {
       toast.error('Failed to create prompt', {
-        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        description: catchTag(error, 'PlanLimitError', (d: { message: string }) => d.message) ?? (error instanceof Error ? error.message : 'An unknown error occurred.'),
       });
     }
   }

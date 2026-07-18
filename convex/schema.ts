@@ -37,5 +37,6 @@ export default defineSchema({
 	})
 		.index('by_userId', ['userId'])
 		.index('by_userId_createdAt', ['userId', 'createdAt'])
+		.index('by_userId_isPublic', ['userId', 'isPublic'])
 		.index('by_isPublic', ['isPublic'])
 });

@@ -8,10 +8,13 @@ export async function runEffect<Result, Error>(
 		return await Effect.runPromise(effect);
 	} catch (error) {
 		if (error && typeof error === 'object' && '_tag' in error) {
-			const taggedError = error as { _tag: string; [key: string]: unknown };
+			// Strip the Effect `_tag` marker before serialization: Convex rejects
+			// object fields starting with "_", so the tagged error would otherwise
+			// fail to reach the client as a structured ConvexError.
+			const { _tag, ...data } = error as { _tag: string } & Record<string, unknown>;
 			throw new ConvexError({
-				tag: taggedError._tag,
-				data: taggedError as unknown as Record<string, string | number | boolean | null>
+				tag: _tag,
+				data: data as Record<string, string | number | boolean | null>
 			});
 		}
 		throw error;
@@ -40,3 +43,5 @@ export function effectHandler<
 	return async (ctx: Ctx, args: ObjectType<Args>): Promise<R> =>
 		run(options.handler(args).pipe(provide(ctx)));
 }
+
+

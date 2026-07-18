@@ -9,6 +9,7 @@ import { type PromptFormValues } from '@/lib/schemas/prompt.schema';
 import { useQuery, useMutation } from 'convex/react';
 import { useWatch } from 'react-hook-form';
 import { api } from '@/convex/_generated/api';
+import { catchTag } from '@/lib/errors';
 import { Id } from '@/convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,7 @@ export default function EditPromptPage({ params }: PageProps) {
       router.push('/dashboard/prompts');
     } catch (error) {
       toast.error('Failed to update prompt', {
-        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        description: catchTag(error, 'PlanLimitError', (d: { message: string }) => d.message) ?? (error instanceof Error ? error.message : 'An unknown error occurred.'),
       });
     }
   }

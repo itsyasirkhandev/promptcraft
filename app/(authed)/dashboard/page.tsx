@@ -102,6 +102,9 @@ export default function DashboardPage() {
         ))}
       </section>
 
+      <HobbyUsageCard />
+
+
       {analytics.summary.totalPrompts === 0 ? (
         <Card className="min-h-80 justify-center">
           <CardContent className="flex flex-col items-center justify-center gap-4 py-12 text-center">
@@ -261,6 +264,61 @@ function DistributionCard({
             <ChartLegend content={<ChartLegendContent nameKey="key" />} />
           </PieChart>
         </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HobbyUsageCard() {
+  const usage = useQuery(api.authed.prompts.getUsage);
+
+  // Loading, Pro, and unauthenticated states render nothing so the card
+  // never flashes stale content. The header pill already covers Pro/loading.
+  if (usage === undefined || usage.plan !== "hobby" || usage.promptsLimit === null) return null;
+
+  const promptsRemaining = Math.max(0, usage.promptsLimit - usage.promptsUsed);
+  const publicRemaining = Math.max(0, (usage.publicLimit ?? 0) - usage.publicUsed);
+  const promptsPct = Math.min(100, Math.round((usage.promptsUsed / usage.promptsLimit) * 100));
+  const publicPct = usage.publicLimit ? Math.min(100, Math.round((usage.publicUsed / usage.publicLimit) * 100)) : 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hobby plan usage</CardTitle>
+        <CardDescription>
+          You&apos;re on the free Hobby plan. Upgrade to Pro for unlimited prompts and public sharing.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Prompts created</span>
+            <span className="font-medium tabular-nums">
+              {usage.promptsUsed} / {usage.promptsLimit}
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Prompts used" aria-valuenow={promptsPct} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${promptsPct}%` }} />
+          </div>
+          <span className="text-xs text-muted-foreground">{promptsRemaining} prompts remaining</span>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Public prompts</span>
+            <span className="font-medium tabular-nums">
+              {usage.publicUsed} / {usage.publicLimit}
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Public prompts used" aria-valuenow={publicPct} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${publicPct}%` }} />
+          </div>
+          <span className="text-xs text-muted-foreground">{publicRemaining} public prompts remaining</span>
+        </div>
+
+        <Button asChild size="sm" className="self-start">
+          <Link href="/upgrade">Upgrade to Pro</Link>
+        </Button>
       </CardContent>
     </Card>
   );

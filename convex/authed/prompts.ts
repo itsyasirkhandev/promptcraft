@@ -2,8 +2,8 @@ import { v } from 'convex/values';
 import { effectAuthedQuery, effectAuthedMutation, AuthedContext } from './helpers';
 import { Effect, Schema } from 'effect';
 import { ConvexDB } from '../services/ConvexDB';
-import { GenericDatabaseWriter } from 'convex/server';
-import { DataModel } from '../_generated/dataModel';
+import { GenericDatabaseReader, GenericDatabaseWriter } from 'convex/server';
+import { DataModel, Doc } from '../_generated/dataModel';
 import { validatePrompt } from './validation';
 import { UnauthorizedError } from './errors';
 
@@ -14,6 +14,58 @@ export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()("Not
 export class ForbiddenError extends Schema.TaggedErrorClass<ForbiddenError>()("ForbiddenError", {
 	message: Schema.String
 }) {}
+
+export class PlanLimitError extends Schema.TaggedErrorClass<PlanLimitError>()("PlanLimitError", {
+	message: Schema.String
+}) {}
+
+// Hobby plan limits (match the published Pricing spec: 30 prompts, 10 public).
+export const HOBBY_PROMPT_LIMIT = 30;
+export const HOBBY_PUBLIC_PROMPT_LIMIT = 10;
+
+// Hobby-only quota enforcement. Reads are bounded (limit + 1) so they stay
+// efficient even for users who downgrade from Pro with a large library.
+function enforceHobbyQuota(
+	db: GenericDatabaseReader<DataModel>,
+	viewer: Doc<'users'>,
+	opts: { checkTotal: boolean; markPublic: boolean }
+) {
+	return Effect.gen(function* () {
+		if (viewer.plan !== 'hobby') return;
+
+		if (opts.checkTotal) {
+			const existing = yield* Effect.tryPromise(() =>
+				db
+					.query('prompts')
+					.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
+					.take(HOBBY_PROMPT_LIMIT + 1)
+			);
+			if (existing.length >= HOBBY_PROMPT_LIMIT) {
+				return yield* Effect.fail(
+					new PlanLimitError({
+						message: `You've reached the ${HOBBY_PROMPT_LIMIT}-prompt limit on the Hobby plan. Upgrade to Pro to create more prompts.`
+					})
+				);
+			}
+		}
+
+		if (opts.markPublic) {
+			const publicPrompts = yield* Effect.tryPromise(() =>
+				db
+					.query('prompts')
+					.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+					.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
+			);
+			if (publicPrompts.length >= HOBBY_PUBLIC_PROMPT_LIMIT) {
+				return yield* Effect.fail(
+					new PlanLimitError({
+						message: `You've reached the ${HOBBY_PUBLIC_PROMPT_LIMIT} public-prompt limit on the Hobby plan. Upgrade to Pro to share more public prompts.`
+					})
+				);
+			}
+		}
+	});
+}
 
 const templateFieldsValidator = v.array(
 	v.object({
@@ -54,6 +106,7 @@ export const create = effectAuthedMutation({
 
 			const { db } = yield* ConvexDB;
 			const writerDb = db as GenericDatabaseWriter<DataModel>;
+			yield* enforceHobbyQuota(db, viewer, { checkTotal: true, markPublic: args.isPublic });
 
 			const promptId = yield* Effect.tryPromise(() =>
 				writerDb.insert('prompts', {
@@ -120,6 +173,7 @@ export const update = effectAuthedMutation({
 				templateFields: args.templateFields,
 				category: args.category
 			});
+			yield* enforceHobbyQuota(db, viewer, { checkTotal: false, markPublic: args.isPublic && !prompt.isPublic });
 
 			yield* Effect.tryPromise(() =>
 				writerDb.patch(args.id, {
@@ -213,5 +267,48 @@ export const get = effectAuthedQuery({
 			}
 
 			return yield* Effect.fail(new ForbiddenError({ message: 'Access denied' }));
+		})
+});
+
+export const getUsage = effectAuthedQuery({
+	args: {},
+	handler: () =>
+		Effect.gen(function* () {
+			const { viewer } = yield* AuthedContext;
+			if (!viewer) {
+				return yield* Effect.fail(new UnauthorizedError({ message: 'Not authenticated' }));
+			}
+
+			if (viewer.plan === 'pro') {
+				return {
+					plan: 'pro' as const,
+					promptsUsed: 0,
+					promptsLimit: null,
+					publicUsed: 0,
+					publicLimit: null
+				};
+			}
+
+			const { db } = yield* ConvexDB;
+			const [prompts, publicPrompts] = yield* Effect.tryPromise(() =>
+				Promise.all([
+					db
+						.query('prompts')
+						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
+						.take(HOBBY_PROMPT_LIMIT + 1),
+					db
+						.query('prompts')
+						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+						.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
+				])
+			);
+
+			return {
+				plan: 'hobby' as const,
+				promptsUsed: prompts.length,
+				promptsLimit: HOBBY_PROMPT_LIMIT,
+				publicUsed: publicPrompts.length,
+				publicLimit: HOBBY_PUBLIC_PROMPT_LIMIT
+			};
 		})
 });

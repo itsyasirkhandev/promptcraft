@@ -3,13 +3,23 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton, Show, useUser } from "@clerk/nextjs";
-import { House, List, PlusCircle, Folders } from "@phosphor-icons/react";
+import { CheckCircle, House, List, PlusCircle, Folders } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery, useAction } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -49,12 +59,29 @@ function PlanBadge() {
     </Badge>
   );
 }
+function HobbyUsagePill() {
+  const usage = useQuery(api.authed.prompts.getUsage);
+
+  // Only render for hobby users with loaded usage. Pro users (usage === null
+  // limits) and the loading state show nothing so the pill doesn't flash.
+  if (usage === undefined || usage.plan !== "hobby" || usage.promptsLimit === null) return null;
+
+  const remaining = Math.max(0, usage.promptsLimit - usage.promptsUsed);
+
+  return (
+    <Badge variant="outline" className="tabular-nums">
+      {remaining} prompts left
+    </Badge>
+  );
+}
+
 
 function PlanControl() {
   const user = useQuery(api.authed.users.currentUser);
   const isPro = user?.plan === "pro";
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const generateCheckoutUrl = useAction(api.authed.billing.generateCheckoutUrl);
   const generatePortalUrl = useAction(api.authed.billing.generatePortalUrl);
 
@@ -107,15 +134,47 @@ function PlanControl() {
           {pendingPortal ? "Loading portal…" : "Manage Subscription"}
         </button>
       ) : (
-        <button
-          onClick={handleCheckout}
-          disabled={pendingCheckout}
-          aria-disabled={pendingCheckout}
-          aria-busy={pendingCheckout}
-          className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] disabled:opacity-60 transition-colors"
-        >
-          {pendingCheckout ? "Securing checkout…" : "Upgrade to Pro"}
-        </button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <button className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] transition-colors">
+              Upgrade to Pro
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Upgrade to Pro</DialogTitle>
+              <DialogDescription>
+                Unlock everything you need to scale your prompt library.
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="flex flex-col gap-2">
+              <li className="flex items-start gap-2 text-sm">
+                <CheckCircle weight="fill" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                <span>Create unlimited prompts</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm">
+                <CheckCircle weight="fill" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                <span>Share unlimited public prompts</span>
+              </li>
+            </ul>
+            {error && (
+              <span role="alert" aria-live="polite" className="text-xs text-red-600">
+                {error}
+              </span>
+            )}
+            <DialogFooter>
+              <Button
+                onClick={handleCheckout}
+                disabled={pendingCheckout}
+                aria-disabled={pendingCheckout}
+                aria-busy={pendingCheckout}
+                className="bg-[#111] text-white hover:bg-[#222] disabled:opacity-60"
+              >
+                {pendingCheckout ? "Securing checkout…" : "Continue to checkout"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
       {error && (
         <span role="alert" aria-live="polite" className="text-[10px] text-red-600">
@@ -204,6 +263,7 @@ function Header() {
         <h1 className="text-lg font-bold font-heading">Dashboard</h1>
         <PlanBadge />
         <PlanControl />
+        <HobbyUsagePill />
       </div>
 
       <div className="flex items-center gap-3">
