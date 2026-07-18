@@ -179,8 +179,8 @@ function createCustomer(
 
 /**
  * Create a Polar checkout for a single product bound to an existing customer.
- * The success URL is server-derived (never concatenated from client origin) and must
- * be HTTPS or localhost. The returned Polar URL is validated as HTTPS Polar-hosted.
+ * The client-supplied success URL must be HTTPS or localhost. The returned Polar URL
+ * is validated as HTTPS Polar-hosted.
  */
 export function createCheckout(
   polarCustomerId: string,

@@ -6,10 +6,7 @@ export class ServerConfig extends Context.Service<
 		readonly convexPrivateBridgeKey: string;
 		readonly polarAccessToken: string | null;
 		readonly polarWebhookSecret: string | null;
-		readonly polarProductId: string | null;
 		readonly polarServer: 'sandbox' | 'production' | null;
-		// [Phase 4] Trusted server-side checkout success URL. Never derived from a client origin.
-		readonly polarCheckoutSuccessUrl: string | null;
 	}
 >()('ServerConfig') {
 	static readonly layer = Layer.effect(
@@ -28,10 +25,6 @@ export class ServerConfig extends Context.Service<
 				yield* Config.option(Config.string('POLAR_WEBHOOK_SECRET')),
 				() => null
 			);
-			const polarProductId = Option.getOrElse(
-				yield* Config.option(Config.string('POLAR_PRODUCT_ID')),
-				() => null
-			);
 			const polarServerRaw = Option.getOrElse(
 				yield* Config.option(Config.string('POLAR_SERVER')),
 				() => null
@@ -40,18 +33,12 @@ export class ServerConfig extends Context.Service<
 				polarServerRaw === 'sandbox' || polarServerRaw === 'production'
 					? polarServerRaw
 					: null;
-			const polarCheckoutSuccessUrl = Option.getOrElse(
-				yield* Config.option(Config.string('POLAR_CHECKOUT_SUCCESS_URL')),
-				() => null
-			);
 
 			return {
 				convexPrivateBridgeKey,
 				polarAccessToken,
 				polarWebhookSecret,
-				polarProductId,
-				polarServer,
-				polarCheckoutSuccessUrl
+				polarServer
 			};
 		})
 	);

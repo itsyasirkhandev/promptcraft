@@ -20,6 +20,7 @@ function ChevronArrow() {
 }
 
 const UPGRADE_PATH = "/upgrade";
+const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
 
 type BillingActionName = "checkout" | "portal";
 
@@ -36,7 +37,10 @@ function useBillingRedirect() {
     try {
       const result =
         name === "checkout"
-          ? await generateCheckoutUrl()
+          ? await generateCheckoutUrl({
+              productId: POLAR_PRODUCT_ID,
+              successUrl: `${window.location.origin}/dashboard`,
+            })
           : await generatePortalUrl();
       if (!result?.url) {
         throw new Error("No URL returned");

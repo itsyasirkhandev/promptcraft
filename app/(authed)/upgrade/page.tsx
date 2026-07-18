@@ -16,6 +16,8 @@ import { api } from "@/convex/_generated/api";
 
 type UpgradeStatus = "syncing" | "redirecting" | "error";
 
+const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
+
 const RETRY_MESSAGE = "We couldn't start checkout. Please try again.";
 
 export default function UpgradePage() {
@@ -33,7 +35,10 @@ export default function UpgradePage() {
   const runCheckout = useCallback(() => {
     setStatus("redirecting");
     setError(null);
-    generateCheckoutUrl()
+    generateCheckoutUrl({
+      productId: POLAR_PRODUCT_ID,
+      successUrl: `${window.location.origin}/dashboard`,
+    })
       .then((result) => {
         // generateCheckoutUrl routes Hobby->checkout and Pro->portal and
         // validates the returned URL is HTTPS Polar-hosted (Phase 4).

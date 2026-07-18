@@ -1,19 +1,19 @@
 "use node";
 
 // [Phase 4] Authed client actions for Polar checkout + customer portal.
-// Identity, product, price, success host, and any identity fields are derived
-// server-side exclusively; the client passes zero args (spec 3.3 / 3.5).
+// Identity and customer data are derived server-side; checkout product and success URL
+// are supplied by the client and validated before Polar receives them.
 // The shared return shape is a discriminated { destination: "checkout" | "portal", url: string }
 // so the calling client redirects correctly.
 
 import { Effect } from "effect";
+import { v } from "convex/values";
 import { AuthedContext, effectAuthedAction } from "./helpers";
 import { ConvexActions } from "../services/ConvexDB";
 import { ServerConfig } from "../services/ServerConfig";
 import { internal } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
 import { ensureCustomer, createCheckout, createPortal, PolarBillingError, type BillingBackend } from "../billing/provider";
-import { PolarConfigError } from "../billing/polarClient";
 
 export type BillingUrlResult = {
   destination: "checkout" | "portal";
@@ -60,8 +60,8 @@ function makeBillingBackend(actions: ActionAccessors): BillingBackend {
 }
 
 export const generateCheckoutUrl = effectAuthedAction({
-  args: {},
-  handler: () =>
+  args: { productId: v.string(), successUrl: v.string() },
+  handler: ({ productId, successUrl }) =>
     Effect.gen(function* () {
       const { identity } = yield* AuthedContext;
       const clerkId = identity.subject;
@@ -100,19 +100,7 @@ export const generateCheckoutUrl = effectAuthedAction({
 
       const polarCustomerId = yield* ensureCustomer(makeBillingBackend(actions), clerkId, email, name);
 
-      const { polarProductId, polarCheckoutSuccessUrl } = yield* ServerConfig;
-      if (!polarProductId) {
-        return yield* new PolarConfigError({
-          message: "Polar billing is not configured: POLAR_PRODUCT_ID is missing.",
-        });
-      }
-      if (!polarCheckoutSuccessUrl) {
-        return yield* new PolarConfigError({
-          message: "Polar billing is not configured: POLAR_CHECKOUT_SUCCESS_URL is missing.",
-        });
-      }
-
-      const url = yield* createCheckout(polarCustomerId, polarProductId, polarCheckoutSuccessUrl);
+      const url = yield* createCheckout(polarCustomerId, productId, successUrl);
       return { destination: "checkout" as const, url };
     }).pipe(Effect.provide(ServerConfig.layer)),
 });

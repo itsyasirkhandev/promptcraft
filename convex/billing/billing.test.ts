@@ -69,16 +69,12 @@ const testConfig: {
 	convexPrivateBridgeKey: string;
 	polarAccessToken: string | null;
 	polarWebhookSecret: string | null;
-	polarProductId: string | null;
 	polarServer: "sandbox" | "production" | null;
-	polarCheckoutSuccessUrl: string | null;
 } = {
 	convexPrivateBridgeKey: "test_bridge",
 	polarAccessToken: "test_token",
 	polarWebhookSecret: WH_SECRET,
-	polarProductId: PRODUCT_ID,
 	polarServer: "sandbox",
-	polarCheckoutSuccessUrl: SUCCESS_URL,
 };
 
 // Run a provider Effect against a fixed ServerConfig (no env reads).
@@ -93,7 +89,6 @@ beforeEach(() => {
 	process.env.POLAR_PRODUCT_ID = PRODUCT_ID;
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
-	process.env.POLAR_CHECKOUT_SUCCESS_URL = SUCCESS_URL;
 	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 	// SDK defaults: "not found" customer lookups so ensureCustomer proceeds to
 	// create only when a test opts in.
@@ -469,7 +464,7 @@ describe("authed billing actions", () => {
 		polarMock.customers.create.mockResolvedValueOnce({ id: "pol_new" });
 		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/x" });
 
-		const result = await t.action(api.authed.billing.generateCheckoutUrl);
+		const result = await t.action(api.authed.billing.generateCheckoutUrl, { productId: PRODUCT_ID, successUrl: SUCCESS_URL });
 		expect(result.destination).toBe("checkout");
 		expect(result.url).toBe("https://checkout.polar.sh/x");
 	});
@@ -478,7 +473,7 @@ describe("authed billing actions", () => {
 		const t = await authedBackend("pro", "pol_pro");
 		polarMock.customerSessions.create.mockResolvedValueOnce({ customerPortalUrl: "https://polar.sh/portal" });
 
-		const result = await t.action(api.authed.billing.generateCheckoutUrl);
+		const result = await t.action(api.authed.billing.generateCheckoutUrl, { productId: PRODUCT_ID, successUrl: SUCCESS_URL });
 		expect(result.destination).toBe("portal");
 		expect(result.url).toBe("https://polar.sh/portal");
 		expect(polarMock.checkouts.create).not.toHaveBeenCalled();

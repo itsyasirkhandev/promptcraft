@@ -27,6 +27,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
+
 const navItems = [
   { href: "/dashboard", label: "Home", icon: House },
   { href: "/dashboard/prompts", label: "Prompts", icon: List },
@@ -63,7 +65,10 @@ function PlanControl() {
     setPending("checkout");
     setError(null);
     try {
-      const result = await generateCheckoutUrl();
+      const result = await generateCheckoutUrl({
+        productId: POLAR_PRODUCT_ID,
+        successUrl: `${window.location.origin}/dashboard`,
+      });
       if (!result?.url) throw new Error("No URL returned");
       window.location.assign(result.url);
     } catch {
