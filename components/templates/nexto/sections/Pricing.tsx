@@ -184,6 +184,103 @@ function AuthedPricing() {
   );
 }
 
+type PricingCardProps = {
+  name: string;
+  description: string;
+  price: string;
+  priceSuffix?: string;
+  features: string[];
+  ctaLabel: string;
+  fallbackRedirectUrl: string;
+  signedInCta: React.ReactNode;
+  cardClassName: string;
+  popular?: boolean;
+};
+
+function PricingCard({
+  name,
+  description,
+  price,
+  priceSuffix,
+  features,
+  ctaLabel,
+  fallbackRedirectUrl,
+  signedInCta,
+  cardClassName,
+  popular,
+}: PricingCardProps) {
+  return (
+    <div className={cardClassName}>
+      {popular && (
+        <div className="absolute top-4 right-4 bg-[#111] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
+          Popular
+        </div>
+      )}
+
+      <div>
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className="text-[22px] font-semibold tracking-[-0.5px] text-[#0f0f0f]">
+              {name}
+            </h4>
+            <p className="text-[13.5px] text-[#888] mt-2 min-h-[40px]">
+              {description}
+            </p>
+          </div>
+          <div className={`text-right${priceSuffix ? " flex flex-col" : ""}`}>
+            <span className="text-[32px] font-bold text-[#111]">{price}</span>
+            {priceSuffix && (
+              <span className="text-[11px] text-[#888] font-medium -mt-1">
+                {priceSuffix}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="nexto-dashed my-6" />
+
+        <ul className="space-y-4">
+          {features.map((feature) => (
+            <li
+              key={feature}
+              className="flex items-center gap-3 text-[14px] text-[#1a1a1a]"
+            >
+              <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-8">
+        <ClerkLoading>
+          <button className="nexto-pill-dark w-full justify-center opacity-0 pointer-events-none" aria-hidden="true">
+            <span className="nexto-arrow-circ">
+              <ChevronArrow />
+            </span>
+            {ctaLabel}
+          </button>
+        </ClerkLoading>
+        <ClerkLoaded>
+          <Show when="signed-out">
+            <SignInButton mode="modal" fallbackRedirectUrl={fallbackRedirectUrl} signUpFallbackRedirectUrl={fallbackRedirectUrl}>
+              <button className="nexto-pill-dark w-full justify-center">
+                <span className="nexto-arrow-circ">
+                  <ChevronArrow />
+                </span>
+                {ctaLabel}
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            {signedInCta}
+          </Show>
+        </ClerkLoaded>
+      </div>
+    </div>
+  );
+}
+
 export default function Pricing() {
   return (
     <section className="nexto-section" id="pricing">
@@ -200,130 +297,29 @@ export default function Pricing() {
         </div>
 
         <div className="grid gap-8 grid-cols-1 md:grid-cols-2 max-w-[840px] mx-auto">
-          {/* Hobby Card */}
-          <div className="nexto-card flex flex-col justify-between p-8 border border-black/5 bg-white rounded-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative">
-            <div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-[22px] font-semibold tracking-[-0.5px] text-[#0f0f0f]">
-                    Hobby
-                  </h4>
-                  <p className="text-[13.5px] text-[#888] mt-2 min-h-[40px]">
-                    Perfect for getting started with prompt engineering.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-[32px] font-bold text-[#111]">$0</span>
-                </div>
-              </div>
+          <PricingCard
+            name="Hobby"
+            description="Perfect for getting started with prompt engineering."
+            price="$0"
+            features={["Up to 30 Prompts", "Share 10 Prompts Publicly"]}
+            ctaLabel="Start for Free"
+            fallbackRedirectUrl="/dashboard"
+            signedInCta={<AuthedPricing />}
+            cardClassName="nexto-card flex flex-col justify-between p-8 border border-black/5 bg-white rounded-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative"
+          />
 
-              <div className="nexto-dashed my-6" />
-
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3 text-[14px] text-[#1a1a1a]">
-                  <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
-                  <span>Up to 30 Prompts</span>
-                </li>
-                <li className="flex items-center gap-3 text-[14px] text-[#1a1a1a]">
-                  <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
-                  <span>Share 10 Prompts Publicly</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="mt-8">
-              <ClerkLoading>
-                <button className="nexto-pill-dark w-full justify-center opacity-0 pointer-events-none" aria-hidden="true">
-                  <span className="nexto-arrow-circ">
-                    <ChevronArrow />
-                  </span>
-                  Start for Free
-                </button>
-              </ClerkLoading>
-              <ClerkLoaded>
-                <Show when="signed-out">
-                  <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
-                    <button className="nexto-pill-dark w-full justify-center">
-                      <span className="nexto-arrow-circ">
-                        <ChevronArrow />
-                      </span>
-                      Start for Free
-                    </button>
-                  </SignInButton>
-                </Show>
-                <Show when="signed-in">
-                  <AuthedPricing />
-                </Show>
-              </ClerkLoaded>
-            </div>
-          </div>
-
-          {/* Pro Card */}
-          <div className="nexto-card flex flex-col justify-between p-8 border-2 border-[#111] bg-white rounded-[22px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
-            <div className="absolute top-4 right-4 bg-[#111] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Popular
-            </div>
-
-            <div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-[22px] font-semibold tracking-[-0.5px] text-[#0f0f0f]">
-                    Pro
-                  </h4>
-                  <p className="text-[13.5px] text-[#888] mt-2 min-h-[40px]">
-                    For power users and professional prompt engineers.
-                  </p>
-                </div>
-                <div className="text-right flex flex-col">
-                  <span className="text-[32px] font-bold text-[#111]">$5</span>
-                  <span className="text-[11px] text-[#888] font-medium -mt-1">/mo</span>
-                </div>
-              </div>
-
-              <div className="nexto-dashed my-6" />
-
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3 text-[14px] text-[#1a1a1a]">
-                  <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
-                  <span>Unlimited Prompts</span>
-                </li>
-                <li className="flex items-center gap-3 text-[14px] text-[#1a1a1a]">
-                  <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
-                  <span>Unlimited Public Shares</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="mt-8">
-              <ClerkLoading>
-                <button className="nexto-pill-dark w-full justify-center opacity-0 pointer-events-none" aria-hidden="true">
-                  <span className="nexto-arrow-circ">
-                    <ChevronArrow />
-                  </span>
-                  Get Pro Access
-                </button>
-              </ClerkLoading>
-              <ClerkLoaded>
-                <Show when="signed-out">
-                  <SignInButton
-                    mode="modal"
-                    fallbackRedirectUrl={UPGRADE_PATH}
-                    signUpFallbackRedirectUrl={UPGRADE_PATH}
-                  >
-                    <button className="nexto-pill-dark w-full justify-center">
-                      <span className="nexto-arrow-circ">
-                        <ChevronArrow />
-                      </span>
-                      Get Pro Access
-                    </button>
-                  </SignInButton>
-                </Show>
-                <Show when="signed-in">
-                  <ProCardCta />
-                </Show>
-              </ClerkLoaded>
-            </div>
-          </div>
+          <PricingCard
+            name="Pro"
+            description="For power users and professional prompt engineers."
+            price="$5"
+            priceSuffix="/mo"
+            features={["Unlimited Prompts", "Unlimited Public Shares"]}
+            ctaLabel="Get Pro Access"
+            fallbackRedirectUrl={UPGRADE_PATH}
+            signedInCta={<ProCardCta />}
+            cardClassName="nexto-card flex flex-col justify-between p-8 border-2 border-[#111] bg-white rounded-[22px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden"
+            popular
+          />
         </div>
       </div>
     </section>

@@ -23,16 +23,24 @@ export interface PolarSubscriptionEvent {
   data: PolarSubscriptionEventData;
 }
 
-export async function verifyPolarWebhook(
-  request: Request,
-  secret: string,
-): Promise<PolarSubscriptionEvent | null> {
-  const payloadString = await request.text();
+// Read the raw body + a lowercase header map off the incoming request.
+async function readRequest(request: Request): Promise<{
+  payload: string;
+  headers: Record<string, string>;
+}> {
+  const payload = await request.text();
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => {
     headers[key] = value;
   });
+  return { payload, headers };
+}
 
+// Polar signs with either the svix-* or webhook-* header scheme; accept both.
+// Throws the same SvixVerificationError the SDK uses for missing headers.
+function requireSvixHeaders(
+  headers: Record<string, string>,
+): Record<string, string> {
   const svixHeaders: Record<string, string> = {
     "svix-id": headers["svix-id"] || headers["webhook-id"] || "",
     "svix-timestamp":
@@ -40,7 +48,6 @@ export async function verifyPolarWebhook(
     "svix-signature":
       headers["svix-signature"] || headers["webhook-signature"] || "",
   };
-
   if (
     !svixHeaders["svix-id"] ||
     !svixHeaders["svix-timestamp"] ||
@@ -48,21 +55,53 @@ export async function verifyPolarWebhook(
   ) {
     throw new SvixVerificationError("Missing webhook headers");
   }
+  return svixHeaders;
+}
 
-  // Polar requires the secret base64-encoded (same as SDK validateEvent does).
+// Polar requires the secret base64-encoded (same as SDK validateEvent does).
+function verifySignature(
+  payload: string,
+  svixHeaders: Record<string, string>,
+  secret: string,
+): unknown {
   const wh = new Webhook(btoa(secret));
-  let parsed: unknown;
   try {
-    parsed = wh.verify(payloadString, svixHeaders);
+    return wh.verify(payload, svixHeaders);
   } catch {
     throw new SvixVerificationError("Invalid webhook signature");
   }
+}
 
+// Narrow the nested customer object out of the raw event data.
+function extractCustomer(
+  customer: unknown,
+): PolarSubscriptionEventData["customer"] {
+  if (typeof customer !== "object" || customer === null) return undefined;
+  const c = customer as Record<string, unknown>;
+  return {
+    id: typeof c.id === "string" ? c.id : undefined,
+    externalId:
+      typeof c.external_id === "string" ? c.external_id : undefined,
+    metadata:
+      typeof c.metadata === "object" && c.metadata !== null
+        ? (c.metadata as Record<string, unknown>)
+        : undefined,
+  };
+}
+
+// Validate + normalize a verified webhook payload into a subscription event.
+// Returns null for non-subscription or malformed events (not an error).
+function parseSubscriptionEvent(
+  parsed: unknown,
+): PolarSubscriptionEvent | null {
   if (typeof parsed !== "object" || parsed === null || !("type" in parsed)) {
     return null;
   }
   const event = parsed as Record<string, unknown>;
-  if (typeof event.type !== "string" || !event.type.startsWith("subscription.")) {
+  if (
+    typeof event.type !== "string" ||
+    !event.type.startsWith("subscription.")
+  ) {
     return null;
   }
   const data = event.data;
@@ -78,40 +117,33 @@ export async function verifyPolarWebhook(
   ) {
     return null;
   }
-  const customer =
-    "customer" in data && typeof data.customer === "object" && data.customer !== null
-      ? data.customer
-      : undefined;
+  const d = data as Record<string, unknown>;
   return {
     type: event.type,
     timestamp: event.timestamp ? new Date(String(event.timestamp)) : new Date(),
     data: {
-      id: data.id,
-      status: data.status,
-      productId: data.product_id,
+      id: d.id as string,
+      status: d.status as string,
+      productId: d.product_id as string,
       customerId:
-        "customer_id" in data && typeof data.customer_id === "string"
-          ? data.customer_id
+        "customer_id" in d && typeof d.customer_id === "string"
+          ? (d.customer_id as string)
           : undefined,
-      customer: customer
-        ? {
-            id: "id" in customer && typeof customer.id === "string" ? customer.id : undefined,
-            externalId:
-              "external_id" in customer && typeof customer.external_id === "string"
-                ? customer.external_id
-                : undefined,
-            metadata:
-              "metadata" in customer &&
-              typeof customer.metadata === "object" &&
-              customer.metadata !== null
-                ? (customer.metadata as Record<string, unknown>)
-                : undefined,
-          }
-        : undefined,
+      customer: extractCustomer(d.customer),
       metadata:
-        "metadata" in data && typeof data.metadata === "object" && data.metadata !== null
-          ? (data.metadata as Record<string, unknown>)
+        typeof d.metadata === "object" && d.metadata !== null
+          ? (d.metadata as Record<string, unknown>)
           : undefined,
     },
   };
+}
+
+export async function verifyPolarWebhook(
+  request: Request,
+  secret: string,
+): Promise<PolarSubscriptionEvent | null> {
+  const { payload, headers } = await readRequest(request);
+  const svixHeaders = requireSvixHeaders(headers);
+  const parsed = verifySignature(payload, svixHeaders, secret);
+  return parseSubscriptionEvent(parsed);
 }

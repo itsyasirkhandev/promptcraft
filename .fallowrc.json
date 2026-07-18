@@ -1,7 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "ignorePatterns": [
-    "convex/_generated/**"
+    "convex/_generated/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.stories.*"
   ],
   "ignoreDependencies": [
     "@hookform/resolvers",
@@ -14,7 +17,8 @@
     "maxCognitive": 25
   },
   "duplicates": {
-    "minOccurrences": 2
+    "minOccurrences": 2,
+    "mode": "semantic"
   },
   "rules": {
     "unused-dependencies": "error"
