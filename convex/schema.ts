@@ -27,7 +27,7 @@ export default defineSchema({
 			v.object({
 				id: v.string(),
 				name: v.string(),
-				type: v.string(),
+				type: v.union(v.literal('text'), v.literal('longText'), v.literal('number'), v.literal('singleSelect'), v.literal('multiSelect')),
 				options: v.optional(v.array(v.string()))
 			})
 		),

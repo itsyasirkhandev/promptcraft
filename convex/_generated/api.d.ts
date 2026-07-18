@@ -29,6 +29,7 @@ import type * as private_helpers from "../private/helpers.js";
 import type * as private_users from "../private/users.js";
 import type * as services_ConvexDB from "../services/ConvexDB.js";
 import type * as services_ServerConfig from "../services/ServerConfig.js";
+import type * as userQueries from "../userQueries.js";
 import type * as users from "../users.js";
 
 import type {
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   "private/users": typeof private_users;
   "services/ConvexDB": typeof services_ConvexDB;
   "services/ServerConfig": typeof services_ServerConfig;
+  userQueries: typeof userQueries;
   users: typeof users;
 }>;
 
