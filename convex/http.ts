@@ -106,7 +106,10 @@ http.route({
     const data = event.data;
 
     if (data.productId !== configuredProductId) {
-      console.log("polar-webhook: ignored event for unrelated product", type);
+      console.log("polar-webhook: ignored event for unrelated product", type, {
+        receivedProductId: data.productId,
+        configuredProductId,
+      });
       return new Response(null, { status: 200 });
     }
 
