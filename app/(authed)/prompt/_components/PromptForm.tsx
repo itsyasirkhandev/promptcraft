@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import type {
   Control,
@@ -27,8 +27,8 @@ import { TagInput } from '@/components/ui/tag-input';
 import { CategorySelector } from '@/components/prompts/CategorySelector';
 import { TemplateFieldsPanel } from '../create/_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from '../create/_components/CreateTemplateFieldDialog';
-import { toast } from 'sonner';
-import { Copy, Check } from '@phosphor-icons/react';
+import { ShareUrlField } from './ShareUrlField';
+import { useAutoSetCategory } from './useAutoSetCategory';
 import type { PromptFormValues, TemplateFieldType } from '@/lib/schemas/prompt.schema';
 
 function charCountClass(current: number, max: number): string {
@@ -83,16 +83,8 @@ export function PromptForm({
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
-  const [copiedShare, setCopiedShare] = useState(false);
 
-  useEffect(() => {
-    if (!autoSetCategory) return;
-    if (watchedIsPublic) {
-      setValue('category', 'other');
-    } else {
-      setValue('category', undefined);
-    }
-  }, [watchedIsPublic, setValue, autoSetCategory]);
+  useAutoSetCategory(watchedIsPublic, setValue, autoSetCategory);
 
   function updateSelection(textarea: HTMLTextAreaElement) {
     const start = textarea.selectionStart;
@@ -190,38 +182,7 @@ export function PromptForm({
           )}
 
           {/* Share URL */}
-          {watchedIsPublic && publicSlug && (
-            <Field orientation="vertical">
-              <FieldLabel className="text-foreground">Public Link</FieldLabel>
-              <div className="flex items-center gap-2">
-                <Input
-                  readOnly
-                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/p/${publicSlug}`}
-                  className="font-mono text-sm"
-                  onClick={(e) => e.currentTarget.select()}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(`${typeof window !== 'undefined' ? window.location.origin : ''}/p/${publicSlug}`);
-                      setCopiedShare(true);
-                      toast.success('Link copied to clipboard');
-                      setTimeout(() => setCopiedShare(false), 2000);
-                    } catch {
-                      toast.error('Failed to copy link.');
-                    }
-                  }}
-                  className="gap-2 shrink-0"
-                >
-                  {copiedShare ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-                  <span>{copiedShare ? 'Copied' : 'Copy'}</span>
-                </Button>
-              </div>
-            </Field>
-          )}
+          {watchedIsPublic && publicSlug && <ShareUrlField slug={publicSlug} />}
 
           {/* Tags */}
           <Field orientation="vertical">

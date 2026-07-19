@@ -2,21 +2,18 @@
 
 import * as React from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Check } from '@phosphor-icons/react';
+import { ArrowLeft } from '@phosphor-icons/react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { interpolateVariables, flattenFormValues } from '@/lib/variables';
 import type { TemplateField } from '@/lib/schemas/prompt.schema';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PromptPreview } from '@/components/prompts/PromptPreview';
-import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { DynamicFields } from '@/components/prompts/use/DynamicFields';
+import { Card } from '@/components/ui/card';
 import { PromptNotFound } from '@/components/prompts/PromptNotFound';
+import { LivePreviewCard } from '@/components/prompts/use/LivePreviewCard';
+import { TemplateFieldsCard } from '@/components/prompts/use/TemplateFieldsCard';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,8 +24,6 @@ export default function UsePromptPage({ params }: PageProps) {
 
   const prompt = useQuery(api.authed.prompts.get, { id: id as Id<'prompts'> });
   const templateFields = (prompt?.templateFields ?? []) as TemplateField[];
-
-  const [copied, setCopied] = React.useState(false);
 
   const { control, setValue } = useForm<Record<string, string | string[] | number | undefined>>({
     defaultValues: {},
@@ -41,17 +36,6 @@ export default function UsePromptPage({ params }: PageProps) {
     if (!prompt) return '';
     return interpolateVariables(prompt.content, flatValues);
   }, [prompt, flatValues]);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(interpolated);
-      setCopied(true);
-      toast.success('Copied final prompt to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Failed to copy text.');
-    }
-  };
 
   if (prompt === undefined) {
     return (
@@ -112,52 +96,21 @@ export default function UsePromptPage({ params }: PageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Template Fields</CardTitle>
-              <CardDescription>Fill in the variables defined in your prompt.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <DynamicFields
-                templateFields={templateFields}
-                formValues={formValues}
-                setValue={setValue}
-                variant="use"
-              />
-            </CardContent>
-          </Card>
+          <TemplateFieldsCard
+            templateFields={templateFields}
+            formValues={formValues}
+            setValue={setValue}
+          />
         </div>
 
         {/* Right Column: Live Preview & Result */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-850">
-              <div>
-                <CardTitle className="text-lg">Live Preview</CardTitle>
-                <CardDescription>Visual rendering with filled fields highlighted.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <OpenInAIButton content={interpolated} />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopy}
-                  className="gap-2 rounded-xl h-8 border-slate-200 dark:border-slate-800 shadow-sm"
-                >
-                  {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-                  <span>{copied ? 'Copied' : 'Copy'}</span>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[450px]">
-                <div className="p-6 font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-350">
-                  <PromptPreview content={prompt.content} fields={templateFields} values={flatValues} />
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          <LivePreviewCard
+            content={prompt.content}
+            templateFields={templateFields}
+            flatValues={flatValues}
+            interpolated={interpolated}
+          />
         </div>
       </div>
     </div>

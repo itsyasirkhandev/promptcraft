@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useQuery } from 'convex/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
+import { useClipboardCopy } from '@/lib/hooks/use-clipboard-copy';
 import Link from 'next/link';
 import {
   PlusCircle,
@@ -165,18 +165,7 @@ interface PreviewPanelProps {
 }
 
 function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPanelProps) {
-  const [copied, setCopied] = React.useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(interpolated);
-      setCopied(true);
-      toast.success('Copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Failed to copy.');
-    }
-  };
+  const { copied, copy } = useClipboardCopy();
 
   return (
     <div className="flex h-full flex-col">
@@ -198,7 +187,7 @@ function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPane
             type="button"
             size="sm"
             variant="outline"
-            onClick={handleCopy}
+            onClick={() => copy(interpolated, { successMessage: 'Copied to clipboard!', errorMessage: 'Failed to copy.' })}
             className="gap-1.5 rounded-xl h-8 border-border/60 shadow-sm"
           >
             {copied ? (
@@ -496,4 +485,3 @@ export default function WorkspacePage() {
     </div>
   );
 }
-
