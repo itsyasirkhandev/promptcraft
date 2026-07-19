@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'convex/react';
 import { Check, Link as LinkIcon } from '@phosphor-icons/react';
@@ -77,10 +78,11 @@ export function PublicPromptClient({ slug }: PublicPromptClientProps) {
 			<div className="flex items-start justify-between gap-4">
 				<div className="flex items-center gap-3">
 					{prompt.author.avatarUrl ? (
-						/* eslint-disable-next-line @next/next/no-img-element */
-						<img
+						<Image
 							src={prompt.author.avatarUrl}
 							alt={prompt.author.name}
+							width={40}
+							height={40}
 							className="size-10 rounded-full border border-slate-200 dark:border-slate-800 object-cover"
 						/>
 					) : (
