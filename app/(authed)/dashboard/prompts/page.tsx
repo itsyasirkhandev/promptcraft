@@ -47,6 +47,7 @@ import {
   ChartBar,
   Palette,
   GraduationCap,
+  ShareNetwork,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -176,11 +177,13 @@ interface CardFooterActionsProps {
   prompt: Doc<'prompts'>;
   copied: boolean;
   onCopy: () => void;
+  copiedSlug: boolean;
+  onCopySlug: () => void;
   onDelete: (id: Id<'prompts'>, title: string) => void;
   formatDate: (ts: number) => string;
 }
 
-function CardFooterActions({ prompt, copied, onCopy, onDelete, formatDate }: CardFooterActionsProps) {
+function CardFooterActions({ prompt, copied, onCopy, copiedSlug, onCopySlug, onDelete, formatDate }: CardFooterActionsProps) {
   const hasUpdatedAt = typeof prompt.updatedAt === 'number';
   const displayUpdateDate = hasUpdatedAt ? prompt.updatedAt : prompt.createdAt;
 
@@ -202,6 +205,17 @@ function CardFooterActions({ prompt, copied, onCopy, onDelete, formatDate }: Car
           )}
         </div>
         <div className="flex items-center gap-1">
+          {prompt.isPublic && prompt.publicSlug && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onCopySlug}
+              title="Copy share link"
+              className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-white/5"
+            >
+              {copiedSlug ? <Check className="size-4 text-emerald-500" /> : <ShareNetwork className="size-4" />}
+            </Button>
+          )}
           <Button variant="ghost" size="icon" asChild className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-white/5">
             <Link href={`/prompt/${prompt._id}/edit`}><PencilSimple className="size-4" /></Link>
           </Button>
@@ -233,6 +247,7 @@ interface PromptCardProps {
 
 function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -242,6 +257,19 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const handleCopySlug = async () => {
+    if (!prompt.publicSlug) return;
+    try {
+      const shareUrl = `${window.location.origin}/p/${prompt.publicSlug}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedSlug(true);
+      toast.success('Share link copied to clipboard');
+      setTimeout(() => setCopiedSlug(false), 2000);
+    } catch {
+      toast.error('Failed to copy share link');
     }
   };
 
@@ -281,7 +309,7 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
             </div>
           )}
         </div>
-        <CardFooterActions prompt={prompt} copied={copied} onCopy={handleCopy} onDelete={onDelete} formatDate={formatDate} />
+        <CardFooterActions prompt={prompt} copied={copied} onCopy={handleCopy} copiedSlug={copiedSlug} onCopySlug={handleCopySlug} onDelete={onDelete} formatDate={formatDate} />
       </CardContent>
     </Card>
   );
