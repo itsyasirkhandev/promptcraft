@@ -1,19 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { type PromptFormValues } from '@/lib/schemas/prompt.schema';
 import { useQuery, useMutation } from 'convex/react';
+import { usePromptSubmit, toPromptMutationArgs } from '@/hooks/use-prompt-submit';
 import { useWatch } from 'react-hook-form';
 import { api } from '@/convex/_generated/api';
-import { catchTag } from '@/lib/errors';
 import { Id } from '@/convex/_generated/dataModel';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PromptForm } from '../../_components/PromptForm';
+import { Card } from '@/components/ui/card';
+import { PromptFormCard } from '../../_components/PromptForm';
 import { PromptNotFound } from '@/components/prompts/PromptNotFound';
 import { usePromptForm } from '@/hooks/use-prompt-form';
 
@@ -22,14 +20,17 @@ interface PageProps {
 }
 
 export default function EditPromptPage({ params }: PageProps) {
-  const router = useRouter();
   const { id } = React.use(params);
 
   const prompt = useQuery(api.authed.prompts.get, { id: id as Id<'prompts'> });
   const updatePrompt = useMutation(api.authed.prompts.update);
+  const submit = usePromptSubmit({
+    success: { message: 'Prompt updated!', description: 'Your changes have been saved.' },
+    error: 'Failed to update prompt',
+  });
 
-  const { register, handleSubmit, control, setValue, reset, formState: { errors, isSubmitting } } =
-    usePromptForm();
+  const form = usePromptForm();
+  const { control, setValue, reset } = form;
 
   const isResettingRef = React.useRef(true);
   const prevIsPublicRef = React.useRef(false);
@@ -65,24 +66,7 @@ export default function EditPromptPage({ params }: PageProps) {
   }, [watchedIsPublic, setValue]);
 
   async function onSubmit(data: PromptFormValues) {
-    try {
-      await updatePrompt({
-        id: id as Id<'prompts'>,
-        title: data.title,
-        content: data.content,
-        templateMode: data.templateMode,
-        isPublic: data.isPublic,
-        category: data.category || undefined,
-        tags: data.tags,
-        templateFields: data.templateFields,
-      });
-      toast.success('Prompt updated!', { description: 'Your changes have been saved.' });
-      router.push('/dashboard/prompts');
-    } catch (error) {
-      toast.error('Failed to update prompt', {
-        description: catchTag(error, 'PlanLimitError', (d: { message: string }) => d.message) ?? (error instanceof Error ? error.message : 'An unknown error occurred.'),
-      });
-    }
+    await submit(() => updatePrompt({ id: id as Id<'prompts'>, ...toPromptMutationArgs(data) }));
   }
 
   if (prompt === undefined) {
@@ -120,28 +104,16 @@ export default function EditPromptPage({ params }: PageProps) {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Edit Prompt</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-card-foreground">Modify Prompt Details</CardTitle>
-          <CardDescription>Update the details and fields of your saved prompt.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PromptForm
-            control={control}
-            register={register}
-            errors={errors}
-            setValue={setValue}
-            handleSubmit={handleSubmit}
-            reset={reset}
-            isSubmitting={isSubmitting}
-            onSubmit={onSubmit}
-            submitLabel="Save Changes"
-            resetLabel="Reset"
-            autoSetCategory={false}
-            publicSlug={prompt.publicSlug ?? undefined}
-          />
-        </CardContent>
-      </Card>
+      <PromptFormCard
+        form={form}
+        title="Modify Prompt Details"
+        description="Update the details and fields of your saved prompt."
+        onSubmit={onSubmit}
+        submitLabel="Save Changes"
+        resetLabel="Reset"
+        autoSetCategory={false}
+        publicSlug={prompt.publicSlug ?? undefined}
+      />
     </div>
   );
 }

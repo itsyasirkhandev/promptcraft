@@ -6,11 +6,16 @@ import type {
   Control,
   UseFormRegister,
   FieldErrors,
-  UseFormSetValue,
-  UseFormHandleSubmit,
-  UseFormReset,
+  UseFormReturn,
 } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   FieldGroup,
   Field,
@@ -43,14 +48,8 @@ interface Selection {
   text: string;
 }
 
-export interface PromptFormProps {
-  control: Control<PromptFormValues>;
-  register: UseFormRegister<PromptFormValues>;
-  errors: FieldErrors<PromptFormValues>;
-  setValue: UseFormSetValue<PromptFormValues>;
-  handleSubmit: UseFormHandleSubmit<PromptFormValues>;
-  reset: UseFormReset<PromptFormValues>;
-  isSubmitting: boolean;
+interface PromptFormProps {
+  form: UseFormReturn<PromptFormValues>;
   onSubmit: (data: PromptFormValues) => Promise<void>;
   submitLabel: string;
   resetLabel: string;
@@ -61,20 +60,101 @@ export interface PromptFormProps {
   publicSlug?: string;
 }
 
-export function PromptForm({
-  control,
+function TitleField({
   register,
   errors,
-  setValue,
-  handleSubmit,
-  reset,
-  isSubmitting,
+  watchedTitle,
+}: {
+  register: UseFormRegister<PromptFormValues>;
+  errors: FieldErrors<PromptFormValues>;
+  watchedTitle: string;
+}) {
+  return (
+    <Field orientation="vertical">
+      <FieldLabel htmlFor="title" className="text-foreground">Title</FieldLabel>
+      <Input id="title" {...register('title')} placeholder="Enter a title..." aria-invalid={!!errors.title} />
+      <p className={charCountClass(watchedTitle.length, 300)}>{watchedTitle.length}/300</p>
+      <FieldError errors={[errors.title]} />
+    </Field>
+  );
+}
+
+function ContentField({
+  register,
+  errors,
+  watchedContent,
+  showConvertButton,
+  selection,
+  onSelectionChange,
+  onConvertClick,
+}: {
+  register: UseFormRegister<PromptFormValues>;
+  errors: FieldErrors<PromptFormValues>;
+  watchedContent: string;
+  showConvertButton: boolean;
+  selection: Selection | null;
+  onSelectionChange: (textarea: HTMLTextAreaElement) => void;
+  onConvertClick: () => void;
+}) {
+  const trimmed = selection ? selection.text.trim() : '';
+  return (
+    <Field orientation="vertical">
+      <FieldLabel htmlFor="content" className="text-foreground">Content</FieldLabel>
+      <Textarea
+        id="content"
+        {...register('content')}
+        placeholder="Write your prompt..."
+        className="min-h-48"
+        aria-invalid={!!errors.content}
+        onPointerUp={(e) => onSelectionChange(e.currentTarget)}
+        onKeyUp={(e) => onSelectionChange(e.currentTarget)}
+      />
+      <p className={charCountClass(watchedContent.length, 10000)}>{watchedContent.length}/10,000</p>
+      {showConvertButton && (
+        <Button type="button" variant="outline" size="sm" onClick={onConvertClick} className="self-start text-xs">
+          {trimmed
+            ? `Convert "${trimmed.slice(0, 15)}${trimmed.length > 15 ? '...' : ''}" to Dynamic`
+            : 'Add Dynamic Field'}
+        </Button>
+      )}
+      <FieldError errors={[errors.content]} />
+    </Field>
+  );
+}
+
+function ToggleField({
+  control,
+  name,
+  title,
+  description,
+}: {
+  control: Control<PromptFormValues>;
+  name: 'templateMode' | 'isPublic';
+  title: string;
+  description: string;
+}) {
+  return (
+    <Field orientation="horizontal">
+      <FieldContent>
+        <FieldTitle className="text-foreground">{title}</FieldTitle>
+        <FieldDescription>{description}</FieldDescription>
+      </FieldContent>
+      <Controller control={control} name={name} render={({ field }) => (
+        <Switch checked={field.value} onCheckedChange={field.onChange} />
+      )} />
+    </Field>
+  );
+}
+
+function PromptForm({
+  form,
   onSubmit,
   submitLabel,
   resetLabel,
   autoSetCategory = true,
   publicSlug,
 }: PromptFormProps) {
+  const { control, register, setValue, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
   const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
   const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
   const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
@@ -113,65 +193,35 @@ export function PromptForm({
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <FieldGroup>
-          {/* Title */}
-          <Field orientation="vertical">
-            <FieldLabel htmlFor="title" className="text-foreground">Title</FieldLabel>
-            <Input id="title" {...register('title')} placeholder="Enter a title..." aria-invalid={!!errors.title} />
-            <p className={charCountClass(watchedTitle.length, 300)}>{watchedTitle.length}/300</p>
-            <FieldError errors={[errors.title]} />
-          </Field>
+          <TitleField register={register} errors={errors} watchedTitle={watchedTitle} />
+          <ContentField
+            register={register}
+            errors={errors}
+            watchedContent={watchedContent}
+            showConvertButton={showConvertButton}
+            selection={selection}
+            onSelectionChange={updateSelection}
+            onConvertClick={() => setCreateFieldDialogOpen(true)}
+          />
 
-          {/* Content */}
-          <Field orientation="vertical">
-            <FieldLabel htmlFor="content" className="text-foreground">Content</FieldLabel>
-            <Textarea
-              id="content"
-              {...register('content')}
-              placeholder="Write your prompt..."
-              className="min-h-48"
-              aria-invalid={!!errors.content}
-              onPointerUp={(e) => updateSelection(e.currentTarget)}
-              onKeyUp={(e) => updateSelection(e.currentTarget)}
-            />
-            <p className={charCountClass(watchedContent.length, 10000)}>{watchedContent.length}/10,000</p>
-            {showConvertButton && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setCreateFieldDialogOpen(true)} className="self-start text-xs">
-                {selection && selection.text.trim()
-                  ? `Convert "${selection.text.trim().slice(0, 15)}${selection.text.trim().length > 15 ? '...' : ''}" to Dynamic`
-                  : 'Add Dynamic Field'}
-              </Button>
-            )}
-            <FieldError errors={[errors.content]} />
-          </Field>
-
-          {/* Template Fields Panel */}
           {showTemplatePanel && (
             <TemplateFieldsPanel control={control} setValue={setValue} contentValue={watchedContent} />
           )}
 
-          {/* Template Mode */}
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldTitle className="text-foreground">Template Mode</FieldTitle>
-              <FieldDescription>This prompt can be reused as a template</FieldDescription>
-            </FieldContent>
-            <Controller control={control} name="templateMode" render={({ field }) => (
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
-            )} />
-          </Field>
+          <ToggleField
+            control={control}
+            name="templateMode"
+            title="Template Mode"
+            description="This prompt can be reused as a template"
+          />
 
-          {/* Public Prompt */}
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldTitle className="text-foreground">Public Prompt</FieldTitle>
-              <FieldDescription>Make this prompt visible to others</FieldDescription>
-            </FieldContent>
-            <Controller control={control} name="isPublic" render={({ field }) => (
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
-            )} />
-          </Field>
+          <ToggleField
+            control={control}
+            name="isPublic"
+            title="Public Prompt"
+            description="Make this prompt visible to others"
+          />
 
-          {/* Category */}
           {watchedIsPublic && (
             <Field orientation="vertical">
               <FieldLabel className="text-foreground">Category</FieldLabel>
@@ -181,10 +231,8 @@ export function PromptForm({
             </Field>
           )}
 
-          {/* Share URL */}
           {watchedIsPublic && publicSlug && <ShareUrlField slug={publicSlug} />}
 
-          {/* Tags */}
           <Field orientation="vertical">
             <FieldLabel className="text-foreground">Tags</FieldLabel>
             <Controller control={control} name="tags" render={({ field }) => (
@@ -210,5 +258,46 @@ export function PromptForm({
         />
       )}
     </>
+  );
+}
+
+interface PromptFormCardProps {
+  form: UseFormReturn<PromptFormValues>;
+  title: string;
+  description: string;
+  onSubmit: (data: PromptFormValues) => Promise<void>;
+  submitLabel: string;
+  resetLabel: string;
+  autoSetCategory?: boolean;
+  publicSlug?: string;
+}
+
+export function PromptFormCard({
+  form,
+  title,
+  description,
+  onSubmit,
+  submitLabel,
+  resetLabel,
+  autoSetCategory,
+  publicSlug,
+}: PromptFormCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-card-foreground">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <PromptForm
+          form={form}
+          onSubmit={onSubmit}
+          submitLabel={submitLabel}
+          resetLabel={resetLabel}
+          autoSetCategory={autoSetCategory}
+          publicSlug={publicSlug}
+        />
+      </CardContent>
+    </Card>
   );
 }

@@ -10,7 +10,8 @@
     "@hookform/resolvers",
     "immer",
     "react-hook-form",
-    "convex-test"
+    "convex-test",
+    "react-doctor"
   ],
   "health": {
     "maxCrap": 250,

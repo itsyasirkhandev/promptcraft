@@ -1,3 +1,4 @@
+import { UnauthorizedError } from './errors';
 import {
 	customAction,
 	customCtxAndArgs,
@@ -128,4 +129,14 @@ export const effectAuthedAction = <Args extends PropertyValidators, R, E>(option
 					Effect.provideService(ConvexActions, { runQuery: ctx.runQuery, runMutation: ctx.runMutation }),
 				),
 		),
+	});
+
+/** Resolve the authenticated viewer or fail with UnauthorizedError. */
+export const requireViewer = (message = 'Not authenticated') =>
+	Effect.gen(function* () {
+		const { viewer } = yield* AuthedContext;
+		if (!viewer) {
+			return yield* Effect.fail(new UnauthorizedError({ message }));
+		}
+		return viewer;
 	});
