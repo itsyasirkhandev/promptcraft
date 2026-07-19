@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { useQuery } from 'convex/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
+import { usePromptInterpolation } from '@/hooks/use-prompt-interpolation';
+import { useClipboardCopy } from '@/lib/hooks/use-clipboard-copy';
 import Link from 'next/link';
 import {
   PlusCircle,
@@ -21,7 +21,6 @@ import {
 } from '@phosphor-icons/react';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
-import { interpolateVariables, flattenFormValues } from '@/lib/variables';
 import type { TemplateField } from '@/lib/schemas/prompt.schema';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -165,18 +164,7 @@ interface PreviewPanelProps {
 }
 
 function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPanelProps) {
-  const [copied, setCopied] = React.useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(interpolated);
-      setCopied(true);
-      toast.success('Copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Failed to copy.');
-    }
-  };
+  const { copied, copy } = useClipboardCopy();
 
   return (
     <div className="flex h-full flex-col">
@@ -198,7 +186,7 @@ function PreviewPanel({ prompt, interpolated, flatValues, compact }: PreviewPane
             type="button"
             size="sm"
             variant="outline"
-            onClick={handleCopy}
+            onClick={() => copy(interpolated, { successMessage: 'Copied to clipboard!', errorMessage: 'Failed to copy.' })}
             className="gap-1.5 rounded-xl h-8 border-border/60 shadow-sm"
           >
             {copied ? (
@@ -435,13 +423,7 @@ export default function WorkspacePage() {
 
   const prompts = useQuery(api.authed.prompts.list);
 
-  const { control, setValue, reset } = useForm<
-    Record<string, string | string[] | number | undefined>
-  >({ defaultValues: {} });
-
-  const formValues = useWatch({ control });
-
-  // Auto-select first prompt if no `id` in URL
+  // Auto-select first prompt if no id in URL
   React.useEffect(() => {
     if (prompts && prompts.length > 0 && !activeId) {
       router.replace(`/dashboard/workspace?id=${prompts[0]._id}`);
@@ -453,17 +435,15 @@ export default function WorkspacePage() {
     [prompts, activeId]
   );
 
+  const { setValue, reset, formValues, flatValues, interpolated } =
+    usePromptInterpolation(activePrompt);
+
   // Reset form when switching prompts
   React.useEffect(() => {
     reset({});
   }, [activeId, reset]);
 
   const templateFields = (activePrompt?.templateFields ?? []) as TemplateField[];
-  const flatValues = React.useMemo(() => flattenFormValues(formValues), [formValues]);
-  const interpolated = React.useMemo(() => {
-    if (!activePrompt) return '';
-    return interpolateVariables(activePrompt.content, flatValues);
-  }, [activePrompt, flatValues]);
 
   if (prompts === undefined) return <WorkspaceSkeleton />;
   if (prompts.length === 0) return <EmptyWorkspace />;
@@ -496,4 +476,3 @@ export default function WorkspacePage() {
     </div>
   );
 }
-

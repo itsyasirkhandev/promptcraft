@@ -1,7 +1,6 @@
 import { Effect } from 'effect';
 import { ConvexDB } from '../services/ConvexDB';
-import { UnauthorizedError } from './errors';
-import { AuthedContext, effectAuthedQuery } from './helpers';
+import { effectAuthedQuery, requireViewer } from './helpers';
 
 const DAYS_IN_PERIOD = 30;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
@@ -13,12 +12,7 @@ export const getInventoryAnalytics = effectAuthedQuery({
 	args: {},
 	handler: () =>
 		Effect.gen(function* () {
-			const { viewer } = yield* AuthedContext;
-			if (!viewer) {
-				return yield* Effect.fail(
-					new UnauthorizedError({ message: 'Not authenticated or user not registered' })
-				);
-			}
+			const viewer = yield* requireViewer('Not authenticated or user not registered')
 
 			const now = Date.now();
 			const currentDate = new Date(now);

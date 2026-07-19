@@ -1,0 +1,49 @@
+'use client';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CopyButton } from '@/components/prompts/CopyButton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
+import { PromptPreview } from '@/components/prompts/PromptPreview';
+import type { TemplateField } from '@/lib/schemas/prompt.schema';
+
+interface LivePreviewCardProps {
+	content: string;
+	templateFields: TemplateField[];
+	flatValues: Record<string, string>;
+	interpolated: string;
+}
+
+export function LivePreviewCard({
+	content,
+	templateFields,
+	flatValues,
+	interpolated,
+}: LivePreviewCardProps) {
+	return (
+		<Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+			<CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-850">
+				<div>
+					<CardTitle className="text-lg">Live Preview</CardTitle>
+					<CardDescription>Visual rendering with filled fields highlighted.</CardDescription>
+				</div>
+				<div className="flex items-center gap-2">
+					<OpenInAIButton content={interpolated} />
+					<CopyButton
+						value={interpolated}
+						successMessage="Copied final prompt to clipboard!"
+						errorMessage="Failed to copy text."
+						className="rounded-xl h-8 border-slate-200 dark:border-slate-800 shadow-sm"
+					/>
+				</div>
+			</CardHeader>
+			<CardContent className="p-0">
+				<ScrollArea className="h-[450px]">
+					<div className="p-6 font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-350">
+						<PromptPreview content={content} fields={templateFields} values={flatValues} />
+					</div>
+				</ScrollArea>
+			</CardContent>
+		</Card>
+	);
+}

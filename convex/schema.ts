@@ -32,6 +32,7 @@ export default defineSchema({
 			})
 		),
 		category: v.optional(v.string()),
+		publicSlug: v.optional(v.string()),
 		createdAt: v.number(),
 		updatedAt: v.optional(v.number())
 	})
@@ -39,4 +40,5 @@ export default defineSchema({
 		.index('by_userId_createdAt', ['userId', 'createdAt'])
 		.index('by_userId_isPublic', ['userId', 'isPublic'])
 		.index('by_isPublic', ['isPublic'])
+		.index('by_publicSlug', ['publicSlug'])
 });
