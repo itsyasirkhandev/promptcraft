@@ -27,6 +27,8 @@ A convention-heavy starter template for building real apps.
 | **Private function** | A Convex function protected by an API key guard (server-to-server) |
 | **Prompt Inventory Analytics** | Aggregate facts derived from the prompts currently owned by a Viewer, excluding usage events such as views, copies, or provider opens |
 | **UTC Daily Bucket** | A calendar day from 00:00:00 through 23:59:59 UTC used to group prompt creation timestamps consistently |
+| **Public Slug** | The URL-safe, unique, stable identifier for a public prompt; set once on the first isPublic transition, retained across toggles and title/content edits, gated by isPublic on the public read |
+| **Public Prompt DTO** | The unauthenticated-safe projection of a prompt + its author, stripped of userId/email/clerkId/polarCustomerId and returned only by api.public.prompts.getBySlug |
 
 ## Conventions
 

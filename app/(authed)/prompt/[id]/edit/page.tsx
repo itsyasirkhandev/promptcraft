@@ -138,6 +138,7 @@ export default function EditPromptPage({ params }: PageProps) {
             submitLabel="Save Changes"
             resetLabel="Reset"
             autoSetCategory={false}
+            publicSlug={prompt.publicSlug ?? undefined}
           />
         </CardContent>
       </Card>

@@ -27,8 +27,10 @@ import type * as http from "../http.js";
 import type * as private_demo from "../private/demo.js";
 import type * as private_helpers from "../private/helpers.js";
 import type * as private_users from "../private/users.js";
+import type * as public_prompts from "../public/prompts.js";
 import type * as services_ConvexDB from "../services/ConvexDB.js";
 import type * as services_ServerConfig from "../services/ServerConfig.js";
+import type * as slugs from "../slugs.js";
 import type * as userQueries from "../userQueries.js";
 import type * as users from "../users.js";
 
@@ -58,8 +60,10 @@ declare const fullApi: ApiFromModules<{
   "private/demo": typeof private_demo;
   "private/helpers": typeof private_helpers;
   "private/users": typeof private_users;
+  "public/prompts": typeof public_prompts;
   "services/ConvexDB": typeof services_ConvexDB;
   "services/ServerConfig": typeof services_ServerConfig;
+  slugs: typeof slugs;
   userQueries: typeof userQueries;
   users: typeof users;
 }>;

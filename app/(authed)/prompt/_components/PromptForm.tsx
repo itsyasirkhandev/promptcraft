@@ -27,6 +27,8 @@ import { TagInput } from '@/components/ui/tag-input';
 import { CategorySelector } from '@/components/prompts/CategorySelector';
 import { TemplateFieldsPanel } from '../create/_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from '../create/_components/CreateTemplateFieldDialog';
+import { toast } from 'sonner';
+import { Copy, Check } from '@phosphor-icons/react';
 import type { PromptFormValues, TemplateFieldType } from '@/lib/schemas/prompt.schema';
 
 function charCountClass(current: number, max: number): string {
@@ -55,6 +57,8 @@ export interface PromptFormProps {
   /** When true, auto-sets category to 'other' on isPublic toggle (create mode).
    *  When false, uses the guard-ref approach for edit mode. */
   autoSetCategory?: boolean;
+  /** Existing public slug — when set and isPublic is on, shows a read-only share URL. */
+  publicSlug?: string;
 }
 
 export function PromptForm({
@@ -69,6 +73,7 @@ export function PromptForm({
   submitLabel,
   resetLabel,
   autoSetCategory = true,
+  publicSlug,
 }: PromptFormProps) {
   const watchedTitle = useWatch({ control, name: 'title', defaultValue: '' });
   const watchedContent = useWatch({ control, name: 'content', defaultValue: '' });
@@ -78,6 +83,7 @@ export function PromptForm({
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
 
   useEffect(() => {
     if (!autoSetCategory) return;
@@ -180,6 +186,40 @@ export function PromptForm({
               <Controller control={control} name="category" render={({ field }) => (
                 <CategorySelector value={field.value} onChange={field.onChange} error={errors.category?.message} />
               )} />
+            </Field>
+          )}
+
+          {/* Share URL */}
+          {watchedIsPublic && publicSlug && (
+            <Field orientation="vertical">
+              <FieldLabel className="text-foreground">Public Link</FieldLabel>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/p/${publicSlug}`}
+                  className="font-mono text-sm"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(`${typeof window !== 'undefined' ? window.location.origin : ''}/p/${publicSlug}`);
+                      setCopiedShare(true);
+                      toast.success('Link copied to clipboard');
+                      setTimeout(() => setCopiedShare(false), 2000);
+                    } catch {
+                      toast.error('Failed to copy link.');
+                    }
+                  }}
+                  className="gap-2 shrink-0"
+                >
+                  {copiedShare ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+                  <span>{copiedShare ? 'Copied' : 'Copy'}</span>
+                </Button>
+              </div>
             </Field>
           )}
 

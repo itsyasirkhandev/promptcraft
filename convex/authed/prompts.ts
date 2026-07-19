@@ -6,6 +6,7 @@ import { GenericDatabaseReader, GenericDatabaseWriter } from 'convex/server';
 import { DataModel, Doc } from '../_generated/dataModel';
 import { validatePrompt } from './validation';
 import { UnauthorizedError } from './errors';
+import { generateUniqueSlug } from '../slugs';
 
 export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()("NotFoundError", {
 	message: Schema.String
@@ -108,6 +109,10 @@ export const create = effectAuthedMutation({
 			const writerDb = db as GenericDatabaseWriter<DataModel>;
 			yield* enforceHobbyQuota(db, viewer, { checkTotal: true, markPublic: args.isPublic });
 
+			const publicSlug = args.isPublic
+				? yield* generateUniqueSlug(writerDb, args.title)
+				: undefined;
+
 			const promptId = yield* Effect.tryPromise(() =>
 				writerDb.insert('prompts', {
 					userId: viewer._id,
@@ -118,6 +123,7 @@ export const create = effectAuthedMutation({
 					tags: args.tags,
 					templateFields: args.templateFields,
 					category: args.category,
+					publicSlug,
 					createdAt: Date.now()
 				})
 			);
@@ -174,6 +180,11 @@ export const update = effectAuthedMutation({
 				category: args.category
 			});
 			yield* enforceHobbyQuota(db, viewer, { checkTotal: false, markPublic: args.isPublic && !prompt.isPublic });
+			// Generate a slug only on private->public transition with no existing slug.
+			// An existing slug is always preserved (never regenerated on title edit).
+			const publicSlug = args.isPublic && !prompt.publicSlug
+				? yield* generateUniqueSlug(writerDb, args.title)
+				: prompt.publicSlug;
 
 			yield* Effect.tryPromise(() =>
 				writerDb.patch(args.id, {
@@ -184,6 +195,7 @@ export const update = effectAuthedMutation({
 					tags: args.tags,
 					templateFields: args.templateFields,
 					category: args.category,
+					publicSlug,
 					updatedAt: Date.now()
 				})
 			);
