@@ -1,6 +1,11 @@
 # pnpm workspace & hardening configuration.
 # See: https://pnpm.io/settings
 
+# Single-package project: the root is the only workspace member.
+# Required so pnpm accepts this file as a valid workspace config.
+packages:
+  - '.'
+
 # Delay installs until releases have had time to be vetted.
 # 10080 minutes = 7 days. Protects against malware that gets
 # caught and unpublished within hours of release.
