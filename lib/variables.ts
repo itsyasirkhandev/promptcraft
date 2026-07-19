@@ -18,17 +18,16 @@ export function tokenizeTemplate(
   // Split on {{name}} patterns, keeping the delimiters in the result
   const parts = content.split(/({{[^{}]{1,64}}})/g);
 
-  return parts
-    .filter((part) => part !== '')
-    .map((part): TemplateToken => {
-      const match = /^{{([^{}]{1,64})}}$/.exec(part);
-      if (match) {
-        const name = match[1];
-        const field = fields.find((f) => f.name === name);
-        return { kind: 'variable', name, field };
-      }
-      return { kind: 'text', content: part };
-    });
+  return parts.flatMap((part): TemplateToken[] => {
+    if (part === '') return [];
+    const match = /^{{([^{}]{1,64})}}$/.exec(part);
+    if (match) {
+      const name = match[1];
+      const field = fields.find((f) => f.name === name);
+      return [{ kind: 'variable', name, field }];
+    }
+    return [{ kind: 'text', content: part }];
+  });
 }
 
 /**

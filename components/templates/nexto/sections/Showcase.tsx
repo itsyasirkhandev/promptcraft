@@ -53,9 +53,9 @@ export default function Showcase() {
         <div
           className="grid gap-[14px] grid-cols-1 md:grid-cols-[1.4fr_1fr]"
         >
-          {works.map((w, i) => (
+          {works.map((w) => (
             <a
-              key={i}
+              key={w.title}
               href="#"
               className={`relative rounded-[22px] overflow-hidden min-h-[340px] flex flex-col justify-end p-[22px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(0,0,0,0.08)] group ${w.tall ? "row-span-2" : ""}`}
               style={{ background: w.bg }}

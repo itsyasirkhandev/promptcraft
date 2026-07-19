@@ -63,6 +63,7 @@ function HobbyCardCta({ isPro }: { isPro: boolean }) {
   if (isPro) {
     return (
       <button
+        type="button"
         className="nexto-pill-dark w-full justify-center opacity-60 cursor-default"
         disabled
         aria-disabled="true"
@@ -76,6 +77,7 @@ function HobbyCardCta({ isPro }: { isPro: boolean }) {
   }
   return (
     <button
+      type="button"
       className="nexto-pill-dark w-full justify-center opacity-60 cursor-default"
       disabled
       aria-disabled="true"
@@ -99,6 +101,7 @@ function ProCardCta() {
   if (loading) {
     return (
       <button
+        type="button"
         className="nexto-pill-dark w-full justify-center opacity-60"
         disabled
         aria-disabled="true"
@@ -119,6 +122,7 @@ function ProCardCta() {
     <div>
       {isPro ? (
         <button
+          type="button"
           className="nexto-pill-dark w-full justify-center disabled:opacity-60"
           onClick={onManage}
           disabled={pendingPortal}
@@ -132,6 +136,7 @@ function ProCardCta() {
         </button>
       ) : (
         <button
+          type="button"
           className="nexto-pill-dark w-full justify-center disabled:opacity-60"
           onClick={onUpgrade}
           disabled={pendingCheckout}
@@ -167,6 +172,7 @@ function AuthedPricing() {
       <div className="mt-8">
         {loading ? (
           <button
+            type="button"
             className="nexto-pill-dark w-full justify-center opacity-60"
             disabled
             aria-hidden="true"
@@ -254,7 +260,7 @@ function PricingCard({
 
       <div className="mt-8">
         <ClerkLoading>
-          <button className="nexto-pill-dark w-full justify-center opacity-0 pointer-events-none" aria-hidden="true">
+          <button type="button" tabIndex={-1} className="nexto-pill-dark w-full justify-center opacity-0 pointer-events-none" aria-hidden="true">
             <span className="nexto-arrow-circ">
               <ChevronArrow />
             </span>
@@ -264,7 +270,7 @@ function PricingCard({
         <ClerkLoaded>
           <Show when="signed-out">
             <SignInButton mode="modal" fallbackRedirectUrl={fallbackRedirectUrl} signUpFallbackRedirectUrl={fallbackRedirectUrl}>
-              <button className="nexto-pill-dark w-full justify-center">
+              <button type="button" className="nexto-pill-dark w-full justify-center">
                 <span className="nexto-arrow-circ">
                   <ChevronArrow />
                 </span>

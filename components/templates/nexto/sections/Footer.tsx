@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const LOGO_URL = "/logo.svg";
+
+function handleScroll(e: React.MouseEvent<HTMLAnchorElement>, targetId: string) {
+  const element = document.getElementById(targetId);
+  if (element) {
+    e.preventDefault();
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+}
 
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO_URL} alt="" className="h-7 brightness-0" />
+      <Image src={LOGO_URL} alt="" width={28} height={28} className="h-7 w-auto brightness-0" />
       <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
     </Link>
   );
@@ -22,14 +30,6 @@ const socials = [
 ];
 
 export default function Footer() {
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    const element = document.getElementById(targetId);
-    if (element) {
-      e.preventDefault();
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <footer className="pt-[60px] pb-10 bg-transparent relative">
       <div className="nexto-wrap">

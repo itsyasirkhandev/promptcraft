@@ -46,7 +46,7 @@ function DialogBody({
   onSave: (field: { name: string; type: TemplateFieldType; options?: string[] }) => void;
   onClose: () => void;
 }) {
-  const [nameInput, setNameInput] = useState(sanitizeName(initialName));
+  const [nameInput, setNameInput] = useState(() => sanitizeName(initialName));
   const [type, setType] = useState<TemplateFieldType>('text');
   const [options, setOptions] = useState<string[]>([]);
   const [optionInput, setOptionInput] = useState('');

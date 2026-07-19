@@ -49,6 +49,7 @@ export default function CTA() {
               <Show when="signed-out">
                 <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
                   <button
+                    type="button"
                     className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
                   >
                     <span

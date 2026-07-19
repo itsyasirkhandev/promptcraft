@@ -51,7 +51,7 @@ export default function Hero() {
         <div className="flex items-center gap-[18px] flex-wrap justify-center mb-9">
           <Show when="signed-out">
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
-              <button className="nexto-pill-dark lg">
+              <button type="button" className="nexto-pill-dark lg">
                 <span className="nexto-arrow-circ lg">
                   <ChevronArrow />
                 </span>

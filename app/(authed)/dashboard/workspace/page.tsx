@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useQuery } from 'convex/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, redirect } from 'next/navigation';
 import { usePromptInterpolation } from '@/hooks/use-prompt-interpolation';
 import { useClipboardCopy } from '@/lib/hooks/use-clipboard-copy';
 import Link from 'next/link';
@@ -32,6 +32,15 @@ import { OpenInAIButton } from '@/components/prompts/OpenInAIButton';
 import { PromptSwitcher } from '@/components/prompts/use/PromptSwitcher';
 import { DynamicFields } from '@/components/prompts/use/DynamicFields';
 import { cn } from '@/lib/utils';
+
+// Hoisted at module scope: explicit locale + timezone so SSR and CSR
+// render the same text, and we don't rebuild the formatter on each call.
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
 
 // ─── Loading skeleton ────────────────────────────────────────────────────────
 
@@ -94,11 +103,9 @@ function StaticPromptInfo({
     createdAt: number;
   };
 }) {
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(prompt.createdAt));
+  // Use the module-scope formatter (explicit locale + timezone) to avoid
+  // rebuilding the formatter each call and to keep SSR/CSR output stable.
+  const formattedDate = dateFormatter.format(new Date(prompt.createdAt));
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -414,21 +421,15 @@ function MobileLayout({
   );
 }
 
+
 // ─── Main Workspace Page ──────────────────────────────────────────────────────
 
-export default function WorkspacePage() {
+function WorkspaceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeId = searchParams.get('id');
 
   const prompts = useQuery(api.authed.prompts.list);
-
-  // Auto-select first prompt if no id in URL
-  React.useEffect(() => {
-    if (prompts && prompts.length > 0 && !activeId) {
-      router.replace(`/dashboard/workspace?id=${prompts[0]._id}`);
-    }
-  }, [prompts, activeId, router]);
 
   const activePrompt = React.useMemo(
     () => (prompts ?? []).find((p: Doc<'prompts'>) => p._id === activeId) ?? null,
@@ -447,6 +448,14 @@ export default function WorkspacePage() {
 
   if (prompts === undefined) return <WorkspaceSkeleton />;
   if (prompts.length === 0) return <EmptyWorkspace />;
+
+  // Auto-select first prompt if no id in URL. Doing this during render
+  // (instead of inside useEffect) avoids the flash-then-redirect pattern
+  // that the client-side-redirect rule warns about. redirect() throws a
+  // special value Next.js catches, so this works as a render-time guard.
+  if (!activeId && prompts.length > 0) {
+    redirect(`/dashboard/workspace?id=${prompts[0]._id}`);
+  }
 
   const layoutProps: SharedLayoutProps | null = activePrompt
     ? { activePrompt, templateFields, formValues, setValue, flatValues, interpolated }
@@ -474,5 +483,16 @@ export default function WorkspacePage() {
         </>
       )}
     </div>
+  );
+}
+
+// useSearchParams must be inside a Suspense boundary so the rest of the page
+// can stay statically rendered. We wrap the whole workspace in Suspense
+// using the same skeleton shown while prompts load.
+export default function WorkspacePage() {
+  return (
+    <React.Suspense fallback={<WorkspaceSkeleton />}>
+      <WorkspaceContent />
+    </React.Suspense>
   );
 }

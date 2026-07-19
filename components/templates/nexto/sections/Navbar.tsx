@@ -2,9 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 
 const LOGO_URL = "/logo.svg";
+
+function handleScroll(e: React.MouseEvent<HTMLAnchorElement>, targetId: string) {
+  const element = document.getElementById(targetId);
+  if (element) {
+    e.preventDefault();
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+}
 
 function ChevronArrow() {
   return (
@@ -23,8 +32,7 @@ function ChevronArrow() {
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO_URL} alt="" className="h-7 brightness-0" />
+      <Image src={LOGO_URL} alt="" width={28} height={28} className="h-7 w-auto brightness-0" />
       <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
     </Link>
   );
@@ -53,14 +61,6 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    const element = document.getElementById(targetId);
-    if (element) {
-      e.preventDefault();
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <>
       <nav className="sticky top-0 z-[70] backdrop-saturate-[180%] backdrop-blur-[10px] bg-[rgba(245,245,245,0.7)]">
@@ -85,7 +85,7 @@ export default function Navbar() {
           </ul>
 
           <ClerkLoading>
-            <button className="nexto-pill-dark hidden md:inline-flex opacity-0 pointer-events-none" aria-hidden="true">
+            <button type="button" className="nexto-pill-dark hidden md:inline-flex opacity-0 pointer-events-none" aria-hidden="true">
               <span className="nexto-arrow-circ">
                 <ChevronArrow />
               </span>
@@ -96,6 +96,7 @@ export default function Navbar() {
             <Show when="signed-out">
               <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
                 <button
+                  type="button"
                   className="nexto-pill-dark hidden md:inline-flex"
                   aria-label="Sign In / Sign Up"
                 >
@@ -122,6 +123,7 @@ export default function Navbar() {
 
           {/* Hamburger */}
           <button
+            type="button"
             className="flex md:hidden flex-col gap-[6px] w-6 h-6 justify-center items-center cursor-pointer z-[61] relative"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             onClick={() => setMenuOpen((o) => !o)}
@@ -157,7 +159,7 @@ export default function Navbar() {
           </Link>
         ))}
         <ClerkLoading>
-          <button className="nexto-pill-dark lg mt-6 self-start opacity-0 pointer-events-none" aria-hidden="true">
+          <button type="button" tabIndex={-1} className="nexto-pill-dark lg mt-6 self-start opacity-0 pointer-events-none" aria-hidden="true">
             <span className="nexto-arrow-circ lg">
               <ChevronArrow />
             </span>
@@ -168,6 +170,7 @@ export default function Navbar() {
           <Show when="signed-out">
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
               <button
+                type="button"
                 className="nexto-pill-dark lg mt-6 self-start"
                 onClick={() => setMenuOpen(false)}
               >

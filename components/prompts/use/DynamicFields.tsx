@@ -121,6 +121,7 @@ function FieldSingleSelect({ field, valueStr, isWorkspace, setValue }: FieldCont
 
 function FieldMultiSelect({ field, currentValue, isWorkspace, setValue }: FieldControlProps) {
   const list = Array.isArray(currentValue) ? currentValue : [];
+  const listSet = new Set(list);
   return (
     <div
       className={cn(
@@ -132,7 +133,7 @@ function FieldMultiSelect({ field, currentValue, isWorkspace, setValue }: FieldC
     >
       {field.options && field.options.length > 0 ? (
         field.options.map((opt) => {
-          const isChecked = list.includes(opt);
+          const isChecked = listSet.has(opt);
           return (
             <div key={opt} className="flex items-center gap-2">
               <Checkbox

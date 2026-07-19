@@ -39,7 +39,7 @@ export default function Process() {
         {/* Timeline connector row */}
         <div className="nexto-process-timeline">
           {steps.map((s, i) => (
-            <div key={i} className="nexto-process-step">
+            <div key={s.title} className="nexto-process-step">
               {/* Number node */}
               <div className="nexto-process-node-row">
                 <div className="nexto-process-node">

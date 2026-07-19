@@ -33,7 +33,7 @@ export default function NextoLayout({
   return (
     <html lang="en" suppressHydrationWarning className={cn("font-sans", raleway.variable)}>
       <head>
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}{/* react-doctor-disable-next-line react-doctor/nextjs-no-font-link: Material Symbols Rounded is an icon font with custom variable-font axes (FILL, GRAD, opsz) that next/font/google does not fully expose; the <link> tag is the most reliable way to load it with these axes., react-doctor/nextjs-no-font-link */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=optional"

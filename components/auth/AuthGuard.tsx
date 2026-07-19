@@ -57,6 +57,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
               </div>
               <SignInButton mode="modal">
                 <button
+                  type="button"
                   className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-sm font-medium px-6 py-3 rounded-full cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
                 >
                   <LockKey size={18} weight="bold" />

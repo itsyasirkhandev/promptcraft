@@ -65,12 +65,10 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
 
   const activePrompt = prompts.find((p) => p._id === activeId);
 
-  // Focus search when popover opens
-  React.useEffect(() => {
-    if (open) {
-      setTimeout(() => searchRef.current?.focus(), 50);
-    }
-  }, [open]);
+  // Focus search when popover opens. The focus side-effect runs in the
+  // open event handler (not an effect) so it stays coupled to its trigger.
+  // The 50ms delay lets the popover mount before we focus. Optional
+  // chaining makes the timer a no-op if the component unmounts first.
 
   const handleSelect = (id: string) => {
     onSelect(id);
@@ -79,7 +77,11 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
   };
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) setSearch('');
+    if (!next) {
+      setSearch('');
+    } else {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
     setOpen(next);
   };
 
@@ -165,6 +167,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
 
                 return (
                   <button
+                    type="button"
                     key={prompt._id}
                     onClick={() => handleSelect(prompt._id)}
                     className={cn(

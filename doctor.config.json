@@ -1,0 +1,21 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": [
+      ".agents/**",
+      ".antigravitycli/**",
+      ".claude/**",
+      ".fallow/**",
+      ".github/**",
+      ".next/**",
+      "components/ui/**",
+      "convex/**",
+      "docs/**",
+      "node_modules/**",
+      "public/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/*.stories.*"
+    ]
+  }
+}

@@ -63,6 +63,10 @@ const CATEGORY_MAP: Record<
   other: { label: 'General / Other', icon: Globe },
 };
 
+function formatDate(timestamp: number) {
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 // ── PromptCard sub-components ────────────────────────────────────────────────
 
 interface CardHeaderBadgesProps {
@@ -119,10 +123,10 @@ interface CardContentPreviewProps {
 
 function highlightVariables(text: string, fields: { name: string }[]) {
   if (!fields || fields.length === 0) return text;
-  const fieldNames = fields
-    .map((f) => f.name.trim())
-    .filter(Boolean)
-    .map((name) => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+  const fieldNames = fields.flatMap((f) => {
+    const trimmed = f.name.trim();
+    return trimmed ? [trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')] : [];
+  });
   if (fieldNames.length === 0) return text;
   const pattern = new RegExp(`(\\{\\{?(?:${fieldNames.join('|')})\\}?\\})`, 'g');
   return text.split(pattern).map((part, index) => {
@@ -130,8 +134,9 @@ function highlightVariables(text: string, fields: { name: string }[]) {
     const match = fields.find((f) => f.name === cleanPart);
     if (match) {
       return (
+        // react-doctor-disable-next-line react-doctor/no-array-index-as-key: tokens from string.split() have no stable id; position is the identity, react-doctor/no-array-index-as-key
         <span
-          key={index}
+          key={`part-${index}`}
           className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/10 dark:bg-purple-450/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-400/20 font-semibold font-sans text-[10px] select-all cursor-help"
           title={`Variable: ${match.name}`}
         >
@@ -320,8 +325,7 @@ export default function PromptsDashboardPage() {
     return result;
   }, [prompts, search, filterType, sortBy]);
 
-  const formatDate = (timestamp: number) =>
-    new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
 
   if (prompts === undefined) {
     return (

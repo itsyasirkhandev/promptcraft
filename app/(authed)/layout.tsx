@@ -125,6 +125,7 @@ function PlanControl() {
     <div className="flex items-center gap-2">
       {isPro ? (
         <button
+          type="button"
           onClick={handlePortal}
           disabled={pendingPortal}
           aria-disabled={pendingPortal}
@@ -136,7 +137,7 @@ function PlanControl() {
       ) : (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <button className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] transition-colors">
+            <button type="button" className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] transition-colors">
               Upgrade to Pro
             </button>
           </DialogTrigger>
