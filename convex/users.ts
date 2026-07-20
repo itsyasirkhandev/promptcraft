@@ -188,12 +188,25 @@ export const updateSubscriptionFromPolar = internalMutation({
 			return;
 		}
 
+		// Capture the pre-transition plan so a replayed granting event for an
+		// already-Pro user does not resend the email.
+		const wasHobby = user.plan === "hobby";
+
 		await ctx.db.patch(user._id, {
 			polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
 			polarSubscriptionId: args.polarSubscriptionId,
 			polarSubscriptionStatus: args.polarSubscriptionStatus,
 			plan: args.plan,
 		});
+
+		if (wasHobby && args.plan === "pro" && user.email) {
+			await ctx.scheduler.runAfter(0, internal.emails.sendProUpgradeEmail, {
+				email: user.email,
+				name: user.name || undefined,
+			});
+		} else if (wasHobby && args.plan === "pro" && !user.email) {
+			console.warn("Skipping Pro upgrade email: user has no email address.");
+		}
 	},
 });
 
