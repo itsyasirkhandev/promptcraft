@@ -2,6 +2,12 @@
   "name": "clerk-convex-nextjs-starter",
   "version": "0.1.0",
   "private": true,
+  "reactDoctor": {
+    "ignoreDependencies": [
+      "immer",
+      "@testing-library/react"
+    ]
+  },
   "scripts": {
     "dev": "convex dev --start \"next dev\"",
     "build": "next build",
