@@ -109,6 +109,8 @@ export const create = effectAuthedMutation({
 				? yield* generateUniqueSlug(writerDb, args.title)
 				: undefined;
 
+			const searchableText = `${args.title} ${args.content} ${args.tags.join(' ')}`.toLowerCase();
+
 			const promptId = yield* Effect.tryPromise(() =>
 				writerDb.insert('prompts', {
 					userId: viewer._id,
@@ -120,6 +122,7 @@ export const create = effectAuthedMutation({
 					templateFields: args.templateFields,
 					category: args.category,
 					publicSlug,
+					searchableText,
 					createdAt: Date.now()
 				})
 			);
@@ -189,6 +192,7 @@ export const update = effectAuthedMutation({
 					templateFields: args.templateFields,
 					category: args.category,
 					publicSlug,
+					searchableText: `${args.title} ${args.content} ${args.tags.join(' ')}`.toLowerCase(),
 					updatedAt: Date.now()
 				})
 			);

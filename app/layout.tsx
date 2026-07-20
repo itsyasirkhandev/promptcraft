@@ -5,6 +5,7 @@ import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export const metadata: Metadata = {
   title: "Prompt Crafts",
@@ -41,10 +42,12 @@ export default function NextoLayout({
       </head>
       <body className={`${dmSans.variable} min-h-screen`}>
         <ConvexClientProvider>
-          <TooltipProvider delayDuration={0}>
-            {children}
-            <Toaster />
-          </TooltipProvider>
+          <NuqsAdapter>
+            <TooltipProvider delayDuration={0}>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </NuqsAdapter>
         </ConvexClientProvider>
       </body>
     </html>
