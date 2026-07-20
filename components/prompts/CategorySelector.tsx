@@ -2,17 +2,11 @@
 
 import * as React from 'react';
 import {
-  Code,
-  PencilSimple,
-  Megaphone,
-  ChartBar,
-  Palette,
-  GraduationCap,
-  Globe,
   Check,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { FieldError } from '@/components/ui/field';
+import { PROMPT_CATEGORIES } from '@/lib/prompts/categories';
 
 interface CategorySelectorProps {
   value: string | undefined;
@@ -20,41 +14,25 @@ interface CategorySelectorProps {
   error?: string;
 }
 
-interface Category {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const CATEGORIES: Category[] = [
-  { id: 'coding', label: 'Coding & Tech', icon: Code },
-  { id: 'writing', label: 'Writing & Content', icon: PencilSimple },
-  { id: 'marketing', label: 'Marketing & Growth', icon: Megaphone },
-  { id: 'analysis', label: 'Data & Analysis', icon: ChartBar },
-  { id: 'design', label: 'Design & Art', icon: Palette },
-  { id: 'education', label: 'Education & Learning', icon: GraduationCap },
-  { id: 'other', label: 'General / Other', icon: Globe },
-];
-
 export function CategorySelector({ value, onChange, error }: CategorySelectorProps) {
   const buttonsRef = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     let nextIndex = index;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      nextIndex = (index + 1) % CATEGORIES.length;
+      nextIndex = (index + 1) % PROMPT_CATEGORIES.length;
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      nextIndex = (index - 1 + CATEGORIES.length) % CATEGORIES.length;
+      nextIndex = (index - 1 + PROMPT_CATEGORIES.length) % PROMPT_CATEGORIES.length;
     } else if (e.key === 'Home') {
       nextIndex = 0;
     } else if (e.key === 'End') {
-      nextIndex = CATEGORIES.length - 1;
+      nextIndex = PROMPT_CATEGORIES.length - 1;
     } else {
       return;
     }
 
     e.preventDefault();
-    const nextCategory = CATEGORIES[nextIndex];
+    const nextCategory = PROMPT_CATEGORIES[nextIndex];
     onChange(nextCategory.id);
     
     // Focus the next button
@@ -68,7 +46,7 @@ export function CategorySelector({ value, onChange, error }: CategorySelectorPro
         aria-label="Prompt Category"
         className="grid grid-cols-2 sm:grid-cols-4 gap-2.5"
       >
-        {CATEGORIES.map((category, index) => {
+        {PROMPT_CATEGORIES.map((category, index) => {
           const isSelected = value === category.id;
           const Icon = category.icon;
 

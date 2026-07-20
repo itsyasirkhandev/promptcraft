@@ -74,8 +74,8 @@ export default function Navbar() {
             {["Marketplace", "Pricing", "Process"].map((item) => (
               <li key={item}>
                 <Link
-                  href={`/#${item.toLowerCase().replace(/\s/g, "-")}`}
-                  onClick={(e) => handleScroll(e, item.toLowerCase().replace(/\s/g, "-"))}
+                  href={item === "Marketplace" ? "/marketplace" : `/#${item.toLowerCase().replace(/\s/g, "-")}`}
+                  onClick={item === "Marketplace" ? undefined : (e) => handleScroll(e, item.toLowerCase().replace(/\s/g, "-"))}
                   className="text-[14px] font-normal text-[#1a1a1a] opacity-65 hover:opacity-100 transition-opacity"
                 >
                   {item}
@@ -148,9 +148,9 @@ export default function Navbar() {
         {["Marketplace", "Pricing", "Process"].map((item) => (
           <Link
             key={item}
-            href={`/#${item.toLowerCase().replace(/\s/g, "-")}`}
+            href={item === "Marketplace" ? "/marketplace" : `/#${item.toLowerCase().replace(/\s/g, "-")}`}
             className="text-[38px] font-black tracking-[-1.5px] text-[#0f0f0f] py-6 border-b border-dashed border-black/15"
-            onClick={(e) => {
+            onClick={item === "Marketplace" ? () => setMenuOpen(false) : (e) => {
               setMenuOpen(false);
               handleScroll(e, item.toLowerCase().replace(/\s/g, "-"));
             }}

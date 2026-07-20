@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ConvexError, ObjectType, PropertyValidators } from "convex/values";
+import { ConvexError, ObjectType, PropertyValidators, Value } from "convex/values";
 
 export async function runEffect<Result, Error>(
 	effect: Effect.Effect<Result, Error, never>
@@ -14,7 +14,7 @@ export async function runEffect<Result, Error>(
 			const { _tag, ...data } = error as { _tag: string } & Record<string, unknown>;
 			throw new ConvexError({
 				tag: _tag,
-				data: data as Record<string, string | number | boolean | null>
+				data: data as Record<string, Value>
 			});
 		}
 		throw error;
