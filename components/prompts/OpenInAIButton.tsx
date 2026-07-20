@@ -143,9 +143,9 @@ export function OpenInAIButton({ content }: OpenInAIButtonProps) {
             <DropdownMenuItem
               key={provider.id}
               onClick={() => handleAction(provider)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-lg cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
             >
-              <Icon icon={provider.icon} className="size-4 text-slate-500 dark:text-slate-400 shrink-0" />
+              <Icon icon={provider.icon} className="size-4 text-slate-500 dark:text-slate-300 shrink-0" />
               <span>{provider.name}</span>
             </DropdownMenuItem>
           ))}
