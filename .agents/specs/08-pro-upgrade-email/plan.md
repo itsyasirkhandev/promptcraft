@@ -86,6 +86,7 @@ Phase 1  (email action: sendProUpgradeEmail in convex/emails.ts)
 
 ## Implementation progress (live)
 
-- [ ] **Phase 1** — Pending.
-- [ ] **Phase 2** — Pending.
-- [ ] **Phase 3** — Pending.
+- [x] **Phase 1** — `sendProUpgradeEmail` `internalAction` added to `convex/emails.ts` (reuses `BrevoApiError`, Effect v4 shape mirroring `sendWelcomeEmail`, concise confirmation template, `/dashboard/billing` link via `SITE_URL` env). `SITE_URL` documented in `.env.example` and set to `https://promptcrafts.vercel.app` on the dev Convex deployment. Gate green: `convex:gen; lint; typecheck`.
+- [x] **Phase 2** — Hobby→Pro detection + scheduling added to `updateSubscriptionFromPolar` in `convex/users.ts`. Captures `wasHobby` before the existing patch; schedules `internal.emails.sendProUpgradeEmail` only when `wasHobby && args.plan === "pro" && user.email`; warns on empty email. No TS7022 circularity (inline `internal.emails.*` reference compiles, same as `insertNewUser`). Existing patch + resolution logic unchanged. Gate green: `convex:gen; lint; typecheck`.
+  - **Deviation recorded:** none. The TS7022 `Promise<void>`-typed helper workaround was not needed — `updateSubscriptionFromPolar` is an `internalMutation` (not a public function in `convex/authed/`), so the circularity that affected spec 05 Phases 3/4 does not apply. Inline scheduling matches `insertNewUser`'s existing pattern.
+- [ ] **Phase 3** — Automated gate green: `convex:gen; lint; typecheck; test:run` (73 tests pass, 8 files; no regressions; the billing tests exercise the Hobby→Pro path and confirm the missing-`BREVO_API_KEY` graceful-degradation warning fires). **Manual checklist pending** — requires a live sandbox Polar checkout (cannot be performed from the CLI): sandbox upgrade delivers email; replay of already-Pro state does NOT resend; downgrade+re-upgrade resends.
