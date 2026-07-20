@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { MarketplaceSearch } from '@/components/marketplace/MarketplaceSearch';
 
@@ -20,7 +21,9 @@ export default function MarketplacePage() {
 				</p>
 			</div>
 
-			<MarketplaceSearch />
+			<Suspense>
+				<MarketplaceSearch />
+			</Suspense>
 		</div>
 	);
 }

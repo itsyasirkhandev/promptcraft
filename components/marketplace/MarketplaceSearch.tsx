@@ -108,7 +108,7 @@ export function MarketplaceSearch() {
 
       {/* Category tabs */}
       <div className="scrollbar-none w-full overflow-x-auto py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max gap-2.5 px-1 md:justify-center">
+        <div className="flex w-max gap-2.5 px-1 md:w-full md:flex-wrap md:justify-center">
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
             const Icon = cat.icon;
