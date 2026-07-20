@@ -4,6 +4,7 @@ import { MarketplaceSearch } from '@/components/marketplace/MarketplaceSearch';
 import Navbar from '@/components/templates/nexto/sections/Navbar';
 import Pricing from '@/components/templates/nexto/sections/Pricing';
 import CTA from '@/components/templates/nexto/sections/CTA';
+import Footer from '@/components/templates/nexto/sections/Footer';
 
 export const metadata: Metadata = {
 	title: 'Public Marketplace — Prompt Crafts',
@@ -32,6 +33,7 @@ export default function MarketplacePage() {
 		</div>
 		<Pricing />
 		<CTA />
+		<Footer />
 	</>
 	);
 }
