@@ -94,7 +94,7 @@ function toPublicPromptDTO(
 		templateMode: prompt.templateMode,
 		category: prompt.category,
 		publicSlug: prompt.publicSlug,
-		author: author ? { name: author.name, avatarUrl: author.avatarUrl } : { name: 'Anonymous' }
+		author: { name: author?.name ?? 'Anonymous', avatarUrl: author?.avatarUrl ?? null }
 	};
 }
 

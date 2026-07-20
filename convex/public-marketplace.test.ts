@@ -290,7 +290,7 @@ describe("api.public.prompts.listPublicPrompts — security / DTO shape", () => 
 		const orphan = result.find((p) => p.title === "Orphan Public");
 		expect(orphan).toBeDefined();
 		expect(orphan?.author.name).toBe("Anonymous");
-		expect(orphan?.author).not.toHaveProperty("avatarUrl");
+		expect(orphan?.author.avatarUrl).toBeNull();
 	});
 
 	test("resolved author carries name and avatarUrl when present", async () => {
