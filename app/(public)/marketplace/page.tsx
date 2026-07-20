@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { MarketplaceSearch } from '@/components/marketplace/MarketplaceSearch';
+import Navbar from '@/components/templates/nexto/sections/Navbar';
+import Pricing from '@/components/templates/nexto/sections/Pricing';
+import CTA from '@/components/templates/nexto/sections/CTA';
 
 export const metadata: Metadata = {
 	title: 'Public Marketplace — Prompt Crafts',
@@ -10,6 +13,8 @@ export const metadata: Metadata = {
 
 export default function MarketplacePage() {
 	return (
+	<>
+		<Navbar />
 		<div className="mx-auto max-w-7xl px-4 py-12">
 			<div className="mb-12 text-center">
 				<h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-heading lg:text-5xl dark:text-slate-50">
@@ -25,5 +30,8 @@ export default function MarketplacePage() {
 				<MarketplaceSearch />
 			</Suspense>
 		</div>
+		<Pricing />
+		<CTA />
+	</>
 	);
 }
