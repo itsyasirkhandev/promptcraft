@@ -4,15 +4,8 @@ import * as React from 'react';
 import { useQuery } from 'convex/react';
 import { useQueryState, parseAsString, parseAsStringLiteral, throttle } from 'nuqs';
 import {
-  ChartBar,
   CircleNotch,
-  Code,
-  Globe,
-  GraduationCap,
   MagnifyingGlass,
-  Megaphone,
-  Palette,
-  PencilSimple,
   SquaresFour,
   X,
 } from '@phosphor-icons/react';
@@ -28,24 +21,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { PROMPT_CATEGORIES } from '@/lib/prompts/categories';
 import { MarketplacePromptCard } from './MarketplacePromptCard';
 
 /**
- * This project's 7 public-prompt categories plus an `all` sentinel. The ids
- * match `allowedCategories` in convex/authed/validation.ts (the source of
- * truth) and the labels/icons match the dashboard's `CATEGORY_MAP` /
- * `CategorySelector.tsx`, so the marketplace reads consistently with the rest
- * of the app.
+ * The marketplace adds an `all` sentinel on top of the shared
+ * `PROMPT_CATEGORIES` so a visitor can clear the category filter.
  */
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: SquaresFour },
-  { id: 'coding', label: 'Coding & Tech', icon: Code },
-  { id: 'writing', label: 'Writing & Content', icon: PencilSimple },
-  { id: 'marketing', label: 'Marketing & Growth', icon: Megaphone },
-  { id: 'analysis', label: 'Data & Analysis', icon: ChartBar },
-  { id: 'design', label: 'Design & Art', icon: Palette },
-  { id: 'education', label: 'Education & Learning', icon: GraduationCap },
-  { id: 'other', label: 'General / Other', icon: Globe },
+  ...PROMPT_CATEGORIES,
 ] as const;
 
 const sortValues = ['recent', 'a-z'] as const;

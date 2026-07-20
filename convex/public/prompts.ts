@@ -36,17 +36,8 @@ export const getBySlug = query({
 
 		const author = await ctx.db.get(prompt.userId);
 		return {
-			title: prompt.title,
-			content: prompt.content,
-			tags: prompt.tags,
-			templateMode: prompt.templateMode,
-			templateFields: prompt.templateFields,
-			category: prompt.category,
-			publicSlug: prompt.publicSlug,
-			_creationTime: prompt._creationTime,
-			author: author
-				? { name: author.name, avatarUrl: author.avatarUrl }
-				: { name: 'Anonymous' }
+			...toPublicPromptDTO(prompt, author),
+			templateFields: prompt.templateFields
 		};
 	}
 });
@@ -91,12 +82,11 @@ async function collectByCategory(
 	return out;
 }
 
-function toPublicPromptListDTO(
+function toPublicPromptDTO(
 	prompt: Doc<'prompts'>,
 	author: Doc<'users'> | null,
 ) {
 	return {
-		_id: prompt._id,
 		_creationTime: prompt._creationTime,
 		title: prompt.title,
 		content: prompt.content,
@@ -187,7 +177,7 @@ export const listPublicPrompts = query({
 					Promise.all(
 						prompts.map(async (p) => {
 							const author = await db.get(p.userId);
-							return toPublicPromptListDTO(p, author);
+							return { _id: p._id, ...toPublicPromptDTO(p, author) };
 						})
 					)
 				);

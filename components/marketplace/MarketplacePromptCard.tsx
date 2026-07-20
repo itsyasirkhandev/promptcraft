@@ -32,7 +32,7 @@ import {
  * return type so it can never drift from the backend shape. The card renders
  * only these fields — no `userId`, no author email, no `templateFields`.
  */
-export type PublicPromptDTO = NonNullable<
+type PublicPromptDTO = NonNullable<
   FunctionReturnType<typeof api.public.prompts.listPublicPrompts>
 >[number];
 
