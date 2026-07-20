@@ -50,10 +50,11 @@ const CATEGORY_ICON_MAP: Record<
 };
 
 function formatDate(timestamp: number) {
-  return new Date(timestamp).toLocaleDateString(undefined, {
+  return new Date(timestamp).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'utc',
   });
 }
 
