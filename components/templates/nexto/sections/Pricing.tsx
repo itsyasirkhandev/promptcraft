@@ -4,6 +4,7 @@ import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { useQuery, useAction } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { POLAR_PRODUCT_ID } from "@/lib/billing";
 
 function ChevronArrow() {
   return (
@@ -20,7 +21,6 @@ function ChevronArrow() {
 }
 
 const UPGRADE_PATH = "/upgrade";
-const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
 
 type BillingActionName = "checkout" | "portal";
 

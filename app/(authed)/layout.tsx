@@ -3,23 +3,12 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton, Show, useUser } from "@clerk/nextjs";
-import { CheckCircle, House, List, PlusCircle, Folders } from "@phosphor-icons/react";
+import { CreditCard, House, List, PlusCircle, Folders } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery, useAction } from "convex/react";
-import { useState } from "react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -37,13 +26,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
-
 const navItems = [
   { href: "/dashboard", label: "Home", icon: House },
   { href: "/dashboard/prompts", label: "Prompts", icon: List },
   { href: "/prompt/create", label: "Create", icon: PlusCircle },
   { href: "/dashboard/workspace", label: "Workspace", icon: Folders },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
 function PlanBadge() {
@@ -72,117 +60,6 @@ function HobbyUsagePill() {
     <Badge variant="outline" className="tabular-nums">
       {remaining} prompts left
     </Badge>
-  );
-}
-
-
-function PlanControl() {
-  const user = useQuery(api.authed.users.currentUser);
-  const isPro = user?.plan === "pro";
-  const [pending, setPending] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const generateCheckoutUrl = useAction(api.authed.billing.generateCheckoutUrl);
-  const generatePortalUrl = useAction(api.authed.billing.generatePortalUrl);
-
-  if (!user) return null;
-
-  const handleCheckout = async () => {
-    if (pending) return;
-    setPending("checkout");
-    setError(null);
-    try {
-      const result = await generateCheckoutUrl({
-        productId: POLAR_PRODUCT_ID,
-        successUrl: `${window.location.origin}/dashboard`,
-      });
-      if (!result?.url) throw new Error("No URL returned");
-      window.location.assign(result.url);
-    } catch {
-      setError("Couldn't start checkout. Please try again.");
-      setPending(null);
-    }
-  };
-
-  const handlePortal = async () => {
-    if (pending) return;
-    setPending("portal");
-    setError(null);
-    try {
-      const result = await generatePortalUrl();
-      if (!result?.url) throw new Error("No URL returned");
-      window.location.assign(result.url);
-    } catch {
-      setError("Couldn't open the subscription portal. Please try again.");
-      setPending(null);
-    }
-  };
-
-  const pendingCheckout = pending === "checkout";
-  const pendingPortal = pending === "portal";
-
-  return (
-    <div className="flex items-center gap-2">
-      {isPro ? (
-        <button
-          type="button"
-          onClick={handlePortal}
-          disabled={pendingPortal}
-          aria-disabled={pendingPortal}
-          aria-busy={pendingPortal}
-          className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-        >
-          {pendingPortal ? "Loading portal…" : "Manage Subscription"}
-        </button>
-      ) : (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button type="button" className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-[#111] text-white hover:bg-[#222] transition-colors">
-              Upgrade to Pro
-            </button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upgrade to Pro</DialogTitle>
-              <DialogDescription>
-                Unlock everything you need to scale your prompt library.
-              </DialogDescription>
-            </DialogHeader>
-            <ul className="flex flex-col gap-2">
-              <li className="flex items-start gap-2 text-sm">
-                <CheckCircle weight="fill" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                <span>Create unlimited prompts</span>
-              </li>
-              <li className="flex items-start gap-2 text-sm">
-                <CheckCircle weight="fill" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                <span>Share unlimited public prompts</span>
-              </li>
-            </ul>
-            {error && (
-              <span role="alert" aria-live="polite" className="text-xs text-red-600">
-                {error}
-              </span>
-            )}
-            <DialogFooter>
-              <Button
-                onClick={handleCheckout}
-                disabled={pendingCheckout}
-                aria-disabled={pendingCheckout}
-                aria-busy={pendingCheckout}
-                className="bg-[#111] text-white hover:bg-[#222] disabled:opacity-60"
-              >
-                {pendingCheckout ? "Securing checkout…" : "Continue to checkout"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {error && (
-        <span role="alert" aria-live="polite" className="text-[10px] text-red-600">
-          {error}
-        </span>
-      )}
-    </div>
   );
 }
 
@@ -263,7 +140,6 @@ function Header() {
         <SidebarTrigger />
         <h1 className="text-lg font-bold font-heading">Dashboard</h1>
         <PlanBadge />
-        <PlanControl />
         <HobbyUsagePill />
       </div>
 

@@ -1,0 +1,12 @@
+{
+  "skills": {
+    "disabled": [
+      "dataviz",
+      "extension-creator",
+      "new-app",
+      "qc-helper",
+      "stuck"
+    ]
+  },
+  "$version": 4
+}

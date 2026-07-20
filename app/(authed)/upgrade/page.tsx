@@ -13,10 +13,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import Link from "next/link";
 import { api } from "@/convex/_generated/api";
+import { POLAR_PRODUCT_ID } from "@/lib/billing";
 
 type UpgradeStatus = "syncing" | "redirecting" | "error";
-
-const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
 
 const RETRY_MESSAGE = "We couldn't start checkout. Please try again.";
 
