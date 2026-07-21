@@ -53,9 +53,23 @@ jobs:
         if: github.ref != 'refs/heads/main' && (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/'))
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_KEY }}
+          CONVEX_DEPLOY_KEY_PROD: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           if [ -z "$CONVEX_DEPLOY_KEY" ]; then
             echo "::warning::CONVEX_PREVIEW_KEY is not set. Preview deployments will not work. Please ensure you have created a preview environment in Convex and set the CONVEX_PREVIEW_KEY secret in your GitHub repository."
           else
-            pnpm convex deploy
+            BRANCH_NAME="${GITHUB_REF_NAME}"
+            echo "Creating preview deployment for branch: ${BRANCH_NAME}"
+            # Create the preview deployment first so we can set env vars before deploy
+            npx convex deployment create "yasir-khan:promptcraft:preview/${BRANCH_NAME}" --type preview --expiration "in 30 days" 2>/dev/null || true
+
+            # Copy CLERK_FRONTEND_API_URL from the production deployment so the
+            # auth config check during convex deploy passes on new previews.
+            # Temporarily swap to the production deploy key to read the value.
+            CLERK_URL="$(CONVEX_DEPLOY_KEY="$CONVEX_DEPLOY_KEY_PROD" npx convex env get CLERK_FRONTEND_API_URL 2>/dev/null)"
+            if [ -n "$CLERK_URL" ] && [ "$CLERK_URL" != "null" ]; then
+              npx convex env set CLERK_FRONTEND_API_URL "$CLERK_URL"
+            fi
+
+            pnpm convex deploy --preview-name "${BRANCH_NAME}"
           fi
