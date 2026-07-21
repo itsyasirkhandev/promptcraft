@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import type { UseFormSetValue } from 'react-hook-form';
 import type { PromptFormValues } from '@/lib/schemas/prompt.schema';
