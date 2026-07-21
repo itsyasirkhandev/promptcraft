@@ -42,6 +42,7 @@ const modules = (
 const polarMock = vi.hoisted(() => ({
 	customers: {
 		getExternal: vi.fn(),
+		list: vi.fn(),
 		create: vi.fn(),
 		updateExternal: vi.fn(),
 	},
@@ -93,6 +94,7 @@ beforeEach(() => {
 	// SDK defaults: "not found" customer lookups so ensureCustomer proceeds to
 	// create only when a test opts in.
 	polarMock.customers.getExternal.mockRejectedValue({ statusCode: 404 });
+	polarMock.customers.list.mockResolvedValue({ result: { items: [] } });
 });
 
 // --- svix payload signing (mirrors verifyPolarWebhook: btoa(secret)) --------
@@ -348,8 +350,32 @@ describe("ensureCustomer", () => {
 		polarMock.customers.getExternal.mockResolvedValueOnce({ id: "pol_found" });
 		const id = await run(ensureCustomer(backend, CLERK_ID, "u@test.com", "Test"));
 		expect(id).toBe("pol_found");
+		expect(polarMock.customers.list).not.toHaveBeenCalled();
 		expect(polarMock.customers.create).not.toHaveBeenCalled();
 		expect(backend.savePolarCustomerId).toHaveBeenCalledWith(CLERK_ID, "pol_found");
+	});
+
+	test("reuses and saves an existing Polar customer found by exact email", async () => {
+		const backend: BillingBackend = {
+			getUserInfoForPolar: vi.fn().mockResolvedValue({
+				userId: "u1",
+				email: "u@test.com",
+				name: "Test",
+				polarCustomerId: null,
+				plan: "hobby" as const,
+			}),
+			savePolarCustomerId: vi.fn().mockResolvedValue(undefined),
+		};
+		polarMock.customers.list.mockResolvedValueOnce({
+			result: { items: [{ id: "pol_email", email: "U@Test.com" }] },
+		});
+
+		const id = await run(ensureCustomer(backend, CLERK_ID, "u@test.com", "Test"));
+
+		expect(id).toBe("pol_email");
+		expect(polarMock.customers.list).toHaveBeenCalledWith({ email: "u@test.com", limit: 2 });
+		expect(polarMock.customers.create).not.toHaveBeenCalled();
+		expect(backend.savePolarCustomerId).toHaveBeenCalledWith(CLERK_ID, "pol_email");
 	});
 
 	test("creates a customer when none exists", async () => {
@@ -388,6 +414,31 @@ describe("ensureCustomer", () => {
 		const id = await run(ensureCustomer(backend, CLERK_ID, "u@test.com", "Test"));
 		expect(id).toBe("pol_winner");
 		expect(backend.savePolarCustomerId).toHaveBeenCalledWith(CLERK_ID, "pol_winner");
+	});
+
+	test("recovers from an email conflict by reusing and saving the existing customer", async () => {
+		const backend: BillingBackend = {
+			getUserInfoForPolar: vi.fn().mockResolvedValue({
+				userId: "u1",
+				email: "u@test.com",
+				name: "Test",
+				polarCustomerId: null,
+				plan: "hobby" as const,
+			}),
+			savePolarCustomerId: vi.fn().mockResolvedValue(undefined),
+		};
+		polarMock.customers.list
+			.mockResolvedValueOnce({ result: { items: [] } })
+			.mockResolvedValueOnce({
+				result: { items: [{ id: "pol_email_winner", email: "u@test.com" }] },
+			});
+		polarMock.customers.create.mockRejectedValueOnce({ statusCode: 422 });
+
+		const id = await run(ensureCustomer(backend, CLERK_ID, "u@test.com", "Test"));
+
+		expect(id).toBe("pol_email_winner");
+		expect(polarMock.customers.list).toHaveBeenCalledTimes(2);
+		expect(backend.savePolarCustomerId).toHaveBeenCalledWith(CLERK_ID, "pol_email_winner");
 	});
 
 	test("aborts on empty email without creating a customer", async () => {
@@ -462,13 +513,37 @@ describe("authed billing actions", () => {
 
 	test("Hobby routes to the checkout destination", async () => {
 		const t = await authedBackend("hobby");
-		// No stored customer, no Polar externalId match -> create one, then checkout.
+		// No stored customer, no Polar externalId or email match -> create one, then checkout.
 		polarMock.customers.create.mockResolvedValueOnce({ id: "pol_new" });
 		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/x" });
 
 		const result = await t.action(api.authed.billing.generateCheckoutUrl, { productId: PRODUCT_ID, successUrl: SUCCESS_URL });
 		expect(result.destination).toBe("checkout");
 		expect(result.url).toBe("https://checkout.polar.sh/x");
+	});
+
+	test("Hobby reuses an existing email customer and creates checkout", async () => {
+		const t = await authedBackend("hobby");
+		polarMock.customers.list.mockResolvedValueOnce({
+			result: { items: [{ id: "pol_email", email: "u@test.com" }] },
+		});
+		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/existing" });
+
+		const result = await t.action(api.authed.billing.generateCheckoutUrl, { productId: PRODUCT_ID, successUrl: SUCCESS_URL });
+
+		expect(result.destination).toBe("checkout");
+		expect(result.url).toBe("https://checkout.polar.sh/existing");
+		expect(polarMock.customers.create).not.toHaveBeenCalled();
+		expect(polarMock.checkouts.create).toHaveBeenCalledWith(expect.objectContaining({
+			customerId: "pol_email",
+		}));
+		const user = await t.run(async (ctx) =>
+			ctx.db
+				.query("users")
+				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.unique(),
+		);
+		expect(user?.polarCustomerId).toBe("pol_email");
 	});
 
 	test("Pro routes to the portal destination (no second checkout)", async () => {

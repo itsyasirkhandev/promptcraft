@@ -73,8 +73,9 @@ function isAppReturnUrl(url: string): boolean {
 /**
  * Idempotently ensure a Polar customer exists for a Clerk user and return its real ID.
  * Order (spec 3.1): stored polarCustomerId -> Polar customer by Clerk externalId ->
- * create only if neither exists. Recovers from external-ID conflict / concurrent create.
- * Never uses placeholder IDs; never saves an ID to a different user. Aborts on empty email.
+ * Polar customer by exact email -> create only if neither exists. Recovers from
+ * external-ID/email conflicts and concurrent creates. Never uses placeholder IDs;
+ * never saves an ID to a different user. Aborts on empty email.
  */
 export function ensureCustomer(
   backend: BillingBackend,
@@ -106,11 +107,28 @@ export function ensureCustomer(
       return existingId;
     }
 
-    // 2. None exists — create one, recovering from concurrent/external-ID conflict.
+    // 2. Reuse an existing Polar customer identified by the exact email.
+    const emailId = yield* lookupByEmail(polar, email);
+    if (emailId) {
+      yield* saveId(backend, clerkId, emailId);
+      return emailId;
+    }
+
+    // 3. None exists — create one, recovering from concurrent/external-ID conflict.
     const createdId = yield* createCustomer(polar, clerkId, email, name, info);
     yield* saveId(backend, clerkId, createdId);
     return createdId;
   });
+}
+
+function findByExternalId(polar: Polar, clerkId: string) {
+  return polar.customers
+    .getExternal({ externalId: clerkId })
+    .then((customer) => customer.id)
+    .catch((error: unknown) => {
+      if (isNotFound(error)) return null;
+      throw error;
+    });
 }
 
 function lookupByExternalId(
@@ -118,17 +136,34 @@ function lookupByExternalId(
   clerkId: string,
 ): Effect.Effect<string | null, PolarBillingError, never> {
   return Effect.tryPromise({
-    try: async () => {
-      try {
-        const c = await polar.customers.getExternal({ externalId: clerkId });
-        return c.id;
-      } catch (e) {
-        if (isNotFound(e)) return null;
-        throw e;
-      }
-    },
+    try: () => findByExternalId(polar, clerkId),
     catch: (e) =>
       new PolarBillingError({ message: `Polar customer lookup failed: ${String(e)}` }),
+  });
+}
+
+async function findByEmail(polar: Polar, email: string) {
+  const page = await polar.customers.list({ email, limit: 2 });
+  const normalizedEmail = email.trim().toLowerCase();
+  const matches = page.result.items.filter(
+    (customer) => customer.email?.trim().toLowerCase() === normalizedEmail,
+  );
+
+  if (matches.length > 1) {
+    throw new Error(`Multiple Polar customers found for email ${email}.`);
+  }
+
+  return matches[0]?.id ?? null;
+}
+
+function lookupByEmail(
+  polar: Polar,
+  email: string,
+): Effect.Effect<string | null, PolarBillingError, never> {
+  return Effect.tryPromise({
+    try: () => findByEmail(polar, email),
+    catch: (e) =>
+      new PolarBillingError({ message: `Polar customer email lookup failed: ${String(e)}` }),
   });
 }
 
@@ -164,10 +199,13 @@ function createCustomer(
         return customer.id;
       } catch (e) {
         // Concurrent/race recovery: another caller created the Polar customer
-        // with this externalId. Retrieve and reuse the winner (spec 3.1).
+        // with this externalId or email. Retrieve and reuse the winner (spec 3.1).
         if (isConflict(e)) {
-          const existing = await polar.customers.getExternal({ externalId: clerkId });
-          return existing.id;
+          const existingByExternalId = await findByExternalId(polar, clerkId);
+          if (existingByExternalId) return existingByExternalId;
+
+          const existingByEmail = await findByEmail(polar, email);
+          if (existingByEmail) return existingByEmail;
         }
         throw e;
       }

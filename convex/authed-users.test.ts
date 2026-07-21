@@ -28,6 +28,7 @@ const modules = (
 const polarMock = vi.hoisted(() => ({
 	customers: {
 		getExternal: vi.fn(),
+		list: vi.fn(),
 		create: vi.fn(),
 		updateExternal: vi.fn(),
 	},
@@ -51,6 +52,7 @@ const TOKEN_ID = "tok_clerk_456";
 beforeEach(() => {
 	vi.clearAllMocks();
 	polarMock.customers.getExternal.mockRejectedValue({ statusCode: 404 });
+	polarMock.customers.list.mockResolvedValue({ result: { items: [] } });
 	polarMock.customers.create.mockResolvedValue({ id: "pol_authed" });
 	process.env.CLERK_JWT_ISSUER_DOMAIN = "https://clerk.example.com";
 	process.env.POLAR_ACCESS_TOKEN = "test_token";

@@ -25,6 +25,7 @@ const modules = (
 const polarMock = vi.hoisted(() => ({
 	customers: {
 		getExternal: vi.fn(),
+		list: vi.fn(),
 		create: vi.fn(),
 		updateExternal: vi.fn(),
 	},
@@ -58,9 +59,10 @@ function clerkPayload(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	// SDK defaults: "not found" external lookup so ensureCustomer proceeds to
-	// create. create resolves to a fixed id so savePolarCustomerId can persist it.
+	// SDK defaults: "not found" external and email lookups so ensureCustomer proceeds
+	// to create. create resolves to a fixed id so savePolarCustomerId can persist it.
 	polarMock.customers.getExternal.mockRejectedValue({ statusCode: 404 });
+	polarMock.customers.list.mockResolvedValue({ result: { items: [] } });
 	polarMock.customers.create.mockResolvedValue({ id: "pol_new" });
 	process.env.CLERK_JWT_ISSUER_DOMAIN = ISSUER;
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
