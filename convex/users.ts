@@ -1,4 +1,4 @@
-import { internalMutation, type MutationCtx } from "./_generated/server";
+import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
@@ -148,14 +148,16 @@ export const savePolarCustomerId = internalMutation({
 		}
 
 		if (!user) {
-			console.warn(`savePolarCustomerId: no Convex user for clerkId=${clerkId} or polarCustomerId=${polarCustomerId}`);
-			return;
+			throw new Error(
+				`Cannot save Polar customer ID: no Convex user matches clerkId=${clerkId} or polarCustomerId=${polarCustomerId}`,
+			);
 		}
 
 		// Never overwrite a different user's customer ID.
 		if (user.polarCustomerId && user.polarCustomerId !== polarCustomerId) {
-			console.warn(`savePolarCustomerId: refusing to overwrite existing Polar customer ID for user ${user._id}`);
-			return;
+			throw new Error(
+				`Cannot overwrite Polar customer ID for Convex user ${user._id}`,
+			);
 		}
 
 		await ctx.db.patch(user._id, { polarCustomerId });
@@ -207,6 +209,41 @@ export const updateSubscriptionFromPolar = internalMutation({
 		} else if (wasHobby && args.plan === "pro" && !user.email) {
 			console.warn("Skipping Pro upgrade email: user has no email address.");
 		}
+	},
+});
+
+// [Phase 3] Best-effort Clerk profile re-sync via the Clerk Backend API.
+// Triggered from getOrCreateUser when a new user is created with potentially
+// incomplete profile (email/name missing from the JWT identity).
+// Requires CLERK_SECRET_KEY env var; silently skips if unset.
+// The Clerk webhook is the primary sync path — this is a repair fallback.
+export const resyncFromClerk = internalAction({
+	args: { clerkId: v.string() },
+	handler: async (ctx, { clerkId }) => {
+		const secretKey = process.env.CLERK_SECRET_KEY;
+		if (!secretKey) {
+			console.log("resyncFromClerk: CLERK_SECRET_KEY not configured, skipping");
+			return;
+		}
+
+		const response = await fetch(
+			`https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
+			{ headers: { Authorization: `Bearer ${secretKey}` } },
+		);
+
+		if (!response.ok) {
+			if (response.status === 404) {
+				console.warn(`resyncFromClerk: Clerk user ${clerkId} not found`);
+			} else {
+				console.warn(
+					`resyncFromClerk: Clerk API returned ${response.status} for ${clerkId}`,
+				);
+			}
+			return;
+		}
+
+		const data = await response.json();
+		await ctx.runMutation(internal.users.upsertFromClerk, { data });
 	},
 });
 
