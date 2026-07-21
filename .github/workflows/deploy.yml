@@ -63,13 +63,12 @@ jobs:
             # Create the preview deployment first so we can set env vars before deploy
             npx convex deployment create "yasir-khan:promptcraft:preview/${BRANCH_NAME}" --type preview --expiration "in 30 days" 2>/dev/null || true
 
-            # Copy CLERK_FRONTEND_API_URL from the production deployment so the
-            # auth config check during convex deploy passes on new previews.
-            # Temporarily swap to the production deploy key to read the value.
-            CLERK_URL="$(CONVEX_DEPLOY_KEY="$CONVEX_DEPLOY_KEY_PROD" npx convex env get CLERK_FRONTEND_API_URL 2>/dev/null)"
-            if [ -n "$CLERK_URL" ] && [ "$CLERK_URL" != "null" ]; then
-              npx convex env set CLERK_FRONTEND_API_URL "$CLERK_URL"
-            fi
+            # Copy all env vars from the production deployment onto the preview.
+            # Uses CONVEX_DEPLOY_KEY_PROD (production key) to read, then writes
+            # to preview using the preview key (current CONVEX_DEPLOY_KEY).
+            CONVEX_DEPLOY_KEY="$CONVEX_DEPLOY_KEY_PROD" npx convex env list --prod > .env.preview
+            npx convex env set --from-file .env.preview --force
+            rm .env.preview
 
             pnpm convex deploy --preview-name "${BRANCH_NAME}"
           fi
