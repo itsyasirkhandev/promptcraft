@@ -8,14 +8,21 @@ export async function runEffect<Result, Error>(
 		return await Effect.runPromise(effect);
 	} catch (error) {
 		if (error && typeof error === 'object' && '_tag' in error) {
-			// Strip the Effect `_tag` marker before serialization: Convex rejects
-			// object fields starting with "_", so the tagged error would otherwise
-			// fail to reach the client as a structured ConvexError.
-			const { _tag, ...data } = error as { _tag: string } & Record<string, unknown>;
-			throw new ConvexError({
-				tag: _tag,
-				data: data as Record<string, Value>
-			});
+			// Schema.TaggedErrorClass fields (message, etc.) are defined as
+			// non-enumerable own properties in Effect v4, so both object spread
+			// AND JSON.stringify drop them. Use getOwnPropertyNames to capture all
+			// own properties regardless of enumerability.
+			const tag = (error as { _tag: string })._tag;
+			const serialized: Record<string, Value> = {};
+			for (const key of Object.getOwnPropertyNames(error)) {
+				if (key !== '_tag' && key !== 'name' && key !== 'stack' && key !== 'constructor') {
+					const value = (error as Record<string, unknown>)[key];
+					if (value !== undefined) {
+						serialized[key] = value as Value;
+					}
+				}
+			}
+			throw new ConvexError({ tag, data: serialized });
 		}
 		throw error;
 	}

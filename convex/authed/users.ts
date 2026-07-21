@@ -28,6 +28,16 @@ async function schedulePolarCustomerSync(
 	await scheduler.runAfter(0, internal.billing.sync.ensurePolarCustomer, { clerkId, email, name });
 }
 
+// Same workaround as schedulePolarCustomerSync: extracting the internal.api
+// reference into an explicitly-typed function breaks the circular type chain
+// that a direct `internal.users.resyncFromClerk` inline would create.
+async function scheduleClerkResync(
+	scheduler: Scheduler,
+	clerkId: string,
+): Promise<void> {
+	await scheduler.runAfter(5_000, internal.users.resyncFromClerk, { clerkId });
+}
+
 // Resolve the authed viewer by tokenIdentifier, then converge on clerkId so the
 // authed path and the Clerk webhook never create duplicate users.
 function resolveAuthedViewer(
@@ -127,6 +137,14 @@ export const getOrCreateUser = effectAuthedMutation({
 			} else {
 				viewer = yield* insertNewViewer(writerDb, identity);
 				yield* maybeSchedulePolarSync(identity);
+
+				// Schedule a deferred re-sync from Clerk API to backfill any profile
+				// fields (email, name) that the JWT identity may not carry.
+				const clerkId = identity.subject;
+				if (clerkId && !identity.email) {
+					const { scheduler } = yield* ConvexScheduler;
+					yield* Effect.tryPromise(() => scheduleClerkResync(scheduler, clerkId));
+				}
 			}
 			return viewer._id;
 		})
