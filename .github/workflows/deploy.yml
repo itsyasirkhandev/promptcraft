@@ -50,7 +50,7 @@ jobs:
           fi
 
       - name: Deploy Preview
-        if: github.ref != 'refs/heads/main'
+        if: github.ref != 'refs/heads/main' && (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/'))
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_KEY }}
         run: |
