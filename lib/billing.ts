@@ -1,1 +1,7 @@
-export const POLAR_PRODUCT_ID = "31b0505a-9ff3-4fa0-a370-adf5e6ad3143";
+const polarProductId = process.env.NEXT_PUBLIC_POLAR_PRODUCT_ID;
+
+if (!polarProductId) {
+  throw new Error("Missing NEXT_PUBLIC_POLAR_PRODUCT_ID");
+}
+
+export const POLAR_PRODUCT_ID = polarProductId;
