@@ -165,6 +165,30 @@ describe("upsertFromClerk", () => {
 		expect(user?.clerkId).toBe(CLERK_ID);
 	});
 
+	test("converges on an existing user found by email when clerkId and tokenIdentifier do not match", async () => {
+		const t = convexTest(schema, modules);
+		const seededId = await t.run(async (ctx) => {
+			return ctx.db.insert("users", {
+				name: "Pre-existing Email",
+				email: "ada@example.com",
+				tokenIdentifier: "different_token",
+				clerkId: "different_clerk_id",
+				plan: "hobby",
+			});
+		});
+
+		await t.mutation(internal.users.upsertFromClerk, {
+			data: clerkPayload(),
+		});
+		await flush(t);
+
+		const users = await countUsers(t);
+		expect(users).toHaveLength(1);
+		const user = await readUserByClerkId(t);
+		expect(user?._id).toBe(seededId);
+		expect(user?.clerkId).toBe(CLERK_ID);
+	});
+
 	test("schedules Polar customer sync after inserting a user with an email", async () => {
 		const t = convexTest(schema, modules);
 		await t.mutation(internal.users.upsertFromClerk, {

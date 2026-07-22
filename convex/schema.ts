@@ -15,7 +15,8 @@ export default defineSchema({
 	})
 		.index('by_token', ['tokenIdentifier'])
 		.index('by_clerk_id', ['clerkId'])
-		.index('by_polar_customer_id', ['polarCustomerId']),
+		.index('by_polar_customer_id', ['polarCustomerId'])
+		.index('by_email', ['email']),
 	prompts: defineTable({
 		userId: v.id('users'),
 		title: v.string(),

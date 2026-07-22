@@ -11,7 +11,7 @@ import { ConvexDB, ConvexScheduler } from '../services/ConvexDB';
 import { GenericDatabaseWriter, Scheduler, type UserIdentity } from 'convex/server';
 import { DataModel, Doc } from '../_generated/dataModel';
 import { internal } from '../_generated/api';
-import { queryUserByClerkId, queryUserByToken } from '../userQueries';
+import { queryUserByClerkId, queryUserByEmail, queryUserByToken } from '../userQueries';
 
 // [Phase 3] Wrap the internal-action schedule in an explicitly-typed function so the
 // effectAuthedMutation handler's R/E inference doesn't transitively depend on the
@@ -38,7 +38,7 @@ async function scheduleClerkResync(
 	await scheduler.runAfter(5_000, internal.users.resyncFromClerk, { clerkId });
 }
 
-// Resolve the authed viewer by tokenIdentifier, then converge on clerkId so the
+// Resolve the authed viewer by tokenIdentifier, then converge on clerkId and email so the
 // authed path and the Clerk webhook never create duplicate users.
 function resolveAuthedViewer(
 	db: GenericDatabaseWriter<DataModel>,
@@ -48,6 +48,9 @@ function resolveAuthedViewer(
 		let viewer = yield* Effect.tryPromise(() => queryUserByToken(db, identity.tokenIdentifier));
 		if (!viewer && identity.subject) {
 			viewer = yield* Effect.tryPromise(() => queryUserByClerkId(db, identity.subject));
+		}
+		if (!viewer && identity.email) {
+			viewer = yield* Effect.tryPromise(() => queryUserByEmail(db, identity.email!));
 		}
 		return viewer;
 	});

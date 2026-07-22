@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import {
 	queryUserByClerkId,
+	queryUserByEmail,
 	queryUserByPolarCustomerId,
 	queryUserByToken,
 } from "./userQueries";
@@ -39,15 +40,20 @@ function extractClerkProfile(data: any): ClerkProfile {
 	};
 }
 
-// Resolve by clerkId (canonical), then converge on the reconstructed tokenIdentifier
+// Resolve by clerkId (canonical), then converge on the reconstructed tokenIdentifier and email
 // so the webhook and the authed getOrCreateUser path never create duplicates.
 async function resolveExistingUser(
 	ctx: MutationCtx,
-	clerkId: string,
+	profile: ClerkProfile,
 ): Promise<Doc<"users"> | null> {
-	const byClerkId = await queryUserByClerkId(ctx.db, clerkId);
+	const byClerkId = await queryUserByClerkId(ctx.db, profile.clerkId);
 	if (byClerkId) return byClerkId;
-	return queryUserByToken(ctx.db, reconstructTokenIdentifier(clerkId));
+	const byToken = await queryUserByToken(ctx.db, reconstructTokenIdentifier(profile.clerkId));
+	if (byToken) return byToken;
+	if (profile.email) {
+		return queryUserByEmail(ctx.db, profile.email);
+	}
+	return null;
 }
 
 // Apply only changed profile fields, then schedule the shared Polar profile sync
@@ -115,7 +121,7 @@ export const upsertFromClerk = internalMutation({
 	args: { data: v.any() }, // Using v.any() to accept the Clerk webhook event.data payload
 	async handler(ctx, { data }) {
 		const profile = extractClerkProfile(data);
-		const existing = await resolveExistingUser(ctx, profile.clerkId);
+		const existing = await resolveExistingUser(ctx, profile);
 		if (existing) {
 			await updateExistingUser(ctx, existing, profile);
 		} else {

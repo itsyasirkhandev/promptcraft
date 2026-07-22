@@ -9,7 +9,8 @@ import type { DataModel, Doc } from "./_generated/dataModel";
 type UserLookup =
 	| { by: "token"; tokenIdentifier: string }
 	| { by: "clerkId"; clerkId: string }
-	| { by: "polarCustomerId"; polarCustomerId: string };
+	| { by: "polarCustomerId"; polarCustomerId: string }
+	| { by: "email"; email: string };
 
 function queryUserBy(
 	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
@@ -31,6 +32,11 @@ function queryUserBy(
 				.query("users")
 				.withIndex("by_polar_customer_id", (q) => q.eq("polarCustomerId", lookup.polarCustomerId))
 				.unique();
+		case "email":
+			return db
+				.query("users")
+				.withIndex("by_email", (q) => q.eq("email", lookup.email))
+				.unique();
 	}
 }
 
@@ -48,5 +54,10 @@ export const queryUserByPolarCustomerId = (
 	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
 	polarCustomerId: string,
 ): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "polarCustomerId", polarCustomerId });
+
+export const queryUserByEmail = (
+	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
+	email: string,
+): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "email", email });
 
 

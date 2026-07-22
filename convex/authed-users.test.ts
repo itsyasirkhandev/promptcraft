@@ -153,6 +153,27 @@ describe("getOrCreateUser", () => {
 		expect(user?.tokenIdentifier).toBe(TOKEN_ID);
 	});
 
+	test("converges by email when tokenIdentifier and clerkId lookups miss", async () => {
+		const t = authed(convexTest(schema, modules));
+		const seededId = await t.run(async (ctx) => {
+			return ctx.db.insert("users", {
+				name: "Pre-existing Email",
+				email: "ada@example.com",
+				tokenIdentifier: "old_token",
+				clerkId: "old_clerk_id",
+				plan: "hobby",
+			});
+		});
+
+		const id = await t.mutation(api.authed.users.getOrCreateUser, {});
+		await flush(t);
+
+		expect(id).toBe(seededId);
+		const user = await readUserByClerkId(t);
+		expect(user?.clerkId).toBe(CLERK_ID);
+		expect(user?.tokenIdentifier).toBe(TOKEN_ID);
+	});
+
 	test("schedules Polar customer sync after creating a user", async () => {
 		const t = authed(convexTest(schema, modules));
 

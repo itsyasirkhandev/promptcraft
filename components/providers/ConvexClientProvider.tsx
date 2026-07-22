@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ConvexReactClient, useConvexAuth, useMutation } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
@@ -11,10 +11,18 @@ import { clientConfig } from "@/lib/services/Config";
 function UserSyncTrigger() {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const syncUser = useMutation(api.authed.users.getOrCreateUser);
+  const syncedRef = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (!isAuthenticated && !isLoading) {
+      syncedRef.current = false;
+      return;
+    }
+
+    if (isAuthenticated && !isLoading && !syncedRef.current) {
+      syncedRef.current = true;
       void syncUser().catch((err) => {
+        syncedRef.current = false;
         console.error("Failed to sync user to Convex:", err);
       });
     }
