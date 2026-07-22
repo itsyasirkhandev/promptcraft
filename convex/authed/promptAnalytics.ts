@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { ConvexDB } from '../services/ConvexDB';
-import { effectAuthedQuery, requireViewer } from './helpers';
+import { effectAuthedQuery, AuthedContext } from './helpers';
 
 const DAYS_IN_PERIOD = 30;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
@@ -12,7 +12,17 @@ export const getInventoryAnalytics = effectAuthedQuery({
 	args: {},
 	handler: () =>
 		Effect.gen(function* () {
-			const viewer = yield* requireViewer('Not authenticated or user not registered')
+			const { viewer } = yield* AuthedContext;
+			if (!viewer) {
+				return {
+					summary: { totalPrompts: 0, publicPrompts: 0, templatePrompts: 0, createdLast30Days: 0 },
+					creationTrend: [],
+					visibility: [],
+					promptTypes: [],
+					categories: [],
+					period: { timezone: 'UTC' as const, startDate: '', endDate: '', days: DAYS_IN_PERIOD }
+				};
+			}
 
 			const now = Date.now();
 			const currentDate = new Date(now);

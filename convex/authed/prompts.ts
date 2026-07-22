@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { effectAuthedQuery, effectAuthedMutation, requireViewer } from './helpers';
+import { effectAuthedQuery, effectAuthedMutation, requireViewer, AuthedContext } from './helpers';
 import { Effect, Schema } from 'effect';
 import { ConvexDB } from '../services/ConvexDB';
 import { GenericDatabaseReader, GenericDatabaseWriter } from 'convex/server';
@@ -274,7 +274,16 @@ export const getUsage = effectAuthedQuery({
 	args: {},
 	handler: () =>
 		Effect.gen(function* () {
-			const viewer = yield* requireViewer()
+			const { viewer } = yield* AuthedContext;
+			if (!viewer) {
+				return {
+					plan: 'hobby' as const,
+					promptsUsed: 0,
+					promptsLimit: null,
+					publicUsed: 0,
+					publicLimit: null
+				};
+			}
 
 			if (viewer.plan === 'pro') {
 				return {
