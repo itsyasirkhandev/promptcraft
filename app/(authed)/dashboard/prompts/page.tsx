@@ -7,6 +7,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useClipboard } from '@/hooks/use-clipboard';
 import {
   InputGroup,
   InputGroupAddon,
@@ -129,7 +130,7 @@ function highlightVariables(text: string, fields: { name: string }[]) {
     return trimmed ? [trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')] : [];
   });
   if (fieldNames.length === 0) return text;
-  const pattern = new RegExp(`(\\{\\{?(?:${fieldNames.join('|')})\\}?\\})`, 'g');
+  const pattern = new RegExp(`(\\{\\{(?:${fieldNames.join('|')})\\}\\})`, 'g');
   return text.split(pattern).map((part, index) => {
     const cleanPart = part.replace(/^\{\{?|\}\}?$/g, '').trim();
     const match = fields.find((f) => f.name === cleanPart);
@@ -246,29 +247,25 @@ interface PromptCardProps {
 }
 
 function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
-  const [copied, setCopied] = useState(false);
-  const [copiedSlug, setCopiedSlug] = useState(false);
+  const { copied, copy: copyContent } = useClipboard();
+  const { copied: copiedSlug, copy: copySlug } = useClipboard();
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt.content);
-      setCopied(true);
+    const ok = await copyContent(prompt.content);
+    if (ok) {
       toast.success('Copied prompt content to clipboard');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       toast.error('Failed to copy to clipboard');
     }
   };
 
   const handleCopySlug = async () => {
     if (!prompt.publicSlug) return;
-    try {
-      const shareUrl = `${window.location.origin}/p/${prompt.publicSlug}`;
-      await navigator.clipboard.writeText(shareUrl);
-      setCopiedSlug(true);
+    const shareUrl = `${window.location.origin}/p/${prompt.publicSlug}`;
+    const ok = await copySlug(shareUrl);
+    if (ok) {
       toast.success('Share link copied to clipboard');
-      setTimeout(() => setCopiedSlug(false), 2000);
-    } catch {
+    } else {
       toast.error('Failed to copy share link');
     }
   };

@@ -23,6 +23,16 @@ export class PlanLimitError extends Schema.TaggedErrorClass<PlanLimitError>()("P
 export const HOBBY_PROMPT_LIMIT = 30;
 export const HOBBY_PUBLIC_PROMPT_LIMIT = 10;
 
+// Count public prompts (bounded to limit + 1 for efficiency).
+function countPublicPrompts(db: GenericDatabaseReader<DataModel>, viewer: Doc<'users'>) {
+	return Effect.tryPromise(() =>
+		db
+			.query('prompts')
+			.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+			.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
+	);
+}
+
 // Hobby-only quota enforcement. Reads are bounded (limit + 1) so they stay
 // efficient even for users who downgrade from Pro with a large library.
 function enforceHobbyQuota(
@@ -50,12 +60,7 @@ function enforceHobbyQuota(
 		}
 
 		if (opts.markPublic) {
-			const publicPrompts = yield* Effect.tryPromise(() =>
-				db
-					.query('prompts')
-					.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
-					.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
-			);
+			const publicPrompts = yield* countPublicPrompts(db, viewer);
 			if (publicPrompts.length >= HOBBY_PUBLIC_PROMPT_LIMIT) {
 				return yield* Effect.fail(
 					new PlanLimitError({
@@ -203,6 +208,23 @@ export const update = effectAuthedMutation({
 					updatedAt: Date.now()
 				})
 			);
+
+			// Post-update verification: if we just made this prompt public, re-check the
+			// public count to catch concurrent updates that could exceed the limit.
+			// If over the limit, revert the prompt to private.
+			if (viewer.plan === 'hobby' && args.isPublic && !prompt.isPublic) {
+				const publicAfter = yield* countPublicPrompts(db, viewer);
+				if (publicAfter.length > HOBBY_PUBLIC_PROMPT_LIMIT) {
+					yield* Effect.tryPromise(() =>
+						writerDb.patch(args.id, { isPublic: false, publicSlug: undefined })
+					);
+					return yield* Effect.fail(
+						new PlanLimitError({
+							message: `You've reached the ${HOBBY_PUBLIC_PROMPT_LIMIT} public-prompt limit on the Hobby plan. Upgrade to Pro to share more public prompts.`
+						})
+					);
+				}
+			}
 
 			const updatedPrompt = yield* Effect.tryPromise(() => writerDb.get(args.id));
 			return updatedPrompt;

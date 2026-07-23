@@ -8,6 +8,7 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useClipboard } from '@/hooks/use-clipboard';
 import {
   ArrowSquareOut,
   ChartBar,
@@ -63,15 +64,13 @@ interface MarketplacePromptCardProps {
 }
 
 export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
-  const [copied, setCopied] = React.useState(false);
+  const { copied, copy: copyToClipboard } = useClipboard();
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt.content);
-      setCopied(true);
+    const ok = await copyToClipboard(prompt.content);
+    if (ok) {
       toast.success('Prompt copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       toast.error('Failed to copy prompt');
     }
   };

@@ -33,7 +33,6 @@ import { CategorySelector } from '@/components/prompts/CategorySelector';
 import { TemplateFieldsPanel } from '../create/_components/TemplateFieldsPanel';
 import { CreateTemplateFieldDialog } from '../create/_components/CreateTemplateFieldDialog';
 import { ShareUrlField } from './ShareUrlField';
-import { useAutoSetCategory } from './useAutoSetCategory';
 import type { PromptFormValues, TemplateFieldType } from '@/lib/schemas/prompt.schema';
 
 function charCountClass(current: number, max: number): string {
@@ -53,9 +52,6 @@ interface PromptFormProps {
   onSubmit: (data: PromptFormValues) => Promise<void>;
   submitLabel: string;
   resetLabel: string;
-  /** When true, auto-sets category to 'other' on isPublic toggle (create mode).
-   *  When false, uses the guard-ref approach for edit mode. */
-  autoSetCategory?: boolean;
   /** Existing public slug — when set and isPublic is on, shows a read-only share URL. */
   publicSlug?: string;
 }
@@ -151,7 +147,6 @@ function PromptForm({
   onSubmit,
   submitLabel,
   resetLabel,
-  autoSetCategory = true,
   publicSlug,
 }: PromptFormProps) {
   const { control, register, setValue, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
@@ -163,8 +158,6 @@ function PromptForm({
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
-
-  useAutoSetCategory(watchedIsPublic, setValue, autoSetCategory);
 
   function updateSelection(textarea: HTMLTextAreaElement) {
     const start = textarea.selectionStart;
@@ -268,7 +261,6 @@ interface PromptFormCardProps {
   onSubmit: (data: PromptFormValues) => Promise<void>;
   submitLabel: string;
   resetLabel: string;
-  autoSetCategory?: boolean;
   publicSlug?: string;
 }
 
@@ -279,7 +271,6 @@ export function PromptFormCard({
   onSubmit,
   submitLabel,
   resetLabel,
-  autoSetCategory,
   publicSlug,
 }: PromptFormCardProps) {
   return (
@@ -294,7 +285,6 @@ export function PromptFormCard({
           onSubmit={onSubmit}
           submitLabel={submitLabel}
           resetLabel={resetLabel}
-          autoSetCategory={autoSetCategory}
           publicSlug={publicSlug}
         />
       </CardContent>

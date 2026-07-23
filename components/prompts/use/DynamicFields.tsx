@@ -45,23 +45,6 @@ interface FieldControlProps {
   setValue: DynamicFieldsProps['setValue'];
 }
 
-function FieldText({ field, valueStr, isWorkspace, setValue }: FieldControlProps) {
-  return (
-    <Input
-      id={field.id}
-      type="text"
-      placeholder={
-        isWorkspace
-          ? `Enter ${field.name.replace(/_/g, ' ')}…`
-          : `Enter value for ${field.name}...`
-      }
-      value={valueStr}
-      onChange={(e) => setValue(field.name, e.target.value)}
-      className={inputCn(isWorkspace)}
-    />
-  );
-}
-
 function FieldLongText({ field, valueStr, isWorkspace, setValue }: FieldControlProps) {
   return (
     <Textarea
@@ -83,12 +66,19 @@ function FieldLongText({ field, valueStr, isWorkspace, setValue }: FieldControlP
   );
 }
 
-function FieldNumber({ field, valueStr, isWorkspace, setValue }: FieldControlProps) {
+function FieldInput({ field, valueStr, isWorkspace, setValue }: FieldControlProps) {
+  const isNumber = field.type === 'number';
+  const placeholder = isNumber
+    ? isWorkspace ? '0' : 'Enter number...'
+    : isWorkspace
+      ? `Enter ${field.name.replace(/_/g, ' ')}…`
+      : `Enter value for ${field.name}...`;
+
   return (
     <Input
       id={field.id}
-      type="number"
-      placeholder={isWorkspace ? '0' : 'Enter number...'}
+      type={isNumber ? 'number' : 'text'}
+      placeholder={placeholder}
       value={valueStr}
       onChange={(e) => setValue(field.name, e.target.value)}
       className={inputCn(isWorkspace)}
@@ -143,7 +133,7 @@ function FieldMultiSelect({ field, currentValue, isWorkspace, setValue }: FieldC
                   const newList = checked
                     ? [...list, opt]
                     : list.filter((v) => v !== opt);
-                  setValue(field.name, newList);
+                  setValue(field.name, newList.length === 0 && !checked ? undefined : newList);
                 }}
               />
               <Label
@@ -204,9 +194,8 @@ function FieldItem({
         {field.name.replace(/_/g, ' ')}
       </Label>
 
-      {field.type === 'text' && <FieldText {...controlProps} />}
+      {(field.type === 'text' || field.type === 'number') && <FieldInput {...controlProps} />}
       {field.type === 'longText' && <FieldLongText {...controlProps} />}
-      {field.type === 'number' && <FieldNumber {...controlProps} />}
       {field.type === 'singleSelect' && <FieldSingleSelect {...controlProps} />}
       {field.type === 'multiSelect' && <FieldMultiSelect {...controlProps} />}
     </div>
