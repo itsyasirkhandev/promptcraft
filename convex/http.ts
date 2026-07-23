@@ -153,26 +153,28 @@ function filterRelevantSubscription(
 
 // Resolve whether a Convex user exists for either identifier (clerkId first,
 // then polarCustomerId). Polar webhook may arrive before Clerk sync lands.
+// Returns the resolved identifiers for scheduling a deferred update, or null
+// if the user doesn't exist yet.
 async function resolvePolarUser(
-  ctx: ActionCtx,
-  clerkId: string | undefined,
-  polarCustomerId: string | undefined,
-): Promise<boolean> {
-  if (clerkId) {
-    const info = await ctx.runQuery(
-      internal.private.users.getUserInfoForPolar,
-      { clerkId },
-    );
-    if (info) return true;
-  }
-  if (polarCustomerId) {
-    const user = await ctx.runQuery(
-      internal.private.users.getByPolarCustomerId,
-      { polarCustomerId },
-    );
-    if (user) return true;
-  }
-  return false;
+	ctx: ActionCtx,
+	clerkId: string | undefined,
+	polarCustomerId: string | undefined,
+): Promise<{ clerkId?: string; polarCustomerId?: string } | null> {
+	if (clerkId) {
+		const info = await ctx.runQuery(
+			internal.private.users.getUserInfoForPolar,
+			{ clerkId },
+		);
+		if (info) return { clerkId, polarCustomerId };
+	}
+	if (polarCustomerId) {
+		const user = await ctx.runQuery(
+			internal.private.users.getByPolarCustomerId,
+			{ polarCustomerId },
+		);
+		if (user) return { clerkId, polarCustomerId };
+	}
+	return null;
 }
 
 http.route({
@@ -191,12 +193,27 @@ http.route({
 
     const userResolved = await resolvePolarUser(ctx, sub.clerkId, sub.polarCustomerId);
     if (!userResolved) {
-      console.warn("polar-webhook: unknown user, returning retryable response", {
-        type: ev.event.type,
-        hasClerkId: Boolean(sub.clerkId),
-        hasPolarCustomerId: Boolean(sub.polarCustomerId),
-      });
-      return new Response("User not yet synchronized", { status: 409 });
+      // User hasn't synced from Clerk yet. Schedule a deferred update instead
+      // of returning 409 (which relies on Polar's retry policy — Bug #10).
+      // updateSubscriptionFromPolar gracefully skips unknown users, so this
+      // is safe to schedule as a best-effort retry after Clerk syncs.
+      const clerkId = sub.clerkId;
+      const polarCustomerId = sub.polarCustomerId;
+      if (clerkId || polarCustomerId) {
+        await ctx.scheduler.runAfter(5_000, internal.users.updateSubscriptionFromPolar, {
+          clerkId,
+          polarCustomerId,
+          polarSubscriptionId: ev.event.data.id,
+          polarSubscriptionStatus: ev.event.data.status,
+          plan: sub.plan,
+        });
+        console.log("polar-webhook: deferred subscription update for unknown user", {
+          type: ev.event.type,
+          clerkId,
+          polarCustomerId,
+        });
+      }
+      return new Response(null, { status: 200 });
     }
 
     try {

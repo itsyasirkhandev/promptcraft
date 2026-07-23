@@ -12,6 +12,12 @@ export function usePromptInterpolation(prompt: PromptLike | null | undefined) {
 	>({ defaultValues: {} });
 	const formValues = useWatch({ control });
 
+	// Reset form values when the prompt changes so values from one prompt don't
+	// leak into another prompt's interpolation (Bug #9).
+	React.useEffect(() => {
+		reset({});
+	}, [prompt, reset]);
+
 	const flatValues = React.useMemo(() => flattenFormValues(formValues), [formValues]);
 
 	const interpolated = React.useMemo(() => {

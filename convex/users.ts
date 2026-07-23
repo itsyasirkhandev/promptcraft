@@ -135,6 +135,17 @@ export const deleteFromClerk = internalMutation({
 	async handler(ctx, { clerkUserId }) {
 		const existing = await queryUserByClerkId(ctx.db, clerkUserId);
 		if (existing) {
+			// Cascade-delete all prompts belonging to this user before deleting
+			// the user document. Otherwise orphaned public prompts remain visible
+			// in the marketplace with author: 'Anonymous' (Bug #4).
+			const prompts = await ctx.db
+				.query('prompts')
+				.withIndex('by_userId', (q) => q.eq('userId', existing._id))
+				.collect();
+			for (const prompt of prompts) {
+				await ctx.db.delete(prompt._id);
+			}
+
 			// Per spec 3.7: delete only the Convex user. Never touch Polar billing records.
 			await ctx.db.delete(existing._id);
 		}

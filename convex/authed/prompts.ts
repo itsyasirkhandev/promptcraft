@@ -176,11 +176,18 @@ export const update = effectAuthedMutation({
 				category: args.category
 			});
 			yield* enforceHobbyQuota(db, viewer, { checkTotal: false, markPublic: args.isPublic && !prompt.isPublic });
-			// Generate a slug only on private->public transition with no existing slug.
-			// An existing slug is always preserved (never regenerated on title edit).
-			const publicSlug = args.isPublic && !prompt.publicSlug
-				? yield* generateUniqueSlug(writerDb, args.title)
-				: prompt.publicSlug;
+			// Slug strategy:
+			//   - private -> public with no existing slug: generate fresh slug.
+			//   - private -> public with existing slug: generate a fresh slug to
+			//     avoid reusing a stale slug that another prompt may have claimed
+			//     since the prompt was last public (Bug #8).
+			//   - public -> private: clear slug so it frees the namespace (Bug #1).
+			//   - public -> public: preserve the existing slug (URL stability).
+			const publicSlug = args.isPublic
+				? prompt.publicSlug
+					? prompt.publicSlug // stably public, preserve URL
+					: yield* generateUniqueSlug(writerDb, args.title) // private->public, generate fresh
+				: undefined; // going private, clear slug
 
 			yield* Effect.tryPromise(() =>
 				writerDb.patch(args.id, {
@@ -301,11 +308,11 @@ export const getUsage = effectAuthedQuery({
 					db
 						.query('prompts')
 						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
-						.collect(),
+						.take(HOBBY_PROMPT_LIMIT + 1),
 					db
 						.query('prompts')
 						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
-						.collect()
+						.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
 				])
 			);
 

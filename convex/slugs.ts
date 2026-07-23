@@ -47,6 +47,14 @@ export function baseSlugFrom(title: string): string {
  * channel only surfaces a genuine DB read failure, which propagates to the
  * enclosing mutation exactly like the other `Effect.tryPromise` calls in
  * `convex/authed/prompts.ts`.
+ *
+ * ⚠ Determinism: This function uses `Math.random()` inside a Convex mutation.
+ * Convex currently patches `Math.random()` to produce deterministic values
+ * within a single mutation execution, so this is safe today. Should this
+ * function ever run outside a mutation context (action, query, or external
+ * runtime), `Math.random()` will be non-deterministic — consider switching
+ * to Convex's built-in ID or a counter-based approach for stronger guarantees.
+ * See Bug #5.
  */
 export const generateUniqueSlug = (db: GenericDatabaseReader<DataModel>, title: string) =>
 	Effect.gen(function* () {

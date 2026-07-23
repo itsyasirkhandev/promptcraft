@@ -114,17 +114,25 @@ export const listPublicPrompts = query({
 
 				if (args.searchQuery) {
 					const searchQuery = args.searchQuery;
+					// Search indexes only support .take(), not pagination.
+					// When a category filter is applied, we take a larger batch to
+					// increase the chance of filling the page. This is a known
+					// limitation: if fewer than `limit` prompts match the search +
+					// category, the result count will be lower than the page size.
+					// See Bug #7.
+					const takeSize = category && category !== 'all' ? limit * 3 : limit;
 					prompts = yield* Effect.tryPromise(() =>
 						db
 							.query('prompts')
 							.withSearchIndex('search_all', (q) =>
 								q.search('searchableText', searchQuery).eq('isPublic', true)
 							)
-							.take(limit)
+							.take(takeSize)
 					);
 					if (category && category !== 'all') {
 						prompts = prompts.filter((p) => p.category === category);
 					}
+					prompts = prompts.slice(0, limit);
 					if (args.sortBy === 'a-z') {
 						prompts = [...prompts].sort((a, b) => a.title.localeCompare(b.title));
 					}

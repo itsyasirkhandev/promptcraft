@@ -23,7 +23,7 @@ export const sendWelcomeEmail = internalAction({
         return;
       }
 
-      const userName = args.name || 'there';
+      const userName = (args.name || 'there').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 
       const htmlContent = `<!DOCTYPE html>
 <html>
@@ -102,7 +102,7 @@ export const sendProUpgradeEmail = internalAction({
         return;
       }
 
-      const userName = args.name || 'there';
+      const userName = (args.name || 'there').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 
       // Link to the in-app billing page, not Polar directly: portal URLs are
       // short-lived per-session, so the email points to the app route. SITE_URL
