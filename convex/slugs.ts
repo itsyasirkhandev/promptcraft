@@ -64,5 +64,7 @@ export const generateUniqueSlug = (db: GenericDatabaseReader<DataModel>, title: 
 		}
 
 		// Deterministic fallback — unique within the same deployment.
-		return `${baseSlug}-${Date.now().toString(36)}`;
+		// Append a random suffix so two mutations arriving in the same millisecond
+		// still produce distinct slugs.
+		return `${baseSlug}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 	});

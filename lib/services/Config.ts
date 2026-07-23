@@ -25,9 +25,23 @@ export class ClientConfig extends Context.Service<
   );
 }
 
-// Helper to run the config service effect on-demand
-const getConfig = () =>
-  Effect.runSync(ClientConfig.pipe(Effect.provide(ClientConfig.layer)));
+let cachedConfig: { convexUrl: string } | null = null;
+let configError: Error | null = null;
+
+function getConfig(): { convexUrl: string } {
+  if (cachedConfig) return cachedConfig;
+  if (configError) throw configError;
+  try {
+    const result = Effect.runSync(
+      ClientConfig.pipe(Effect.provide(ClientConfig.layer))
+    );
+    cachedConfig = result;
+    return result;
+  } catch (err) {
+    configError = err instanceof Error ? err : new Error(String(err));
+    throw configError;
+  }
+}
 
 export const clientConfig = {
   get convexUrl() {
