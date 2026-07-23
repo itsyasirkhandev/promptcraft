@@ -143,7 +143,7 @@ function FieldMultiSelect({ field, currentValue, isWorkspace, setValue }: FieldC
                   const newList = checked
                     ? [...list, opt]
                     : list.filter((v) => v !== opt);
-                  setValue(field.name, newList);
+                  setValue(field.name, newList.length === 0 && !checked ? undefined : newList);
                 }}
               />
               <Label

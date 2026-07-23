@@ -129,7 +129,7 @@ function highlightVariables(text: string, fields: { name: string }[]) {
     return trimmed ? [trimmed.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')] : [];
   });
   if (fieldNames.length === 0) return text;
-  const pattern = new RegExp(`(\\{\\{?(?:${fieldNames.join('|')})\\}?\\})`, 'g');
+  const pattern = new RegExp(`(\\{\\{(?:${fieldNames.join('|')})\\}\\})`, 'g');
   return text.split(pattern).map((part, index) => {
     const cleanPart = part.replace(/^\{\{?|\}\}?$/g, '').trim();
     const match = fields.find((f) => f.name === cleanPart);

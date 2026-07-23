@@ -165,14 +165,14 @@ async function resolvePolarUser(
 			internal.private.users.getUserInfoForPolar,
 			{ clerkId },
 		);
-		if (info) return { clerkId, polarCustomerId };
+		if (info) return { clerkId, polarCustomerId: info.polarCustomerId ?? undefined };
 	}
 	if (polarCustomerId) {
 		const user = await ctx.runQuery(
 			internal.private.users.getByPolarCustomerId,
 			{ polarCustomerId },
 		);
-		if (user) return { clerkId, polarCustomerId };
+		if (user) return { clerkId: user.clerkId, polarCustomerId };
 	}
 	return null;
 }

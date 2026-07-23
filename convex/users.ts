@@ -51,7 +51,13 @@ async function resolveExistingUser(
 	const byToken = await queryUserByToken(ctx.db, reconstructTokenIdentifier(profile.clerkId));
 	if (byToken) return byToken;
 	if (profile.email) {
-		return queryUserByEmail(ctx.db, profile.email);
+		const byEmail = await queryUserByEmail(ctx.db, profile.email);
+		if (byEmail && byEmail.clerkId && byEmail.clerkId !== profile.clerkId) {
+			console.warn(
+				`resolveExistingUser: email ${profile.email} matches user ${byEmail._id} with different clerkId (${byEmail.clerkId} vs ${profile.clerkId}); converging anyway (Clerk enforces unique emails).`,
+			);
+		}
+		return byEmail;
 	}
 	return null;
 }

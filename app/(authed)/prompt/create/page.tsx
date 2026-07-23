@@ -29,7 +29,6 @@ export default function CreatePromptPage() {
         onSubmit={onSubmit}
         submitLabel="Create Prompt"
         resetLabel="Clear"
-        autoSetCategory
       />
     </div>
   );

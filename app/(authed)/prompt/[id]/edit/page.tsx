@@ -111,7 +111,6 @@ export default function EditPromptPage({ params }: PageProps) {
         onSubmit={onSubmit}
         submitLabel="Save Changes"
         resetLabel="Reset"
-        autoSetCategory={false}
         publicSlug={prompt.publicSlug ?? undefined}
       />
     </div>

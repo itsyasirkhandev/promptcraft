@@ -204,6 +204,28 @@ export const update = effectAuthedMutation({
 				})
 			);
 
+			// Post-update verification: if we just made this prompt public, re-check the
+			// public count to catch concurrent updates that could exceed the limit.
+			// If over the limit, revert the prompt to private.
+			if (viewer.plan === 'hobby' && args.isPublic && !prompt.isPublic) {
+				const publicAfter = yield* Effect.tryPromise(() =>
+					db
+						.query('prompts')
+						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+						.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
+				);
+				if (publicAfter.length > HOBBY_PUBLIC_PROMPT_LIMIT) {
+					yield* Effect.tryPromise(() =>
+						writerDb.patch(args.id, { isPublic: false, publicSlug: undefined })
+					);
+					return yield* Effect.fail(
+						new PlanLimitError({
+							message: `You've reached the ${HOBBY_PUBLIC_PROMPT_LIMIT} public-prompt limit on the Hobby plan. Upgrade to Pro to share more public prompts.`
+						})
+					);
+				}
+			}
+
 			const updatedPrompt = yield* Effect.tryPromise(() => writerDb.get(args.id));
 			return updatedPrompt;
 		})
