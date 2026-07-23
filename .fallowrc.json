@@ -12,7 +12,11 @@
     "immer",
     "react-hook-form",
     "convex-test",
-    "react-doctor"
+    "react-doctor",
+    "@base-ui/react",
+    "class-variance-authority",
+    "next-themes",
+    "radix-ui"
   ],
   "health": {
     "maxCrap": 250,
