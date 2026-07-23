@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Raleway } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { cn } from "@/lib/utils";
@@ -17,12 +17,10 @@ export const metadata: Metadata = {
   },
 };
 
-const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
-
 const dmSans = DM_Sans({
   subsets: ["latin"],
   axes: ["opsz"],
-  variable: "--font-dm-sans",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -32,7 +30,7 @@ export default function NextoLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", raleway.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", dmSans.variable)}>
       <head>
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}{/* react-doctor-disable-next-line react-doctor/nextjs-no-font-link: Material Symbols Rounded is an icon font with custom variable-font axes (FILL, GRAD, opsz) that next/font/google does not fully expose; the <link> tag is the most reliable way to load it with these axes., react-doctor/nextjs-no-font-link */}
         <link

@@ -13,10 +13,17 @@ http.route({
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const payloadString = await request.text();
+    const svixId = request.headers.get("svix-id");
+    const svixTimestamp = request.headers.get("svix-timestamp");
+    const svixSignature = request.headers.get("svix-signature");
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.error("Missing svix webhook headers");
+      return new Response("Missing webhook headers", { status: 400 });
+    }
     const svixHeaders = {
-      "svix-id": request.headers.get("svix-id")!,
-      "svix-timestamp": request.headers.get("svix-timestamp")!,
-      "svix-signature": request.headers.get("svix-signature")!,
+      "svix-id": svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
     };
 
     const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;

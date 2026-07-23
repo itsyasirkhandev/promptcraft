@@ -301,11 +301,11 @@ export const getUsage = effectAuthedQuery({
 					db
 						.query('prompts')
 						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
-						.take(HOBBY_PROMPT_LIMIT + 1),
+						.collect(),
 					db
 						.query('prompts')
 						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
-						.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
+						.collect()
 				])
 			);
 
