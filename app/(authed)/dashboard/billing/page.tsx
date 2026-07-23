@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle } from "@phosphor-icons/react";
+import { CheckCircle, Spinner } from "@phosphor-icons/react";
 import { useAction, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -14,6 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogOverlay,
+  DialogPortal,
+} from "@/components/ui/dialog";
 
 export default function BillingPage() {
   const user = useQuery(api.authed.users.currentUser);
@@ -214,6 +220,28 @@ function HobbyBilling() {
           >
             {pending ? "Securing checkout…" : "Continue to checkout"}
           </Button>
+
+          {/* Full-screen blocking overlay while checkout URL is being generated */}
+          <Dialog open={pending}>
+            <DialogPortal>
+              <DialogOverlay className="z-[100] bg-black/60 backdrop-blur-sm" />
+              <DialogContent
+                showCloseButton={false}
+                className="z-[101] flex w-fit flex-col items-center gap-4 border-none bg-transparent p-12 shadow-none sm:max-w-none"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+              >
+                <Spinner
+                  className="size-8 animate-spin text-white"
+                  aria-hidden="true"
+                />
+                <p className="text-sm text-white/80 font-medium">
+                  Securing checkout…
+                </p>
+              </DialogContent>
+            </DialogPortal>
+          </Dialog>
+
         </CardContent>
       </Card>
     </>
