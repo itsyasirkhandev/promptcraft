@@ -3,7 +3,7 @@
 // [Phase 8] polar-webhook HTTP-route behavior not already covered by
 // billing.test.ts. That suite covers signature rejection, unrelated-product
 // rejection, active/past_due/canceled/replay. These tests cover the two
-// remaining branches of the route handler: the 409 "user not yet
+// remaining branches of the route handler: the 200 "user not yet
 // synchronized" path (resolveClerkId resolves but no Convex user exists), and
 // the customer.metadata.clerkId fallback when customer.externalId is absent.
 // Seam: the HTTP route at /polar-webhook via convex-test's t.fetch. Polar SDK
@@ -96,17 +96,17 @@ function subEvent(overrides: { customer?: Record<string, unknown>; metadata?: Re
 }
 
 describe("polar-webhook route (user-resolution branches)", () => {
-	test("returns 409 when the clerkId resolves but no Convex user exists", async () => {
+	test("returns 200 + schedules deferred update when clerkId resolves but no Convex user exists", async () => {
 		const t = convexTest(schema, modules);
-		// No user seeded. clerkId resolves from customer.metadata; the polar
-		// customer id also has no Convex match -> 409 retryable, no writes.
+		// No user seeded. Route now returns 200 and schedules a deferred
+		// updateSubscriptionFromPolar instead of 409 (Bug #10).
 		const signed = signEvent(subEvent());
 		const res = await t.fetch("/polar-webhook", {
 			method: "POST",
 			headers: signed.headers,
 			body: signed.body,
 		});
-		expect(res.status).toBe(409);
+		expect(res.status).toBe(200);
 
 		const anyUser = await t.run(async (ctx) => ctx.db.query("users").take(10));
 		expect(anyUser).toHaveLength(0);
