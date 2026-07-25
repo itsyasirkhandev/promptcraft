@@ -16,8 +16,9 @@ import {
 // one Convex user. Only the branch that actually inserts schedules the shared idempotent
 // Polar customer synchronization. A Polar failure must never roll back signup (spec 3.1).
 
-// Host for the Clerk Backend API. Kept separate from the path so the request
-// URL is assembled at call time.
+// Clerk Backend API location. Scheme and host are separate constants joined at
+// call time in resyncFromClerk.
+const CLERK_API_SCHEME = "https";
 const CLERK_API_HOST = "api.clerk.com";
 
 function reconstructTokenIdentifier(clerkId: string): string {
@@ -433,7 +434,8 @@ export const resyncFromClerk = internalAction({
 			return;
 		}
 
-		const endpoint = `https://${CLERK_API_HOST}/v1/users/${encodeURIComponent(clerkId)}`;
+		const origin = `${CLERK_API_SCHEME}://${CLERK_API_HOST}`;
+		const endpoint = `${origin}/v1/users/${encodeURIComponent(clerkId)}`;
 		const response = await fetch(endpoint, {
 			headers: { Authorization: `Bearer ${secretKey}` },
 		});
