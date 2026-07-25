@@ -11,7 +11,12 @@ export default defineSchema({
 		plan: v.union(v.literal('hobby'), v.literal('pro')),
 		polarCustomerId: v.optional(v.string()),
 		polarSubscriptionId: v.optional(v.string()),
-		polarSubscriptionStatus: v.optional(v.string())
+		polarSubscriptionStatus: v.optional(v.string()),
+		// Timestamp (ms) of the most recently applied Polar subscription event.
+		// Used to reject stale or replayed webhook deliveries so an out-of-order
+		// event can never overwrite newer subscription state. Optional: existing
+		// users have no value, so the first event after deploy always applies.
+		polarLastEventAt: v.optional(v.number())
 	})
 		.index('by_token', ['tokenIdentifier'])
 		.index('by_clerk_id', ['clerkId'])
@@ -44,5 +49,22 @@ export default defineSchema({
 		.index('by_isPublic', ['isPublic'])
 		.index('by_publicSlug', ['publicSlug'])
 		.index('by_isPublic_and_title', ['isPublic', 'title'])
-		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic'] })
+		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic'] }),
+	// Verified Polar subscription events that arrived before the corresponding
+	// Convex user existed (the Polar webhook can beat the Clerk user.created
+	// webhook). Drained by reconcilePendingSubscriptions in convex/users.ts as
+	// soon as the user is created or their Polar customer ID is saved, then
+	// deleted. Replaces the previous best-effort 5s scheduler retry, which
+	// silently dropped upgrades whenever Clerk sync ran long.
+	pendingSubscriptions: defineTable({
+		clerkId: v.optional(v.string()),
+		polarCustomerId: v.optional(v.string()),
+		polarSubscriptionId: v.optional(v.string()),
+		polarSubscriptionStatus: v.optional(v.string()),
+		plan: v.union(v.literal('hobby'), v.literal('pro')),
+		eventTimestamp: v.number(),
+		createdAt: v.number()
+	})
+		.index('by_clerkId', ['clerkId'])
+		.index('by_polarCustomerId', ['polarCustomerId'])
 });
