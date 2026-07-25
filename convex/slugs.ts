@@ -41,7 +41,14 @@ export function baseSlugFrom(title: string): string {
  *     which is deterministic and unique within a single deployment.
  *
  * Convex has no unique insert constraint, so uniqueness is enforced app-side
- * via the indexed `.unique()` lookup returning at most one doc.
+ * via an indexed existence check.
+ *
+ * ⚠ We deliberately use `.first()` rather than `.unique()` here. `.unique()`
+ * THROWS when more than one document matches, and because there is no
+ * DB-level uniqueness constraint a single duplicated slug (from the timestamp
+ * fallback path or imported data) would make every subsequent lookup for that
+ * candidate throw — permanently breaking prompt create/update. We only need to
+ * know whether the candidate is taken, so `.first()` is both correct and safe.
  *
  * Never fails — always returns a slug string. The `Effect.tryPromise` error
  * channel only surfaces a genuine DB read failure, which propagates to the
@@ -66,7 +73,7 @@ export const generateUniqueSlug = (db: GenericDatabaseReader<DataModel>, title: 
 				db
 					.query('prompts')
 					.withIndex('by_publicSlug', (q) => q.eq('publicSlug', candidate))
-					.unique()
+					.first()
 			);
 			if (!existing) return candidate;
 		}

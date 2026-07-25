@@ -16,6 +16,11 @@ import {
 // one Convex user. Only the branch that actually inserts schedules the shared idempotent
 // Polar customer synchronization. A Polar failure must never roll back signup (spec 3.1).
 
+// Clerk Backend API location. Scheme and host are separate constants joined at
+// call time in resyncFromClerk.
+const CLERK_API_SCHEME = "https";
+const CLERK_API_HOST = "api.clerk.com";
+
 function reconstructTokenIdentifier(clerkId: string): string {
 	const issuer = process.env.CLERK_JWT_ISSUER_DOMAIN;
 	return issuer ? `${issuer}|${clerkId}` : `clerk|${clerkId}`;
@@ -123,6 +128,172 @@ async function insertNewUser(ctx: MutationCtx, profile: ClerkProfile) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Polar subscription application
+//
+// applySubscription is the ONLY place a verified Polar subscription is written
+// to a user document. Both the live webhook path and the pending-event
+// reconciliation path go through it, so the ordering guard cannot be bypassed.
+// The steps below are split out so each is independently testable and the
+// orchestrator stays readable.
+// ---------------------------------------------------------------------------
+
+type SubscriptionUpdate = {
+	clerkId?: string;
+	polarCustomerId?: string;
+	polarSubscriptionId?: string;
+	polarSubscriptionStatus?: string;
+	plan: "hobby" | "pro";
+	eventTimestamp?: number;
+};
+
+// clerkId is canonical; polarCustomerId is the fallback for events that arrive
+// before the clerkId is known. Never creates a user (spec 3.6 / 4.5).
+async function resolveSubscriptionUser(
+	ctx: MutationCtx,
+	args: SubscriptionUpdate,
+): Promise<Doc<"users"> | null> {
+	if (args.clerkId) {
+		const byClerkId = await queryUserByClerkId(ctx.db, args.clerkId);
+		if (byClerkId) return byClerkId;
+	}
+	if (args.polarCustomerId) {
+		return await queryUserByPolarCustomerId(ctx.db, args.polarCustomerId);
+	}
+	return null;
+}
+
+// Ordering + replay guard (Bug #2). Polar delivers at-least-once and does not
+// guarantee ordering, so without this a redelivered or delayed
+// `subscription.canceled` could land after `subscription.active` and downgrade a
+// paying customer. `<=` also makes exact replays a no-op.
+// Users with no polarLastEventAt have never had an event applied, so the first
+// event after deploy is always accepted.
+function isStaleSubscriptionEvent(
+	user: Doc<"users">,
+	incomingAt: number | undefined,
+): boolean {
+	if (incomingAt === undefined) return false;
+	if (user.polarLastEventAt === undefined) return false;
+	return incomingAt <= user.polarLastEventAt;
+}
+
+// Fields absent from the event fall back to the user's current values so a
+// partial event never blanks out known state.
+function buildSubscriptionPatch(
+	user: Doc<"users">,
+	args: SubscriptionUpdate,
+	incomingAt: number | undefined,
+) {
+	return {
+		polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
+		polarSubscriptionId: args.polarSubscriptionId,
+		polarSubscriptionStatus: args.polarSubscriptionStatus,
+		plan: args.plan,
+		polarLastEventAt: incomingAt ?? user.polarLastEventAt,
+	};
+}
+
+// Only on a genuine hobby -> pro transition, so a replayed granting event for an
+// already-Pro user does not resend the email.
+async function maybeSendProUpgradeEmail(
+	ctx: MutationCtx,
+	user: Doc<"users">,
+	wasHobby: boolean,
+	plan: "hobby" | "pro",
+) {
+	if (!wasHobby || plan !== "pro") return;
+	if (!user.email) {
+		console.warn("Skipping Pro upgrade email: user has no email address.");
+		return;
+	}
+	await ctx.scheduler.runAfter(0, internal.emails.sendProUpgradeEmail, {
+		email: user.email,
+		name: user.name || undefined,
+	});
+}
+
+// Resolve -> reject stale -> patch -> notify.
+// Returns false when no user matches, so the caller can decide whether to park
+// the event (webhook) or drop it.
+async function applySubscription(
+	ctx: MutationCtx,
+	args: SubscriptionUpdate,
+): Promise<boolean> {
+	const user = await resolveSubscriptionUser(ctx, args);
+	if (!user) return false;
+
+	const incomingAt = args.eventTimestamp;
+	if (isStaleSubscriptionEvent(user, incomingAt)) {
+		console.log("applySubscription: ignoring stale or replayed Polar event", {
+			subscriptionId: args.polarSubscriptionId,
+			status: args.polarSubscriptionStatus,
+			incomingAt,
+			lastAppliedAt: user.polarLastEventAt,
+		});
+		return true;
+	}
+
+	const wasHobby = user.plan === "hobby";
+	await ctx.db.patch(user._id, buildSubscriptionPatch(user, args, incomingAt));
+	await maybeSendProUpgradeEmail(ctx, user, wasHobby, args.plan);
+
+	return true;
+}
+
+// A single parked row can match both indexes; dedupe before applying.
+function dedupePending<T extends { _id: unknown }>(rows: T[]): T[] {
+	const seen = new Set<string>();
+	const unique: T[] = [];
+	for (const row of rows) {
+		const key = String(row._id);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		unique.push(row);
+	}
+	return unique;
+}
+
+// Drain subscription events that were parked before the user existed (Bug #1).
+// Called after the Clerk upsert and after a Polar customer ID is saved — the two
+// moments at which a previously unresolvable event becomes resolvable.
+// Events are applied oldest-first so the final state reflects the newest event,
+// and each is deleted once applied.
+async function reconcilePendingSubscriptions(
+	ctx: MutationCtx,
+	match: { clerkId?: string; polarCustomerId?: string },
+) {
+	const { clerkId, polarCustomerId } = match;
+
+	const byClerkId = clerkId
+		? await ctx.db
+				.query("pendingSubscriptions")
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
+				.collect()
+		: [];
+	const byCustomerId = polarCustomerId
+		? await ctx.db
+				.query("pendingSubscriptions")
+				.withIndex("by_polarCustomerId", (q) => q.eq("polarCustomerId", polarCustomerId))
+				.collect()
+		: [];
+
+	const pending = dedupePending([...byClerkId, ...byCustomerId]);
+	pending.sort((a, b) => a.eventTimestamp - b.eventTimestamp);
+
+	for (const row of pending) {
+		await applySubscription(ctx, {
+			clerkId: row.clerkId,
+			polarCustomerId: row.polarCustomerId,
+			polarSubscriptionId: row.polarSubscriptionId,
+			polarSubscriptionStatus: row.polarSubscriptionStatus,
+			plan: row.plan,
+			eventTimestamp: row.eventTimestamp,
+		});
+		await ctx.db.delete(row._id);
+	}
+}
+
 export const upsertFromClerk = internalMutation({
 	args: { data: v.any() }, // Using v.any() to accept the Clerk webhook event.data payload
 	async handler(ctx, { data }) {
@@ -133,6 +304,10 @@ export const upsertFromClerk = internalMutation({
 		} else {
 			await insertNewUser(ctx, profile);
 		}
+
+		// The Polar webhook can beat this one. Apply anything that was parked
+		// while this user did not exist yet.
+		await reconcilePendingSubscriptions(ctx, { clerkId: profile.clerkId });
 	},
 });
 
@@ -184,11 +359,17 @@ export const savePolarCustomerId = internalMutation({
 		}
 
 		await ctx.db.patch(user._id, { polarCustomerId });
+
+		// An event may have been parked against this customer ID before we knew
+		// which user it belonged to.
+		await reconcilePendingSubscriptions(ctx, {
+			clerkId: user.clerkId,
+			polarCustomerId,
+		});
 	},
 });
 
 // [Phase 3] Apply a verified Polar subscription event to the Convex user.
-// Resolves by clerkId first, then by stored polarCustomerId as a safe fallback.
 // Atomic patch only; never creates a user from a webhook (spec 3.6 / 4.5).
 export const updateSubscriptionFromPolar = internalMutation({
 	args: {
@@ -197,41 +378,45 @@ export const updateSubscriptionFromPolar = internalMutation({
 		polarSubscriptionId: v.optional(v.string()),
 		polarSubscriptionStatus: v.optional(v.string()),
 		plan: v.union(v.literal("hobby"), v.literal("pro")),
+		// Polar event timestamp in ms. Optional for backwards compatibility with
+		// any already-scheduled calls; when absent the ordering guard is skipped.
+		eventTimestamp: v.optional(v.number()),
 	},
 	async handler(ctx, args) {
-		let user: Doc<"users"> | null = null;
-
-		if (args.clerkId) {
-			user = await queryUserByClerkId(ctx.db, args.clerkId);
-		}
-		if (!user && args.polarCustomerId) {
-			user = await queryUserByPolarCustomerId(ctx.db, args.polarCustomerId);
-		}
-
-		if (!user) {
+		const applied = await applySubscription(ctx, args);
+		if (!applied) {
 			console.warn("updateSubscriptionFromPolar: unknown user; not creating from webhook", args);
-			return;
 		}
+	},
+});
 
-		// Capture the pre-transition plan so a replayed granting event for an
-		// already-Pro user does not resend the email.
-		const wasHobby = user.plan === "hobby";
+// Park a verified Polar subscription event that could not be applied because the
+// Convex user does not exist yet (Bug #1). This replaces the previous one-shot
+// `scheduler.runAfter(5s)` retry, which silently dropped the upgrade whenever
+// Clerk sync took longer than five seconds, leaving a paying customer on hobby.
+export const recordPendingSubscription = internalMutation({
+	args: {
+		clerkId: v.optional(v.string()),
+		polarCustomerId: v.optional(v.string()),
+		polarSubscriptionId: v.optional(v.string()),
+		polarSubscriptionStatus: v.optional(v.string()),
+		plan: v.union(v.literal("hobby"), v.literal("pro")),
+		eventTimestamp: v.number(),
+	},
+	async handler(ctx, args) {
+		// The user may have been created between the route's check and now.
+		const applied = await applySubscription(ctx, args);
+		if (applied) return;
 
-		await ctx.db.patch(user._id, {
-			polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
+		await ctx.db.insert("pendingSubscriptions", {
+			clerkId: args.clerkId,
+			polarCustomerId: args.polarCustomerId,
 			polarSubscriptionId: args.polarSubscriptionId,
 			polarSubscriptionStatus: args.polarSubscriptionStatus,
 			plan: args.plan,
+			eventTimestamp: args.eventTimestamp,
+			createdAt: Date.now(),
 		});
-
-		if (wasHobby && args.plan === "pro" && user.email) {
-			await ctx.scheduler.runAfter(0, internal.emails.sendProUpgradeEmail, {
-				email: user.email,
-				name: user.name || undefined,
-			});
-		} else if (wasHobby && args.plan === "pro" && !user.email) {
-			console.warn("Skipping Pro upgrade email: user has no email address.");
-		}
 	},
 });
 
@@ -249,10 +434,11 @@ export const resyncFromClerk = internalAction({
 			return;
 		}
 
-		const response = await fetch(
-			`https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
-			{ headers: { Authorization: `Bearer ${secretKey}` } },
-		);
+		const origin = `${CLERK_API_SCHEME}://${CLERK_API_HOST}`;
+		const endpoint = `${origin}/v1/users/${encodeURIComponent(clerkId)}`;
+		const response = await fetch(endpoint, {
+			headers: { Authorization: `Bearer ${secretKey}` },
+		});
 
 		if (!response.ok) {
 			if (response.status === 404) {
