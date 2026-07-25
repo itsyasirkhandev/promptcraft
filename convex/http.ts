@@ -153,8 +153,7 @@ function filterRelevantSubscription(
 
 // Resolve whether a Convex user exists for either identifier (clerkId first,
 // then polarCustomerId). Polar webhook may arrive before Clerk sync lands.
-// Returns the resolved identifiers for scheduling a deferred update, or null
-// if the user doesn't exist yet.
+// Returns the resolved identifiers, or null if the user doesn't exist yet.
 async function resolvePolarUser(
 	ctx: ActionCtx,
 	clerkId: string | undefined,
@@ -191,26 +190,38 @@ http.route({
     const sub = filterRelevantSubscription(ev.event, cfg.productId);
     if (!sub) return new Response(null, { status: 200 });
 
+    // Polar event time drives the ordering guard in applySubscription, so a
+    // redelivered or out-of-order event can never overwrite newer state.
+    const eventTimestamp = ev.event.timestamp.getTime();
+
     const userResolved = await resolvePolarUser(ctx, sub.clerkId, sub.polarCustomerId);
     if (!userResolved) {
-      // User hasn't synced from Clerk yet. Schedule a deferred update instead
-      // of returning 409 (which relies on Polar's retry policy — Bug #10).
-      // updateSubscriptionFromPolar gracefully skips unknown users, so this
-      // is safe to schedule as a best-effort retry after Clerk syncs.
+      // User hasn't synced from Clerk yet. Park the event durably so it is
+      // applied the moment the Clerk webhook creates the user (Bug #1).
+      // Previously this scheduled a single retry 5s later and returned 200 —
+      // if Clerk sync took longer, the upgrade was lost with no error and no
+      // redelivery, leaving a paying customer on the hobby plan.
       const clerkId = sub.clerkId;
       const polarCustomerId = sub.polarCustomerId;
       if (clerkId || polarCustomerId) {
-        await ctx.scheduler.runAfter(5_000, internal.users.updateSubscriptionFromPolar, {
+        await ctx.runMutation(internal.users.recordPendingSubscription, {
           clerkId,
           polarCustomerId,
           polarSubscriptionId: ev.event.data.id,
           polarSubscriptionStatus: ev.event.data.status,
           plan: sub.plan,
+          eventTimestamp,
         });
-        console.log("polar-webhook: deferred subscription update for unknown user", {
+        console.log("polar-webhook: parked subscription event for unsynced user", {
           type: ev.event.type,
           clerkId,
           polarCustomerId,
+        });
+      } else {
+        // Nothing to correlate on later — parking it would be unreachable.
+        console.error("polar-webhook: event has no clerkId or polarCustomerId; cannot park", {
+          type: ev.event.type,
+          subscriptionId: ev.event.data.id,
         });
       }
       return new Response(null, { status: 200 });
@@ -223,6 +234,7 @@ http.route({
         polarSubscriptionId: ev.event.data.id,
         polarSubscriptionStatus: ev.event.data.status,
         plan: sub.plan,
+        eventTimestamp,
       });
     } catch (error) {
       console.error("polar-webhook: transient database error", error);
