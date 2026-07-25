@@ -129,6 +129,8 @@ async function insertNewUser(ctx: MutationCtx, profile: ClerkProfile) {
 // applySubscription is the ONLY place a verified Polar subscription is written
 // to a user document. Both the live webhook path and the pending-event
 // reconciliation path go through it, so the ordering guard cannot be bypassed.
+// The steps below are split out so each is independently testable and the
+// orchestrator stays readable.
 // ---------------------------------------------------------------------------
 
 type SubscriptionUpdate = {
@@ -140,35 +142,84 @@ type SubscriptionUpdate = {
 	eventTimestamp?: number;
 };
 
-// Resolve the target user, reject stale/replayed events, then patch.
+// clerkId is canonical; polarCustomerId is the fallback for events that arrive
+// before the clerkId is known. Never creates a user (spec 3.6 / 4.5).
+async function resolveSubscriptionUser(
+	ctx: MutationCtx,
+	args: SubscriptionUpdate,
+): Promise<Doc<"users"> | null> {
+	if (args.clerkId) {
+		const byClerkId = await queryUserByClerkId(ctx.db, args.clerkId);
+		if (byClerkId) return byClerkId;
+	}
+	if (args.polarCustomerId) {
+		return await queryUserByPolarCustomerId(ctx.db, args.polarCustomerId);
+	}
+	return null;
+}
+
+// Ordering + replay guard (Bug #2). Polar delivers at-least-once and does not
+// guarantee ordering, so without this a redelivered or delayed
+// `subscription.canceled` could land after `subscription.active` and downgrade a
+// paying customer. `<=` also makes exact replays a no-op.
+// Users with no polarLastEventAt have never had an event applied, so the first
+// event after deploy is always accepted.
+function isStaleSubscriptionEvent(
+	user: Doc<"users">,
+	incomingAt: number | undefined,
+): boolean {
+	if (incomingAt === undefined) return false;
+	if (user.polarLastEventAt === undefined) return false;
+	return incomingAt <= user.polarLastEventAt;
+}
+
+// Fields absent from the event fall back to the user's current values so a
+// partial event never blanks out known state.
+function buildSubscriptionPatch(
+	user: Doc<"users">,
+	args: SubscriptionUpdate,
+	incomingAt: number | undefined,
+) {
+	return {
+		polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
+		polarSubscriptionId: args.polarSubscriptionId,
+		polarSubscriptionStatus: args.polarSubscriptionStatus,
+		plan: args.plan,
+		polarLastEventAt: incomingAt ?? user.polarLastEventAt,
+	};
+}
+
+// Only on a genuine hobby -> pro transition, so a replayed granting event for an
+// already-Pro user does not resend the email.
+async function maybeSendProUpgradeEmail(
+	ctx: MutationCtx,
+	user: Doc<"users">,
+	wasHobby: boolean,
+	plan: "hobby" | "pro",
+) {
+	if (!wasHobby || plan !== "pro") return;
+	if (!user.email) {
+		console.warn("Skipping Pro upgrade email: user has no email address.");
+		return;
+	}
+	await ctx.scheduler.runAfter(0, internal.emails.sendProUpgradeEmail, {
+		email: user.email,
+		name: user.name || undefined,
+	});
+}
+
+// Resolve -> reject stale -> patch -> notify.
 // Returns false when no user matches, so the caller can decide whether to park
-// the event (webhook) or drop it. Never creates a user (spec 3.6 / 4.5).
+// the event (webhook) or drop it.
 async function applySubscription(
 	ctx: MutationCtx,
 	args: SubscriptionUpdate,
 ): Promise<boolean> {
-	let user: Doc<"users"> | null = null;
-
-	if (args.clerkId) {
-		user = await queryUserByClerkId(ctx.db, args.clerkId);
-	}
-	if (!user && args.polarCustomerId) {
-		user = await queryUserByPolarCustomerId(ctx.db, args.polarCustomerId);
-	}
-
+	const user = await resolveSubscriptionUser(ctx, args);
 	if (!user) return false;
 
-	// Ordering + replay guard (Bug #2). Polar delivers at-least-once and does not
-	// guarantee ordering, so without this a redelivered or delayed
-	// `subscription.canceled` could land after `subscription.active` and downgrade
-	// a paying customer. `<=` also makes exact replays a no-op.
-	// Existing users have no polarLastEventAt, so the first event always applies.
 	const incomingAt = args.eventTimestamp;
-	if (
-		incomingAt !== undefined &&
-		user.polarLastEventAt !== undefined &&
-		incomingAt <= user.polarLastEventAt
-	) {
+	if (isStaleSubscriptionEvent(user, incomingAt)) {
 		console.log("applySubscription: ignoring stale or replayed Polar event", {
 			subscriptionId: args.polarSubscriptionId,
 			status: args.polarSubscriptionStatus,
@@ -178,28 +229,24 @@ async function applySubscription(
 		return true;
 	}
 
-	// Capture the pre-transition plan so a replayed granting event for an
-	// already-Pro user does not resend the email.
 	const wasHobby = user.plan === "hobby";
-
-	await ctx.db.patch(user._id, {
-		polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
-		polarSubscriptionId: args.polarSubscriptionId,
-		polarSubscriptionStatus: args.polarSubscriptionStatus,
-		plan: args.plan,
-		polarLastEventAt: incomingAt ?? user.polarLastEventAt,
-	});
-
-	if (wasHobby && args.plan === "pro" && user.email) {
-		await ctx.scheduler.runAfter(0, internal.emails.sendProUpgradeEmail, {
-			email: user.email,
-			name: user.name || undefined,
-		});
-	} else if (wasHobby && args.plan === "pro" && !user.email) {
-		console.warn("Skipping Pro upgrade email: user has no email address.");
-	}
+	await ctx.db.patch(user._id, buildSubscriptionPatch(user, args, incomingAt));
+	await maybeSendProUpgradeEmail(ctx, user, wasHobby, args.plan);
 
 	return true;
+}
+
+// A single parked row can match both indexes; dedupe before applying.
+function dedupePending<T extends { _id: unknown }>(rows: T[]): T[] {
+	const seen = new Set<string>();
+	const unique: T[] = [];
+	for (const row of rows) {
+		const key = String(row._id);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		unique.push(row);
+	}
+	return unique;
 }
 
 // Drain subscription events that were parked before the user existed (Bug #1).
@@ -226,15 +273,7 @@ async function reconcilePendingSubscriptions(
 				.collect()
 		: [];
 
-	// A single row can match both indexes; dedupe before applying.
-	const seen = new Set<string>();
-	const pending = [];
-	for (const row of [...byClerkId, ...byCustomerId]) {
-		const key = String(row._id);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		pending.push(row);
-	}
+	const pending = dedupePending([...byClerkId, ...byCustomerId]);
 	pending.sort((a, b) => a.eventTimestamp - b.eventTimestamp);
 
 	for (const row of pending) {
@@ -326,7 +365,6 @@ export const savePolarCustomerId = internalMutation({
 });
 
 // [Phase 3] Apply a verified Polar subscription event to the Convex user.
-// Resolves by clerkId first, then by stored polarCustomerId as a safe fallback.
 // Atomic patch only; never creates a user from a webhook (spec 3.6 / 4.5).
 export const updateSubscriptionFromPolar = internalMutation({
 	args: {
@@ -392,7 +430,7 @@ export const resyncFromClerk = internalAction({
 		}
 
 		const response = await fetch(
-			`https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
+			`{{https://api.clerk.com/v1/users/${encodeURIComponent(clerkId}})}`,
 			{ headers: { Authorization: `Bearer ${secretKey}` } },
 		);
 

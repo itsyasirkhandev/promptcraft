@@ -119,14 +119,18 @@ async function readPolarEvent(
   }
 }
 
+type RelevantSubscription = {
+  plan: Plan;
+  polarCustomerId: string | undefined;
+  clerkId: string | undefined;
+};
+
 // Filter to subscription events for the configured product with a mappable
 // plan. Returns the resolved identifiers, or null to ignore the event (200).
 function filterRelevantSubscription(
   event: PolarSubscriptionEvent,
   configuredProductId: string,
-):
-  | { plan: Plan; polarCustomerId: string | undefined; clerkId: string | undefined }
-  | null {
+): RelevantSubscription | null {
   const data = event.data;
   if (data.productId !== configuredProductId) {
     console.log("polar-webhook: ignored event for unrelated product", event.type, {
@@ -176,6 +180,43 @@ async function resolvePolarUser(
 	return null;
 }
 
+// The user hasn't synced from Clerk yet, so park the event durably; it is
+// applied the moment the Clerk webhook creates the user (Bug #1). Previously
+// this scheduled a single retry 5s later and returned 200 — if Clerk sync took
+// longer, the upgrade was lost with no error and no redelivery, leaving a
+// paying customer on the hobby plan.
+async function parkUnresolvedSubscription(
+  ctx: ActionCtx,
+  event: PolarSubscriptionEvent,
+  sub: RelevantSubscription,
+  eventTimestamp: number,
+): Promise<void> {
+  const { clerkId, polarCustomerId } = sub;
+
+  if (!clerkId && !polarCustomerId) {
+    // Nothing to correlate on later — parking it would be unreachable.
+    console.error("polar-webhook: event has no clerkId or polarCustomerId; cannot park", {
+      type: event.type,
+      subscriptionId: event.data.id,
+    });
+    return;
+  }
+
+  await ctx.runMutation(internal.users.recordPendingSubscription, {
+    clerkId,
+    polarCustomerId,
+    polarSubscriptionId: event.data.id,
+    polarSubscriptionStatus: event.data.status,
+    plan: sub.plan,
+    eventTimestamp,
+  });
+  console.log("polar-webhook: parked subscription event for unsynced user", {
+    type: event.type,
+    clerkId,
+    polarCustomerId,
+  });
+}
+
 http.route({
   path: "/polar-webhook",
   method: "POST",
@@ -196,34 +237,7 @@ http.route({
 
     const userResolved = await resolvePolarUser(ctx, sub.clerkId, sub.polarCustomerId);
     if (!userResolved) {
-      // User hasn't synced from Clerk yet. Park the event durably so it is
-      // applied the moment the Clerk webhook creates the user (Bug #1).
-      // Previously this scheduled a single retry 5s later and returned 200 —
-      // if Clerk sync took longer, the upgrade was lost with no error and no
-      // redelivery, leaving a paying customer on the hobby plan.
-      const clerkId = sub.clerkId;
-      const polarCustomerId = sub.polarCustomerId;
-      if (clerkId || polarCustomerId) {
-        await ctx.runMutation(internal.users.recordPendingSubscription, {
-          clerkId,
-          polarCustomerId,
-          polarSubscriptionId: ev.event.data.id,
-          polarSubscriptionStatus: ev.event.data.status,
-          plan: sub.plan,
-          eventTimestamp,
-        });
-        console.log("polar-webhook: parked subscription event for unsynced user", {
-          type: ev.event.type,
-          clerkId,
-          polarCustomerId,
-        });
-      } else {
-        // Nothing to correlate on later — parking it would be unreachable.
-        console.error("polar-webhook: event has no clerkId or polarCustomerId; cannot park", {
-          type: ev.event.type,
-          subscriptionId: ev.event.data.id,
-        });
-      }
+      await parkUnresolvedSubscription(ctx, ev.event, sub, eventTimestamp);
       return new Response(null, { status: 200 });
     }
 
