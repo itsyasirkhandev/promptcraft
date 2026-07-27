@@ -1,27 +1,9 @@
-/**
- * slugs.ts — Public slug generation and uniqueness checking
- *
- * All slug-domain logic lives here. No caller needs to know how uniqueness
- * is enforced or how many retry attempts are made — that is the depth.
- *
- * Exports:
- *   generateUniqueSlug — derive a URL-safe slug from a title, retrying until unique
- *   baseSlugFrom        — pure title -> base-slug normaliser (exported for tests)
- */
-
 import { Effect } from 'effect';
 import { GenericDatabaseReader } from 'convex/server';
 import { DataModel } from './_generated/dataModel';
 
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 10;
 
-/**
- * Normalise a title into a URL-safe base slug.
- * - lowercase
- * - collapse runs of non-alphanumerics to a single `-`
- * - trim leading/trailing `-`
- * - empty result -> literal `prompt` (prevents slugs that start with `-`)
- */
 export function baseSlugFrom(title: string): string {
 	const base = title
 		.toLowerCase()
@@ -30,56 +12,25 @@ export function baseSlugFrom(title: string): string {
 	return base.length > 0 ? base : 'prompt';
 }
 
-/**
- * Generate a unique public slug for a prompt title.
- *
- * Strategy:
- *  1. Normalise the title to a base slug.
- *  2. Append a 6-char random suffix (`Math.random().toString(36).substring(2, 8)`)
- *     and check the `by_publicSlug` index. Retry up to `MAX_ATTEMPTS` times.
- *  3. On exhaustion, fall back to `${baseSlug}-${Date.now().toString(36)}`,
- *     which is deterministic and unique within a single deployment.
- *
- * Convex has no unique insert constraint, so uniqueness is enforced app-side
- * via an indexed existence check.
- *
- * ⚠ We deliberately use `.first()` rather than `.unique()` here. `.unique()`
- * THROWS when more than one document matches, and because there is no
- * DB-level uniqueness constraint a single duplicated slug (from the timestamp
- * fallback path or imported data) would make every subsequent lookup for that
- * candidate throw — permanently breaking prompt create/update. We only need to
- * know whether the candidate is taken, so `.first()` is both correct and safe.
- *
- * Never fails — always returns a slug string. The `Effect.tryPromise` error
- * channel only surfaces a genuine DB read failure, which propagates to the
- * enclosing mutation exactly like the other `Effect.tryPromise` calls in
- * `convex/authed/prompts.ts`.
- *
- * ⚠ Determinism: This function uses `Math.random()` inside a Convex mutation.
- * Convex currently patches `Math.random()` to produce deterministic values
- * within a single mutation execution, so this is safe today. Should this
- * function ever run outside a mutation context (action, query, or external
- * runtime), `Math.random()` will be non-deterministic — consider switching
- * to Convex's built-in ID or a counter-based approach for stronger guarantees.
- * See Bug #5.
- */
+function slugExists(db: GenericDatabaseReader<DataModel>, candidate: string) {
+	return Effect.tryPromise(() =>
+		db
+			.query('prompts')
+			.withIndex('by_publicSlug', (q) => q.eq('publicSlug', candidate))
+			.first()
+	);
+}
+
 export const generateUniqueSlug = (db: GenericDatabaseReader<DataModel>, title: string) =>
 	Effect.gen(function* () {
 		const baseSlug = baseSlugFrom(title);
 
 		for (let i = 0; i < MAX_ATTEMPTS; i++) {
 			const candidate = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
-			const existing = yield* Effect.tryPromise(() =>
-				db
-					.query('prompts')
-					.withIndex('by_publicSlug', (q) => q.eq('publicSlug', candidate))
-					.first()
-			);
-			if (!existing) return candidate;
+			if (!(yield* slugExists(db, candidate))) return candidate;
 		}
 
-		// Deterministic fallback — unique within the same deployment.
-		// Append a random suffix so two mutations arriving in the same millisecond
-		// still produce distinct slugs.
-		return `${baseSlug}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+		const fallback = `${baseSlug}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+		if (!(yield* slugExists(db, fallback))) return fallback;
+		throw new Error('Unable to generate a unique public slug');
 	});

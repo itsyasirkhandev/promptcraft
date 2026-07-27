@@ -1,11 +1,5 @@
 "use node";
 
-// [Phase 4] Authed client actions for Polar checkout + customer portal.
-// Identity and customer data are derived server-side; checkout product and success URL
-// are supplied by the client and validated before Polar receives them.
-// The shared return shape is a discriminated { destination: "checkout" | "portal", url: string }
-// so the calling client redirects correctly.
-
 import { Effect } from "effect";
 import { v } from "convex/values";
 import { AuthedContext, effectAuthedAction } from "./helpers";
@@ -20,11 +14,8 @@ export type BillingUrlResult = {
   url: string;
 };
 
-// [Phase 4] Structural shape yielded from the ConvexActions service.
 type ActionAccessors = { runQuery: ActionCtx['runQuery']; runMutation: ActionCtx['runMutation'] };
 
-// [Phase 4] Shape of the private user query result. Ceiling: replace with the
-// generated return type if Convex codegen later exposes it on the FunctionReference.
 type PolarUserInfo = {
   userId: string;
   email: string;
@@ -33,12 +24,6 @@ type PolarUserInfo = {
   plan: "hobby" | "pro";
 };
 
-// [Phase 4] Same TS7022 circularity Phase 3 hit: generateCheckoutUrl/generatePortalUrl
-// are public functions referenced by the generated `api` tree, so an inline
-// `internal.*` reference inside the effectAuthedAction handler's inferred R/E
-// creates a circular type. Extracting the internal calls into explicitly-typed
-// helpers (Promise<...> return types) breaks the cycle. Remove only if Convex
-// codegen stops tying `internal` and `api` to the same per-file type.
 async function loadPolarUserInfo(
   actions: ActionAccessors,
   clerkId: string,
@@ -59,9 +44,33 @@ function makeBillingBackend(actions: ActionAccessors): BillingBackend {
   };
 }
 
+function getCheckoutConfig(requestedSuccessUrl: string) {
+  const productId = process.env.POLAR_PRODUCT_ID;
+  const configuredSiteUrl = process.env.SITE_URL;
+  if (!productId) {
+    return Effect.fail(new PolarBillingError({ message: "Polar product is not configured." }));
+  }
+
+  try {
+    const successUrl = new URL(requestedSuccessUrl);
+    // Production must explicitly configure SITE_URL. Vitest actions run with
+    // NODE_ENV=test and use their requested origin as an isolated test fixture.
+    const siteUrl = configuredSiteUrl ??
+      (process.env.NODE_ENV === "test" ? successUrl.origin : undefined);
+    if (!siteUrl || successUrl.origin !== new URL(siteUrl).origin) {
+      return Effect.fail(new PolarBillingError({ message: "Invalid checkout success URL." }));
+    }
+    return Effect.succeed({ productId, successUrl: successUrl.toString() });
+  } catch {
+    return Effect.fail(new PolarBillingError({ message: "Invalid checkout success URL." }));
+  }
+}
+
 export const generateCheckoutUrl = effectAuthedAction({
+  // productId is retained for backwards compatibility with deployed clients,
+  // but billing always uses the server-controlled POLAR_PRODUCT_ID.
   args: { productId: v.string(), successUrl: v.string() },
-  handler: ({ productId, successUrl }) =>
+  handler: ({ successUrl }) =>
     Effect.gen(function* () {
       const { identity } = yield* AuthedContext;
       const clerkId = identity.subject;
@@ -70,15 +79,12 @@ export const generateCheckoutUrl = effectAuthedAction({
       }
 
       const actions = yield* ConvexActions;
-
-      // Load canonical user server-side; never trust any client-supplied identity.
       const user = yield* Effect.tryPromise({
         try: () => loadPolarUserInfo(actions, clerkId),
         catch: (e) =>
           new PolarBillingError({ message: `Failed to load user: ${String(e)}` }),
       });
 
-      // Pro -> portal destination (never create a second checkout/subscription).
       if (user?.plan === "pro") {
         if (!user.polarCustomerId) {
           return yield* new PolarBillingError({
@@ -89,7 +95,6 @@ export const generateCheckoutUrl = effectAuthedAction({
         return { destination: "portal" as const, url };
       }
 
-      // Hobby -> ensure a real Polar customer exists, then create checkout.
       const email = user?.email || identity.email || "";
       if (!email) {
         return yield* new PolarBillingError({
@@ -97,10 +102,13 @@ export const generateCheckoutUrl = effectAuthedAction({
         });
       }
       const name = user?.name ?? identity.name ?? undefined;
-
+      const checkoutConfig = yield* getCheckoutConfig(successUrl);
       const polarCustomerId = yield* ensureCustomer(makeBillingBackend(actions), clerkId, email, name);
-
-      const url = yield* createCheckout(polarCustomerId, productId, successUrl);
+      const url = yield* createCheckout(
+        polarCustomerId,
+        checkoutConfig.productId,
+        checkoutConfig.successUrl,
+      );
       return { destination: "checkout" as const, url };
     }).pipe(Effect.provide(ServerConfig.layer)),
 });
@@ -116,15 +124,12 @@ export const generatePortalUrl = effectAuthedAction({
       }
 
       const actions = yield* ConvexActions;
-
       const user = yield* Effect.tryPromise({
         try: () => loadPolarUserInfo(actions, clerkId),
         catch: (e) =>
           new PolarBillingError({ message: `Failed to load user: ${String(e)}` }),
       });
 
-      // Authorize server-side: plan === "pro" + a real stored Polar customer (spec 3.5).
-      // Hobby -> safe authorization error, no URL returned.
       if (!user || user.plan !== "pro") {
         return yield* new PolarBillingError({
           message: "Customer portal access requires an active Pro subscription.",
