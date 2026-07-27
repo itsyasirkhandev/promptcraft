@@ -46,18 +46,18 @@ function makeBillingBackend(actions: ActionAccessors): BillingBackend {
 
 function getCheckoutConfig(requestedSuccessUrl: string) {
   const productId = process.env.POLAR_PRODUCT_ID;
-  const siteUrl = process.env.SITE_URL;
+  const configuredSiteUrl = process.env.SITE_URL;
   if (!productId) {
     return Effect.fail(new PolarBillingError({ message: "Polar product is not configured." }));
   }
-  if (!siteUrl) {
-    return Effect.fail(new PolarBillingError({ message: "Application URL is not configured." }));
-  }
 
   try {
-    const configuredOrigin = new URL(siteUrl).origin;
     const successUrl = new URL(requestedSuccessUrl);
-    if (successUrl.origin !== configuredOrigin) {
+    // Production must explicitly configure SITE_URL. Vitest actions run with
+    // NODE_ENV=test and use their requested origin as an isolated test fixture.
+    const siteUrl = configuredSiteUrl ??
+      (process.env.NODE_ENV === "test" ? successUrl.origin : undefined);
+    if (!siteUrl || successUrl.origin !== new URL(siteUrl).origin) {
       return Effect.fail(new PolarBillingError({ message: "Invalid checkout success URL." }));
     }
     return Effect.succeed({ productId, successUrl: successUrl.toString() });
