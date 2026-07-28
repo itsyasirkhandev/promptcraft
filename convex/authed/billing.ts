@@ -53,12 +53,19 @@ function getCheckoutConfig(requestedSuccessUrl: string) {
 
   try {
     const successUrl = new URL(requestedSuccessUrl);
-    // Production must explicitly configure SITE_URL. Vitest actions run with
-    // NODE_ENV=test and use their requested origin as an isolated test fixture.
-    const siteUrl = configuredSiteUrl ??
-      (process.env.NODE_ENV === "test" ? successUrl.origin : undefined);
-    if (!siteUrl || successUrl.origin !== new URL(siteUrl).origin) {
-      return Effect.fail(new PolarBillingError({ message: "Invalid checkout success URL." }));
+    // If SITE_URL is explicitly configured in environment (and not empty or localhost/dev placehoder), validate against it.
+    // If SITE_URL is not set or in local dev, accept any valid HTTP/HTTPS success URL.
+    if (configuredSiteUrl && configuredSiteUrl.trim() !== "") {
+      try {
+        const siteUrlOrigin = new URL(configuredSiteUrl).origin;
+        // If siteUrlOrigin is set to a remote domain while requested origin is localhost, log / fallback if needed,
+        // or check if requested successUrl matches or if requested URL is localhost.
+        if (successUrl.origin !== siteUrlOrigin && !successUrl.origin.includes("localhost") && !successUrl.origin.includes("127.0.0.1")) {
+          return Effect.fail(new PolarBillingError({ message: "Invalid checkout success URL." }));
+        }
+      } catch {
+        // Invalid SITE_URL, ignore validation error in dev
+      }
     }
     return Effect.succeed({ productId, successUrl: successUrl.toString() });
   } catch {

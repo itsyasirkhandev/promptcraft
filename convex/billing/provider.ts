@@ -61,7 +61,7 @@ function isPolarUrl(url: string): boolean {
 function isAppReturnUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname.endsWith(".localhost")) {
       return u.protocol === "http:" || u.protocol === "https:";
     }
     return u.protocol === "https:";
