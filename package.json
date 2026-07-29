@@ -3,10 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "reactDoctor": {
-    "ignoreDependencies": [
-      "immer",
-      "@testing-library/react"
-    ]
+    "ignoreDependencies": ["immer", "@testing-library/react"]
   },
   "scripts": {
     "dev": "convex dev --start \"next dev\"",
@@ -17,6 +14,7 @@
     "convex:gen": "convex codegen",
     "test": "vitest",
     "test:run": "vitest run --passWithNoTests",
+    "test:convex": "vitest run --config vitest.convex.config.ts --passWithNoTests",
     "fallow": "fallow",
     "fallow:audit": "fallow audit",
     "doctor": "npx react-doctor@latest"
@@ -53,6 +51,7 @@
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^2.0.0",
+    "@edge-runtime/vm": "^5.0.0",
     "@effect/language-service": "^0.86.4",
     "@tailwindcss/postcss": "^4.3.2",
     "@testing-library/dom": "^10.4.1",
@@ -73,9 +72,6 @@
     "vitest": "^4.1.10"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@tailwindcss/oxide"
-    ]
+    "onlyBuiltDependencies": ["esbuild", "@tailwindcss/oxide"]
   }
 }
