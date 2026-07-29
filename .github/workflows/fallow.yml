@@ -31,11 +31,10 @@ jobs:
           node-version: '24'
           cache: pnpm
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+      - name: Enable Corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
 
       # Temporary until the updated pnpm-lock.yaml is committed.
       - name: Install dependencies

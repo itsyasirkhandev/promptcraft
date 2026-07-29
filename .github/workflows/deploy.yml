@@ -30,11 +30,10 @@ jobs:
           node-version: '24'
           cache: pnpm
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+      - name: Enable Corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
 
       # The branch adds @edge-runtime/vm before its lockfile is regenerated.
       # Keep CI unblocked for this remediation PR; restore --frozen-lockfile
