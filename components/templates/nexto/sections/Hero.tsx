@@ -26,7 +26,7 @@ export default function Hero() {
   return (
     <section className="flex flex-col items-center justify-center text-center relative min-h-[calc(100vh-84px)] px-5 pt-10 pb-[60px]">
       <div className="max-w-[700px] w-full flex flex-col items-center">
-        <p className="text-[15px] text-[#888] font-normal mb-[14px]">
+        <p className="text-[15px] text-[#525252] font-normal mb-[14px]">
           Better AI inputs. Better AI outputs.
         </p>
 
@@ -44,7 +44,7 @@ export default function Hero() {
           </h1>
         </div>
 
-        <p className="text-[14px] text-[#888] leading-[1.7] max-w-[470px] mx-auto mb-7">
+        <p className="text-[14px] text-[#525252] leading-[1.7] max-w-[470px] mx-auto mb-7">
           Stop wrestling with AI instructions. Create, organize, and copy your perfect prompts. Free for up to 30 prompts.
         </p>
 
@@ -94,7 +94,7 @@ export default function Hero() {
             <strong className="text-[12.5px] font-semibold text-[#0f0f0f]">
               1,200+ prompts created
             </strong>
-            <span className="text-[11.5px] text-[#888]">
+            <span className="text-[11.5px] text-[#525252]">
               by developers and creators worldwide.
             </span>
           </div>

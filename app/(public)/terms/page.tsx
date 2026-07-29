@@ -12,7 +12,7 @@ export default function TermsPage() {
             <h1 className="text-[38px] font-medium tracking-[-1.5px] text-[#0f0f0f] mt-3">
               Terms of Service
             </h1>
-            <p className="text-[14px] text-[#888] mt-2">
+            <p className="text-[14px] text-[#525252] mt-2">
               Last updated: July 11, 2026
             </p>
           </div>

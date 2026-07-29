@@ -254,17 +254,17 @@ function PricingCard({
       <div>
         <div className="flex justify-between items-start">
           <div>
-            <h4 className="text-[22px] font-semibold tracking-[-0.5px] text-[#0f0f0f]">
+            <h3 className="text-[22px] font-semibold tracking-[-0.5px] text-[#0f0f0f]">
               {name}
-            </h4>
-            <p className="text-[13.5px] text-[#888] mt-2 min-h-[40px]">
+            </h3>
+            <p className="text-[13.5px] text-[#525252] mt-2 min-h-[40px]">
               {description}
             </p>
           </div>
           <div className={`text-right${priceSuffix ? " flex flex-col" : ""}`}>
             <span className="text-[32px] font-bold text-[#111]">{price}</span>
             {priceSuffix && (
-              <span className="text-[11px] text-[#888] font-medium -mt-1">
+              <span className="text-[11px] text-[#525252] font-medium -mt-1">
                 {priceSuffix}
               </span>
             )}

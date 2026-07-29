@@ -28,11 +28,13 @@ export default function NextoPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <Navbar />
-      <Hero />
-      <Showcase />
-      <Process />
-      <Pricing />
-      <CTA />
+      <main>
+        <Hero />
+        <Showcase />
+        <Process />
+        <Pricing />
+        <CTA />
+      </main>
       <Footer />
     </>
   );

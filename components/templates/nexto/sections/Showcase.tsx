@@ -96,7 +96,7 @@ export default function Showcase() {
                 <h4 className="mt-3 text-[18px] font-semibold tracking-[-0.3px] text-[#0f0f0f]">
                   No public prompts yet
                 </h4>
-                <p className="mt-2 text-[13px] text-[#888] max-w-[320px] mx-auto">
+                <p className="mt-2 text-[13px] text-[#525252] max-w-[320px] mx-auto">
                   Be the first to share a prompt and it will appear right here.
                 </p>
                 <Link

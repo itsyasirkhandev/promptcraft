@@ -40,7 +40,7 @@ export default function Footer() {
         >
           <div>
             <Logo />
-            <p className="text-[13.5px] text-[#888] leading-[1.6] max-w-[300px] mt-[18px]">
+            <p className="text-[13.5px] text-[#525252] leading-[1.6] max-w-[300px] mt-[18px]">
               A platform for creators and developers to discover and share high quality AI prompt templates.
             </p>
           </div>
@@ -56,9 +56,9 @@ export default function Footer() {
             },
           ].map((col) => (
             <div key={col.title}>
-              <h5 className="text-[12px] font-semibold text-[#0f0f0f] uppercase tracking-[0.1em] mb-[14px]">
+              <h4 className="text-[12px] font-semibold text-[#0f0f0f] uppercase tracking-[0.1em] mb-[14px]">
                 {col.title}
-              </h5>
+              </h4>
               {col.links.map((link) => {
                 const isLegal = link === "Terms" || link === "Privacy";
                 const href = isLegal ? `/${link.toLowerCase()}` : `/#${link.toLowerCase().replace(/\s/g, "-")}`;
@@ -83,8 +83,8 @@ export default function Footer() {
 
         <div className="nexto-dashed" />
 
-        <div className="flex items-center justify-between pt-6 text-[12.5px] text-[#888] gap-4 flex-wrap">
-          <span>© 2026 Prompt Crafts — All rights reserved.</span>
+        <div className="flex items-center justify-between pt-6 text-[12.5px] text-[#525252] gap-4 flex-wrap">
+          <span className="text-[#525252]">© 2026 Prompt Crafts — All rights reserved.</span>
           <div className="flex gap-2">
             {socials.map((s) => (
               <a
