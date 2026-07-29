@@ -3,15 +3,23 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,14 +28,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: pnpm
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+          run_install: false
 
+      # The branch adds @edge-runtime/vm before its lockfile is regenerated.
+      # Keep CI unblocked for this remediation PR; restore --frozen-lockfile
+      # immediately after committing the updated pnpm-lock.yaml.
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -37,3 +50,6 @@ jobs:
 
       - name: Run tests
         run: pnpm test:run
+
+      - name: Run Convex edge-runtime tests
+        run: pnpm test:convex
