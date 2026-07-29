@@ -255,7 +255,7 @@ function PromptTypeStrip({ activePrompt }: { activePrompt: ActivePromptShape }) 
           'gap-1 rounded-full text-xs font-semibold',
           activePrompt.templateMode
             ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
-            : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/8'
+            : 'border-emerald-500/30 text-emerald-800 dark:text-emerald-400 bg-emerald-500/8'
         )}
       >
         {activePrompt.templateMode ? (

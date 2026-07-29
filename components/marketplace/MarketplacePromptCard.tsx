@@ -169,7 +169,7 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
             onClick={handleCopy}
             className={cn(
               'h-9 flex-1 gap-1.5 rounded-xl text-xs shadow-sm transition-colors active:scale-[0.98]',
-              copied && 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+              copied && 'border-emerald-500 text-emerald-800 dark:text-emerald-400'
             )}
           >
             {copied ? (

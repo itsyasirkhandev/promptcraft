@@ -279,7 +279,7 @@ function PricingCard({
               key={feature}
               className="flex items-center gap-3 text-[14px] text-[#1a1a1a]"
             >
-              <span className="nexto-icon text-[18px] text-emerald-600">check_circle</span>
+              <span className="nexto-icon text-[18px] text-emerald-800">check_circle</span>
               <span>{feature}</span>
             </li>
           ))}

@@ -201,7 +201,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
                         'shrink-0 text-[10px] font-semibold tracking-wide px-1.5 h-4',
                         isDynamic
                           ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
-                          : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/8'
+                          : 'border-emerald-500/30 text-emerald-800 dark:text-emerald-400 bg-emerald-500/8'
                       )}
                     >
                       {isDynamic ? 'Dynamic' : 'Static'}

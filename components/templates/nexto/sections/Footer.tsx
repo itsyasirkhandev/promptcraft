@@ -56,9 +56,9 @@ export default function Footer() {
             },
           ].map((col) => (
             <div key={col.title}>
-              <h4 className="text-[12px] font-semibold text-[#0f0f0f] uppercase tracking-[0.1em] mb-[14px]">
+              <h3 className="text-[12px] font-semibold text-[#0f0f0f] uppercase tracking-[0.1em] mb-[14px]">
                 {col.title}
-              </h4>
+              </h3>
               {col.links.map((link) => {
                 const isLegal = link === "Terms" || link === "Privacy";
                 const href = isLegal ? `/${link.toLowerCase()}` : `/#${link.toLowerCase().replace(/\s/g, "-")}`;

@@ -93,9 +93,9 @@ export default function Showcase() {
                 <span className="nexto-icon nexto-gradient-text text-[34px] leading-none">
                   storefront
                 </span>
-                <h4 className="mt-3 text-[18px] font-semibold tracking-[-0.3px] text-[#0f0f0f]">
+                <h3 className="mt-3 text-[18px] font-semibold tracking-[-0.3px] text-[#0f0f0f]">
                   No public prompts yet
-                </h4>
+                </h3>
                 <p className="mt-2 text-[13px] text-[#525252] max-w-[320px] mx-auto">
                   Be the first to share a prompt and it will appear right here.
                 </p>
@@ -132,9 +132,9 @@ export default function Showcase() {
 
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h4 className="text-[20px] font-semibold tracking-[-0.5px] leading-[1.15] line-clamp-2">
+                          <h3 className="text-[20px] font-semibold tracking-[-0.5px] leading-[1.15] line-clamp-2">
                             {p.title}
-                          </h4>
+                          </h3>
                           {p.content && (
                             <p className="mt-[6px] text-[12.5px] leading-[1.5] text-white/80 line-clamp-2">
                               {p.content}

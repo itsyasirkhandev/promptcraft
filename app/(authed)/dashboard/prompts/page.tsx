@@ -163,7 +163,7 @@ function CardContentPreview({ prompt, copied, onCopy }: CardContentPreviewProps)
           onClick={onCopy}
           className={cn(
             'flex items-center justify-center size-7 rounded-lg bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all transform active:scale-95',
-            copied && 'border-emerald-250 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450'
+            copied && 'border-emerald-250 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-450'
           )}
           title="Copy prompt content"
         >
