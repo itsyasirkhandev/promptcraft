@@ -119,7 +119,7 @@ export default function Showcase() {
                   <Link
                     key={p._id}
                     href={href}
-                    className="relative rounded-[22px] overflow-hidden min-h-[300px] flex flex-col justify-end p-[22px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(0,0,0,0.08)] group"
+                    className="relative rounded-[22px] overflow-hidden min-h-[300px] flex flex-col justify-end p-[22px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-colors duration-300 hover:shadow-[0_14px_36px_rgba(0,0,0,0.08)] group"
                     style={{ background: bg }}
                   >
                     <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/60 to-transparent" />

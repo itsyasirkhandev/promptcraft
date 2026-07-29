@@ -10,7 +10,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || "https://promptcrafts.com";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: URL.canParse(defaultUrl) ? new URL(defaultUrl) : new URL("https://promptcrafts.com"),
   title: {
     default: "Prompt Crafts — Better AI Inputs, Better AI Outputs",
     template: "%s | Prompt Crafts",

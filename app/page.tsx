@@ -6,26 +6,26 @@ import Pricing from "@/components/templates/nexto/sections/Pricing";
 import CTA from "@/components/templates/nexto/sections/CTA";
 import Footer from "@/components/templates/nexto/sections/Footer";
 
-export default function NextoPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Prompt Crafts",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "All",
-    "description": "Craft, optimize, organize, and copy your perfect AI prompts.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0.00",
-      "priceCurrency": "USD"
-    }
-  };
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Prompt Crafts",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "All",
+  "description": "Craft, optimize, organize, and copy your perfect AI prompts.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0.00",
+    "priceCurrency": "USD"
+  }
+};
 
+export default function NextoPage() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <Navbar />
       <Hero />

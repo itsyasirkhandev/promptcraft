@@ -168,7 +168,7 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
             size="sm"
             onClick={handleCopy}
             className={cn(
-              'h-9 flex-1 gap-1.5 rounded-xl text-xs shadow-sm transition-transform active:scale-[0.98]',
+              'h-9 flex-1 gap-1.5 rounded-xl text-xs shadow-sm transition-colors active:scale-[0.98]',
               copied && 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
             )}
           >
@@ -184,7 +184,7 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
               type="button"
               size="sm"
               onClick={handleUse}
-              className="h-9 flex-1 gap-1.5 rounded-xl bg-purple-600 text-xs text-white shadow-sm transition-transform hover:bg-purple-700 active:scale-[0.98] dark:bg-purple-600 dark:hover:bg-purple-500"
+              className="h-9 flex-1 gap-1.5 rounded-xl bg-purple-600 text-xs text-white shadow-sm transition-colors hover:bg-purple-700 active:scale-[0.98] dark:bg-purple-600 dark:hover:bg-purple-500"
             >
               <ArrowSquareOut className="size-3.5" />
               <span>Use</span>

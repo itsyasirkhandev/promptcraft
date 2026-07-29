@@ -28,19 +28,19 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function MarketplacePage() {
-	const jsonLd = {
-		'@context': 'https://schema.org',
-		'@type': 'DataCatalog',
-		name: 'Prompt Crafts Public Marketplace',
-		description: 'A collection of publicly shared AI prompt templates created by developers and creators.',
-	};
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'DataCatalog',
+	name: 'Prompt Crafts Public Marketplace',
+	description: 'A collection of publicly shared AI prompt templates created by developers and creators.',
+};
 
+export default function MarketplacePage() {
 	return (
 	<>
 		<script
 			type="application/ld+json"
-			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
 		/>
 		<Navbar />
 		<div className="mx-auto max-w-7xl px-4 py-12">

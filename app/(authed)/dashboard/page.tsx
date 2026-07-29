@@ -117,7 +117,7 @@ function HobbyUsageCard() {
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Prompts used" aria-valuenow={promptsPct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${promptsPct}%` }} />
+            <div className="h-full rounded-full bg-primary transition-colors" style={{ width: `${promptsPct}%` }} />
           </div>
           <span className="text-xs text-muted-foreground">{promptsRemaining} prompts remaining</span>
         </div>
@@ -130,7 +130,7 @@ function HobbyUsageCard() {
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Public prompts used" aria-valuenow={publicPct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${publicPct}%` }} />
+            <div className="h-full rounded-full bg-primary transition-colors" style={{ width: `${publicPct}%` }} />
           </div>
           <span className="text-xs text-muted-foreground">{publicRemaining} public prompts remaining</span>
         </div>

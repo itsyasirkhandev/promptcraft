@@ -91,7 +91,7 @@ export default function Footer() {
                 key={s.label}
                 href="#"
                 aria-label={s.label}
-                className="nexto-icon w-[34px] h-[34px] rounded-full bg-white border border-black/6 inline-flex items-center justify-center text-[18px] text-[#111] transition-all hover:-translate-y-[2px] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)]"
+                className="nexto-icon w-[34px] h-[34px] rounded-full bg-white border border-black/6 inline-flex items-center justify-center text-[18px] text-[#111] transition-colors hover:bg-slate-50 hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)]"
               >
                 <span aria-hidden="true">{s.icon}</span>
               </a>

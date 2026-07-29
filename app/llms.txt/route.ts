@@ -8,15 +8,13 @@ export async function GET() {
 	try {
 		const publicPrompts = await fetchQuery(api.public.prompts.listPublicPrompts, {});
 		if (publicPrompts && Array.isArray(publicPrompts)) {
-			dynamicPromptLines = publicPrompts
-				.filter((prompt) => prompt.publicSlug)
-				.map((prompt) => {
-					const desc = prompt.content
-						? prompt.content.slice(0, 100).replace(/\n/g, ' ') + '...'
-						: 'Public AI prompt template.';
-					return `- [${prompt.title}](${baseUrl}/p/${prompt.publicSlug}): ${desc}`;
-				})
-				.join('\n');
+			dynamicPromptLines = publicPrompts.flatMap((prompt) => {
+				if (!prompt.publicSlug) return [];
+				const desc = prompt.content
+					? prompt.content.slice(0, 100).replace(/\n/g, ' ') + '...'
+					: 'Public AI prompt template.';
+				return [`- [${prompt.title}](${baseUrl}/p/${prompt.publicSlug}): ${desc}`];
+			}).join('\n');
 		}
 	} catch (error) {
 		console.error('Failed to fetch public prompts for llms.txt:', error);

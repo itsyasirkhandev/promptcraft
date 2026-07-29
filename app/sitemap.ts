@@ -37,14 +37,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	try {
 		const publicPrompts = await fetchQuery(api.public.prompts.listPublicPrompts, {});
 		if (publicPrompts && Array.isArray(publicPrompts)) {
-			dynamicRoutes = publicPrompts
-				.filter((prompt) => prompt.publicSlug)
-				.map((prompt) => ({
+			dynamicRoutes = publicPrompts.flatMap((prompt) => {
+				if (!prompt.publicSlug) return [];
+				return [{
 					url: `${baseUrl}/p/${prompt.publicSlug}`,
 					lastModified: prompt._creationTime ? new Date(prompt._creationTime) : new Date(),
 					changeFrequency: 'weekly',
 					priority: 0.8,
-				}));
+				}];
+			});
 		}
 	} catch (error) {
 		console.error('Failed to fetch public prompts for sitemap generation:', error);

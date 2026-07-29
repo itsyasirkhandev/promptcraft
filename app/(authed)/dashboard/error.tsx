@@ -22,7 +22,7 @@ export default function DashboardError({
         <button
           type="button"
           onClick={reset}
-          className="px-5 py-2 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          className="px-5 py-2 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-colors duration-200 cursor-pointer active:scale-[0.98]"
         >
           Retry
         </button>

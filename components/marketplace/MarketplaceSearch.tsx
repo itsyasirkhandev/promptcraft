@@ -119,10 +119,10 @@ export function MarketplaceSearch() {
                 onClick={() => void setActiveCategory(cat.id)}
                 aria-pressed={isActive}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition-all duration-300 active:scale-95',
+                  'flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition-colors duration-300 active:scale-95',
                   isActive
-                    ? 'scale-[1.02] border-slate-900 bg-slate-900 font-bold text-white shadow-md dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                    : 'border-slate-200 bg-white text-slate-600 hover:scale-[1.01] hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200',
+                    ? 'border-slate-900 bg-slate-900 font-bold text-white shadow-md dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200',
                 )}
               >
                 <Icon

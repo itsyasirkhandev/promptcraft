@@ -144,7 +144,7 @@ function HobbyBilling() {
               aria-valuemax={100}
             >
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-primary transition-colors"
                 style={{ width: `${promptsPct}%` }}
               />
             </div>
@@ -169,7 +169,7 @@ function HobbyBilling() {
               aria-valuemax={100}
             >
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-primary transition-colors"
                 style={{ width: `${publicPct}%` }}
               />
             </div>

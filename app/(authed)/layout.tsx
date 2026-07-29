@@ -77,7 +77,7 @@ function AppSidebar() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.svg" alt="Logo" className="h-6 w-6" />
           {!isCollapsed && (
-            <span className="font-bold text-sm text-slate-800 dark:text-slate-200 tracking-tight transition-all duration-200">
+            <span className="font-bold text-sm text-slate-800 dark:text-slate-200 tracking-tight transition-colors duration-200">
               Prompt Crafts
             </span>
           )}

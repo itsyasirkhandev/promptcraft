@@ -53,7 +53,7 @@ export function PublicPromptClient({ slug }: PublicPromptClientProps) {
 		<div className="flex flex-col gap-6 max-w-6xl mx-auto p-1 animate-in fade-in duration-300">
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
 			/>
 			{/* Header: title + author + copy link */}
 			<div className="flex items-start justify-between gap-4">

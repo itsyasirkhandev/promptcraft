@@ -92,7 +92,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[300px] max-w-full justify-between gap-2 truncate rounded-xl border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:bg-accent/50 transition-all duration-200"
+          className="w-[300px] max-w-full justify-between gap-2 truncate rounded-xl border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:bg-accent/50 transition-colors duration-205"
         >
           <span className="flex min-w-0 items-center gap-2 truncate">
             {activePrompt ? (

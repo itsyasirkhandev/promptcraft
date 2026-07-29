@@ -16,6 +16,9 @@
       "**/*.test.*",
       "**/*.spec.*",
       "**/*.stories.*"
+    ],
+    "tags": [
+      "test-noise"
     ]
   }
 }

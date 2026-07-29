@@ -406,7 +406,7 @@ export default function PromptsDashboardPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight font-heading">Prompts Library</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage, filter, and reuse your static and dynamic templates.</p>
         </div>
-        <Button asChild size="sm" className="w-full sm:w-auto shrink-0 shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]">
+        <Button asChild size="sm" className="w-full sm:w-auto shrink-0 shadow-sm transition-colors hover:scale-[1.02] active:scale-[0.98]">
           <Link href="/prompt/create" className="flex items-center gap-2">
             <Plus className="size-4" /><span>New Prompt</span>
           </Link>

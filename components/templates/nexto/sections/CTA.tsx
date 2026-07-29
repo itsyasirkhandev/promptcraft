@@ -50,7 +50,7 @@ export default function CTA() {
                 <SignInButton mode="modal" fallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
                   <button
                     type="button"
-                    className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
+                    className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-colors hover:bg-[#f0f0f0]"
                   >
                     <span
                       className="w-8 h-8 rounded-full bg-[#111] text-white inline-flex items-center justify-center"
@@ -64,7 +64,7 @@ export default function CTA() {
               <Show when="signed-in">
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-all hover:bg-[#f0f0f0]"
+                  className="inline-flex items-center gap-[12px] bg-white text-[#111] text-[15px] font-medium rounded-[40px] py-[7px] pr-[22px] pl-[7px] transition-colors hover:bg-[#f0f0f0]"
                 >
                   <span
                     className="w-8 h-8 rounded-full bg-[#111] text-white inline-flex items-center justify-center"
