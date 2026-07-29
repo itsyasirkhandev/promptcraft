@@ -7,14 +7,41 @@ import CTA from '@/components/templates/nexto/sections/CTA';
 import Footer from '@/components/templates/nexto/sections/Footer';
 
 export const metadata: Metadata = {
-	title: 'Public Marketplace — Prompt Crafts',
+	title: 'Public AI Prompt Library & Marketplace',
 	description:
-		'Discover, search, and copy publicly shared AI prompts created by the community.',
+		'Discover, search, and copy publicly shared ChatGPT, Claude, and LLM AI prompt templates created by the community.',
+	alternates: {
+		canonical: '/marketplace',
+	},
+	openGraph: {
+		title: 'Public AI Prompt Library & Marketplace — Prompt Crafts',
+		description:
+			'Discover, search, and copy publicly shared ChatGPT, Claude, and LLM AI prompt templates created by the community.',
+		url: '/marketplace',
+		type: 'website',
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'Public AI Prompt Library & Marketplace — Prompt Crafts',
+		description:
+			'Discover, search, and copy publicly shared ChatGPT, Claude, and LLM AI prompt templates created by the community.',
+	},
 };
 
 export default function MarketplacePage() {
+	const jsonLd = {
+		'@context': 'https://schema.org',
+		'@type': 'DataCatalog',
+		name: 'Prompt Crafts Public Marketplace',
+		description: 'A collection of publicly shared AI prompt templates created by developers and creators.',
+	};
+
 	return (
 	<>
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+		/>
 		<Navbar />
 		<div className="mx-auto max-w-7xl px-4 py-12">
 			<div className="mb-12 text-center">

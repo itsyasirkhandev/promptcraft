@@ -36,8 +36,25 @@ export function PublicPromptClient({ slug }: PublicPromptClientProps) {
 		);
 	}
 
+	const jsonLd = {
+		'@context': 'https://schema.org',
+		'@type': 'CreativeWork',
+		name: prompt.title,
+		text: prompt.content,
+		author: {
+			'@type': 'Person',
+			name: prompt.author.name,
+		},
+		dateCreated: new Date(prompt._creationTime).toISOString(),
+		keywords: prompt.tags.join(', '),
+	};
+
 	return (
 		<div className="flex flex-col gap-6 max-w-6xl mx-auto p-1 animate-in fade-in duration-300">
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			/>
 			{/* Header: title + author + copy link */}
 			<div className="flex items-start justify-between gap-4">
 				<div className="flex items-center gap-3">

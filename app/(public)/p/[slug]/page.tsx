@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { fetchQuery } from 'convex/nextjs';
+import { api } from '@/convex/_generated/api';
 import { PublicPromptClient } from '@/components/prompts/PublicPromptClient';
 
 interface PageProps {
@@ -7,15 +9,39 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
 	const { slug } = await params;
-	// Derive a human-readable title from the slug for <head> metadata.
-	const readable = slug
-		.replace(/-/g, ' ')
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+
+	let prompt = null;
+	try {
+		prompt = await fetchQuery(api.public.prompts.getBySlug, { slug });
+	} catch (err) {
+		console.error('Failed to fetch prompt for dynamic metadata:', err);
+	}
+
+	const title = prompt?.title
+		? `${prompt.title} — AI Prompt Template`
+		: `${slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} — Public Prompt`;
+
+	const description = prompt?.content
+		? prompt.content.slice(0, 155).replace(/\n/g, ' ') + '...'
+		: 'Use and copy this public prompt. Fill in the fields, copy, or open in your AI tool of choice.';
+
 	return {
-		title: `${readable} — Public Prompt`,
-		description: 'Use and copy this public prompt. Fill in the fields, copy, or open in your AI tool of choice.',
-		openGraph: { title: readable, type: 'article' },
-		twitter: { card: 'summary' }
+		title,
+		description,
+		alternates: {
+			canonical: `/p/${slug}`,
+		},
+		openGraph: {
+			title,
+			description,
+			url: `/p/${slug}`,
+			type: 'article',
+		},
+		twitter: {
+			card: 'summary_large_image',
+			title,
+			description,
+		},
 	};
 }
 

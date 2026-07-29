@@ -16,7 +16,7 @@ function handleScroll(e: React.MouseEvent<HTMLAnchorElement>, targetId: string) 
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-[9px]" aria-label="Prompt Crafts home">
-      <Image src={LOGO_URL} alt="" width={28} height={28} className="h-7 w-auto brightness-0" />
+      <Image src={LOGO_URL} alt="Prompt Crafts Logo" width={28} height={28} className="h-7 w-auto brightness-0" />
       <span className="text-[20px] font-bold tracking-[-0.3px] text-[#111]">Prompt Crafts</span>
     </Link>
   );
@@ -93,7 +93,7 @@ export default function Footer() {
                 aria-label={s.label}
                 className="nexto-icon w-[34px] h-[34px] rounded-full bg-white border border-black/6 inline-flex items-center justify-center text-[18px] text-[#111] transition-all hover:-translate-y-[2px] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)]"
               >
-                {s.icon}
+                <span aria-hidden="true">{s.icon}</span>
               </a>
             ))}
           </div>

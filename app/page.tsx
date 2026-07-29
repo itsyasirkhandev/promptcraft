@@ -7,8 +7,26 @@ import CTA from "@/components/templates/nexto/sections/CTA";
 import Footer from "@/components/templates/nexto/sections/Footer";
 
 export default function NextoPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Prompt Crafts",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "description": "Craft, optimize, organize, and copy your perfect AI prompts.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    }
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
       <Hero />
       <Showcase />

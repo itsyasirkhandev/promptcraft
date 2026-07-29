@@ -7,9 +7,40 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || "https://promptcrafts.com";
+
 export const metadata: Metadata = {
-  title: "Prompt Crafts",
-  description: "Better AI inputs. Better AI outputs. Craft prompts. Save hours.",
+  metadataBase: new URL(defaultUrl),
+  title: {
+    default: "Prompt Crafts — Better AI Inputs, Better AI Outputs",
+    template: "%s | Prompt Crafts",
+  },
+  description: "Craft, optimize, organize, and copy your perfect AI prompts. Free prompt management & public prompt marketplace.",
+  alternates: {
+    canonical: "./",
+  },
+  openGraph: {
+    title: "Prompt Crafts — Better AI Inputs, Better AI Outputs",
+    description: "Craft, optimize, organize, and copy your perfect AI prompts. Free prompt management & public prompt marketplace.",
+    url: defaultUrl,
+    siteName: "Prompt Crafts",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/logo.svg",
+        width: 800,
+        height: 600,
+        alt: "Prompt Crafts Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prompt Crafts — Better AI Inputs, Better AI Outputs",
+    description: "Craft, optimize, organize, and copy your perfect AI prompts.",
+    images: ["/logo.svg"],
+  },
   icons: {
     icon: "/logo.svg",
     shortcut: "/logo.svg",
