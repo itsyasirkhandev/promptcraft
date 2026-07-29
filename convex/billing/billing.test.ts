@@ -88,6 +88,7 @@ beforeEach(() => {
 	// Convex deployment env read by http.ts (webhook) and ServerConfig.layer (actions).
 	process.env.POLAR_WEBHOOK_SECRET = WH_SECRET;
 	process.env.POLAR_PRODUCT_ID = PRODUCT_ID;
+	process.env.SITE_URL = "https://app.example.com";
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
 	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
