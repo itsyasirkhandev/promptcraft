@@ -47,7 +47,7 @@ export default defineSchema({
 		.index('by_isPublic_and_category_and_title', ['isPublic', 'category', 'title'])
 		.index('by_publicSlug', ['publicSlug'])
 		.index('by_isPublic_and_title', ['isPublic', 'title'])
-		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic'] }),
+		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic', 'category'] }),
 	pendingSubscriptions: defineTable({
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
