@@ -9,7 +9,6 @@
  */
 
 import type * as authed_billing from "../authed/billing.js";
-import type * as authed_demo from "../authed/demo.js";
 import type * as authed_errors from "../authed/errors.js";
 import type * as authed_helpers from "../authed/helpers.js";
 import type * as authed_promptAnalytics from "../authed/promptAnalytics.js";
@@ -24,7 +23,6 @@ import type * as billing_webhooks from "../billing/webhooks.js";
 import type * as effectHelpers from "../effectHelpers.js";
 import type * as emails from "../emails.js";
 import type * as http from "../http.js";
-import type * as private_demo from "../private/demo.js";
 import type * as private_helpers from "../private/helpers.js";
 import type * as private_users from "../private/users.js";
 import type * as public_prompts from "../public/prompts.js";
@@ -42,7 +40,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "authed/billing": typeof authed_billing;
-  "authed/demo": typeof authed_demo;
   "authed/errors": typeof authed_errors;
   "authed/helpers": typeof authed_helpers;
   "authed/promptAnalytics": typeof authed_promptAnalytics;
@@ -57,7 +54,6 @@ declare const fullApi: ApiFromModules<{
   effectHelpers: typeof effectHelpers;
   emails: typeof emails;
   http: typeof http;
-  "private/demo": typeof private_demo;
   "private/helpers": typeof private_helpers;
   "private/users": typeof private_users;
   "public/prompts": typeof public_prompts;

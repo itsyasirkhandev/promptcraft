@@ -2,6 +2,10 @@ import type { MetadataRoute } from 'next';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 
+// The sitemap fetches live data from Convex via fetchQuery, which uses
+// cache: 'no-store', so it must be dynamically rendered.
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promptcrafts.com';
 
