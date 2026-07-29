@@ -1,10 +1,12 @@
 import Navbar from "@/components/templates/nexto/sections/Navbar";
 import Hero from "@/components/templates/nexto/sections/Hero";
 import Showcase from "@/components/templates/nexto/sections/Showcase";
-import Process from "@/components/templates/nexto/sections/Process";
-import Pricing from "@/components/templates/nexto/sections/Pricing";
-import CTA from "@/components/templates/nexto/sections/CTA";
-import Footer from "@/components/templates/nexto/sections/Footer";
+import {
+  LazyProcess,
+  LazyPricing,
+  LazyCTA,
+  LazyFooter,
+} from "@/components/templates/nexto/LazySections";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -31,11 +33,11 @@ export default function NextoPage() {
       <main>
         <Hero />
         <Showcase />
-        <Process />
-        <Pricing />
-        <CTA />
+        <LazyProcess />
+        <LazyPricing />
+        <LazyCTA />
       </main>
-      <Footer />
+      <LazyFooter />
     </>
   );
 }
