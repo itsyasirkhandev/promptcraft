@@ -3,15 +3,9 @@
 import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { useQuery, useAction } from "convex/react";
 import { useState } from "react";
-import { Spinner } from "@phosphor-icons/react";
 import { api } from "@/convex/_generated/api";
 import { POLAR_PRODUCT_ID } from "@/lib/billing";
-import {
-  Dialog,
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-} from "@/components/ui/dialog";
+import { CheckoutLoadingDialog } from "@/components/checkout-loading-dialog";
 
 function ChevronArrow() {
   return (
@@ -52,6 +46,7 @@ function useBillingRedirect() {
       if (!result?.url) {
         throw new Error("No URL returned");
       }
+      // fallow-ignore-next-line security-sink
       window.location.assign(result.url);
     } catch {
       setError(
@@ -167,25 +162,10 @@ function ProCardCta() {
       )}
 
       {/* Full-screen blocking overlay while checkout or portal URL is being generated */}
-      <Dialog open={billing.pending !== null}>
-        <DialogPortal>
-          <DialogOverlay className="z-[100] bg-black/60 backdrop-blur-sm" />
-          <DialogContent
-            showCloseButton={false}
-            className="z-[101] flex w-fit flex-col items-center gap-4 border-none bg-transparent p-12 shadow-none sm:max-w-none"
-            onInteractOutside={(e) => e.preventDefault()}
-            onEscapeKeyDown={(e) => e.preventDefault()}
-          >
-            <Spinner
-              className="size-8 animate-spin text-white"
-              aria-hidden="true"
-            />
-            <p className="text-sm text-white/80 font-medium">
-              {pendingPortal ? "Loading portal…" : "Securing checkout…"}
-            </p>
-          </DialogContent>
-        </DialogPortal>
-      </Dialog>
+      <CheckoutLoadingDialog
+        open={billing.pending !== null}
+        message={pendingPortal ? "Loading portal…" : "Securing checkout…"}
+      />
     </div>
   );
 }

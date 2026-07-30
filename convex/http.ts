@@ -6,6 +6,35 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
 import { verifyPolarWebhook, type PolarSubscriptionEvent } from "./billing/webhooks";
 import { mapSubscriptionToPlan, type Plan } from "./billing/lifecycle";
 
+async function verifyVandlySignature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string
+): Promise<boolean> {
+  if (!signatureHeader) return false;
+  const expectedPrefix = "sha256=";
+  if (!signatureHeader.startsWith(expectedPrefix)) return false;
+  const providedHex = signatureHeader.slice(expectedPrefix.length);
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const bodyData = encoder.encode(rawBody);
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, bodyData);
+  const hashArray = Array.from(new Uint8Array(signatureBuffer));
+  const computedHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  return computedHex.toLowerCase() === providedHex.toLowerCase();
+}
+
 const http = httpRouter();
 
 http.route({
@@ -259,4 +288,73 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/vandly-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const secret = process.env.VANDLY_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error("vandly-webhook: missing VANDLY_WEBHOOK_SECRET");
+      return new Response("Webhook not configured", { status: 500 });
+    }
+
+    const rawBody = await request.text();
+    const signature = request.headers.get("x-vandly-signature");
+
+    if (!(await verifyVandlySignature(rawBody, signature, secret))) {
+      console.error("vandly-webhook: signature verification failed");
+      return new Response("Invalid signature", { status: 400 });
+    }
+
+    let payload: {
+      event?: string;
+      data?: {
+        subscriptionId?: string;
+        productId?: number | string;
+        customerEmail?: string;
+      };
+      timestamp?: string;
+    };
+
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      console.error("vandly-webhook: failed to parse JSON payload");
+      return new Response("Invalid JSON payload", { status: 400 });
+    }
+
+    const configuredProductId = Number(process.env.VANDLY_PRODUCT_ID || 6);
+
+    if (Number(payload.data?.productId) !== configuredProductId) {
+      console.log("vandly-webhook: ignored event for unrelated product", {
+        receivedProductId: payload.data?.productId,
+        configuredProductId,
+      });
+      return new Response(null, { status: 200 });
+    }
+
+    if (!payload.event || !payload.data?.customerEmail || !payload.data?.subscriptionId) {
+      console.warn("vandly-webhook: missing required fields in payload");
+      return new Response(null, { status: 200 });
+    }
+
+    const eventTimestamp = payload.timestamp ? new Date(payload.timestamp).getTime() : Date.now();
+
+    try {
+      await ctx.runMutation(internal.users.updateSubscriptionFromVandly, {
+        email: payload.data.customerEmail,
+        subscriptionId: payload.data.subscriptionId,
+        event: payload.event,
+        eventTimestamp,
+      });
+    } catch (error) {
+      console.error("vandly-webhook: database update error", error);
+      return new Response("Database error", { status: 500 });
+    }
+
+    return new Response(null, { status: 200 });
+  }),
+});
+
 export default http;
+

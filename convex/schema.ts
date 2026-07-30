@@ -12,12 +12,16 @@ export default defineSchema({
 		polarCustomerId: v.optional(v.string()),
 		polarSubscriptionId: v.optional(v.string()),
 		polarSubscriptionStatus: v.optional(v.string()),
-		polarLastEventAt: v.optional(v.number())
+		polarLastEventAt: v.optional(v.number()),
+		vandlySubscriptionId: v.optional(v.string()),
+		vandlySubscriptionStatus: v.optional(v.string()),
+		vandlyLastEventAt: v.optional(v.number())
 	})
 		.index('by_token', ['tokenIdentifier'])
 		.index('by_clerk_id', ['clerkId'])
 		.index('by_polar_customer_id', ['polarCustomerId'])
-		.index('by_email', ['email']),
+		.index('by_email', ['email'])
+		.index('by_vandly_subscription_id', ['vandlySubscriptionId']),
 	prompts: defineTable({
 		userId: v.id('users'),
 		title: v.string(),

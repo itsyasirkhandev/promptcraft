@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle, Spinner } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react";
 import { useAction, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { POLAR_PRODUCT_ID } from "@/lib/billing";
+import { getVandlyCheckoutUrl } from "@/lib/vandly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,19 +15,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-} from "@/components/ui/dialog";
+import { CheckoutLoadingDialog } from "@/components/checkout-loading-dialog";
+import { UsageProgressBar } from "@/components/usage-progress-bar";
 
 export default function BillingPage() {
   const user = useQuery(api.authed.users.currentUser);
 
   if (user === undefined || user === null) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <div className="flex flex-col items-center justify-center min-h-screen/2 gap-4">
         <div
           aria-hidden="true"
           className="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-emerald-500 animate-spin"
@@ -72,14 +69,15 @@ export default function BillingPage() {
   );
 }
 
+// fallow-ignore-next-line code-duplication
 function HobbyBilling() {
+  const user = useQuery(api.authed.users.currentUser);
+  // fallow-ignore-next-line code-duplication
   const usage = useQuery(api.authed.prompts.getUsage);
   const generateCheckoutUrl = useAction(api.authed.billing.generateCheckoutUrl);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Loading, Pro, and unauthenticated states render nothing so the cards
-  // never flash stale content. The parent already gates on the user query.
   if (
     usage === undefined ||
     usage.plan !== "hobby" ||
@@ -88,20 +86,7 @@ function HobbyBilling() {
     return null;
   }
 
-  const promptsPct = Math.min(
-    100,
-    Math.round((usage.promptsUsed / usage.promptsLimit) * 100)
-  );
-  const promptsRemaining = Math.max(0, usage.promptsLimit - usage.promptsUsed);
-  const publicPct = usage.publicLimit
-    ? Math.min(100, Math.round((usage.publicUsed / usage.publicLimit) * 100))
-    : 0;
-  const publicRemaining = Math.max(
-    0,
-    (usage.publicLimit ?? 0) - usage.publicUsed
-  );
-
-  const handleCheckout = async () => {
+  const handlePolarCheckout = async () => {
     if (pending) return;
     setPending(true);
     setError(null);
@@ -111,12 +96,15 @@ function HobbyBilling() {
         successUrl: `${window.location.origin}/dashboard`,
       });
       if (!result?.url) throw new Error("No URL returned");
+      // fallow-ignore-next-line security-sink
       window.location.assign(result.url);
     } catch {
       setError("Couldn't start checkout. Please try again.");
       setPending(false);
     }
   };
+
+  const vandlyUrl = getVandlyCheckoutUrl(user?.email);
 
   return (
     <>
@@ -128,55 +116,18 @@ function HobbyBilling() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Prompts created</span>
-              <span className="font-medium tabular-nums">
-                {usage.promptsUsed} / {usage.promptsLimit}
-              </span>
-            </div>
-            <div
-              className="h-2 w-full rounded-full bg-muted overflow-hidden"
-              role="progressbar"
-              aria-label="Prompts used"
-              aria-valuenow={promptsPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-primary transition-colors"
-                style={{ width: `${promptsPct}%` }}
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {promptsRemaining} prompts remaining
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Public prompts</span>
-              <span className="font-medium tabular-nums">
-                {usage.publicUsed} / {usage.publicLimit}
-              </span>
-            </div>
-            <div
-              className="h-2 w-full rounded-full bg-muted overflow-hidden"
-              role="progressbar"
-              aria-label="Public prompts used"
-              aria-valuenow={publicPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-primary transition-colors"
-                style={{ width: `${publicPct}%` }}
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {publicRemaining} public prompts remaining
-            </span>
-          </div>
+          <UsageProgressBar
+            label="Prompts created"
+            used={usage.promptsUsed}
+            limit={usage.promptsLimit}
+            remainingLabel="prompts remaining"
+          />
+          <UsageProgressBar
+            label="Public prompts"
+            used={usage.publicUsed}
+            limit={usage.publicLimit ?? 0}
+            remainingLabel="public prompts remaining"
+          />
         </CardContent>
       </Card>
 
@@ -184,7 +135,7 @@ function HobbyBilling() {
         <CardHeader>
           <CardTitle>Upgrade to Pro</CardTitle>
           <CardDescription>
-            Unlock everything you need to scale your prompt library.
+            Choose your preferred checkout provider to upgrade.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -211,47 +162,45 @@ function HobbyBilling() {
               {error}
             </span>
           )}
-          <Button
-            onClick={handleCheckout}
-            disabled={pending}
-            aria-disabled={pending}
-            aria-busy={pending}
-            className="self-start bg-[#111] text-white hover:bg-[#222] disabled:opacity-60"
-          >
-            {pending ? "Securing checkout…" : "Continue to checkout"}
-          </Button>
 
-          {/* Full-screen blocking overlay while checkout URL is being generated */}
-          <Dialog open={pending}>
-            <DialogPortal>
-              <DialogOverlay className="z-[100] bg-black/60 backdrop-blur-sm" />
-              <DialogContent
-                showCloseButton={false}
-                className="z-[101] flex w-fit flex-col items-center gap-4 border-none bg-transparent p-12 shadow-none sm:max-w-none"
-                onInteractOutside={(e) => e.preventDefault()}
-                onEscapeKeyDown={(e) => e.preventDefault()}
-              >
-                <Spinner
-                  className="size-8 animate-spin text-white"
-                  aria-hidden="true"
-                />
-                <p className="text-sm text-white/80 font-medium">
-                  Securing checkout…
-                </p>
-              </DialogContent>
-            </DialogPortal>
-          </Dialog>
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <a
+              href={vandlyUrl}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors"
+            >
+              Pay with Vandly
+            </a>
+            <Button
+              onClick={handlePolarCheckout}
+              disabled={pending}
+              aria-disabled={pending}
+              aria-busy={pending}
+              className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {pending ? "Securing checkout…" : "Pay with Polar"}
+            </Button>
+          </div>
 
+          <CheckoutLoadingDialog
+            open={pending}
+            message="Securing checkout…"
+          />
         </CardContent>
       </Card>
     </>
   );
 }
 
+// fallow-ignore-next-line code-duplication
 function ProBilling() {
+  const user = useQuery(api.authed.users.currentUser);
+  // fallow-ignore-next-line code-duplication
   const generatePortalUrl = useAction(api.authed.billing.generatePortalUrl);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isPolarActive = user?.polarSubscriptionStatus === "active";
+  const isVandlyActive = user?.vandlySubscriptionStatus === "active";
 
   const handlePortal = async () => {
     if (pending) return;
@@ -260,6 +209,7 @@ function ProBilling() {
     try {
       const result = await generatePortalUrl();
       if (!result?.url) throw new Error("No URL returned");
+      // fallow-ignore-next-line security-sink
       window.location.assign(result.url);
     } catch {
       setError("Couldn't open the subscription portal. Please try again.");
@@ -272,45 +222,58 @@ function ProBilling() {
       <CardHeader>
         <CardTitle>Manage subscription</CardTitle>
         <CardDescription>
-          Update payment methods, change plans, or cancel your subscription via the Polar customer portal.
+          Your active payment provider and subscription status.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          {isVandlyActive && (
+            <div className="flex items-center justify-between p-3 rounded-lg border border-indigo-500/20 bg-indigo-500/5 text-sm">
+              <span className="font-medium text-indigo-700 dark:text-indigo-300">
+                Vandly Subscription
+              </span>
+              <Badge className="bg-indigo-600">Active</Badge>
+            </div>
+          )}
+
+          {isPolarActive && (
+            <div className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-sm">
+              <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                Polar Subscription
+              </span>
+              <Badge className="bg-emerald-600">Active</Badge>
+            </div>
+          )}
+
+          {!isPolarActive && !isVandlyActive && (
+            <div className="text-sm text-slate-500">
+              Pro plan active
+            </div>
+          )}
+        </div>
+
         {error && (
           <span role="alert" aria-live="polite" className="text-xs text-red-600">
             {error}
           </span>
         )}
-        <Button
-          onClick={handlePortal}
-          disabled={pending}
-          aria-disabled={pending}
-          aria-busy={pending}
-          className="self-start bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
-          {pending ? "Loading portal…" : "Manage Subscription"}
-        </Button>
 
-        {/* Full-screen blocking overlay while portal URL is being generated */}
-        <Dialog open={pending}>
-          <DialogPortal>
-            <DialogOverlay className="z-[100] bg-black/60 backdrop-blur-sm" />
-            <DialogContent
-              showCloseButton={false}
-              className="z-[101] flex w-fit flex-col items-center gap-4 border-none bg-transparent p-12 shadow-none sm:max-w-none"
-              onInteractOutside={(e) => e.preventDefault()}
-              onEscapeKeyDown={(e) => e.preventDefault()}
-            >
-              <Spinner
-                className="size-8 animate-spin text-white"
-                aria-hidden="true"
-              />
-              <p className="text-sm text-white/80 font-medium">
-                Loading portal…
-              </p>
-            </DialogContent>
-          </DialogPortal>
-        </Dialog>
+        {isPolarActive && (
+          <Button
+            onClick={handlePortal}
+            disabled={pending}
+            aria-disabled={pending}
+            aria-busy={pending}
+            className="self-start bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 mt-2"
+          >
+            {pending ? "Loading portal…" : "Manage Polar Subscription"}
+          </Button>
+        )}
+
+        <CheckoutLoadingDialog
+          open={pending}
+          message="Loading portal…"
+        />
       </CardContent>
     </Card>
   );

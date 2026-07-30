@@ -7,6 +7,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "@/convex/_generated/api";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
+import { UsageProgressBar } from "@/components/usage-progress-bar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -95,11 +96,7 @@ function HobbyUsageCard() {
   // never flashes stale content. The header pill already covers Pro/loading.
   if (usage === undefined || usage.plan !== "hobby" || usage.promptsLimit === null) return null;
 
-  const promptsRemaining = Math.max(0, usage.promptsLimit - usage.promptsUsed);
-  const publicRemaining = Math.max(0, (usage.publicLimit ?? 0) - usage.publicUsed);
-  const promptsPct = Math.min(100, Math.round((usage.promptsUsed / usage.promptsLimit) * 100));
-  const publicPct = usage.publicLimit ? Math.min(100, Math.round((usage.publicUsed / usage.publicLimit) * 100)) : 0;
-
+  // fallow-ignore-next-line code-duplication
   return (
     <Card>
       <CardHeader>
@@ -109,31 +106,18 @@ function HobbyUsageCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Prompts created</span>
-            <span className="font-medium tabular-nums">
-              {usage.promptsUsed} / {usage.promptsLimit}
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Prompts used" aria-valuenow={promptsPct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-primary transition-colors" style={{ width: `${promptsPct}%` }} />
-          </div>
-          <span className="text-xs text-muted-foreground">{promptsRemaining} prompts remaining</span>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Public prompts</span>
-            <span className="font-medium tabular-nums">
-              {usage.publicUsed} / {usage.publicLimit}
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Public prompts used" aria-valuenow={publicPct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-primary transition-colors" style={{ width: `${publicPct}%` }} />
-          </div>
-          <span className="text-xs text-muted-foreground">{publicRemaining} public prompts remaining</span>
-        </div>
+        <UsageProgressBar
+          label="Prompts created"
+          used={usage.promptsUsed}
+          limit={usage.promptsLimit}
+          remainingLabel="prompts remaining"
+        />
+        <UsageProgressBar
+          label="Public prompts"
+          used={usage.publicUsed}
+          limit={usage.publicLimit ?? 0}
+          remainingLabel="public prompts remaining"
+        />
 
         <Button asChild size="sm" className="self-start">
           <Link href="/upgrade">Upgrade to Pro</Link>

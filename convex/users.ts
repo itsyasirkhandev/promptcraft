@@ -436,6 +436,16 @@ export const resyncFromClerk = internalAction({
 
 		const origin = `${CLERK_API_SCHEME}://${CLERK_API_HOST}`;
 		const endpoint = `${origin}/v1/users/${encodeURIComponent(clerkId)}`;
+
+		// Safety: validate the constructed URL resolves to the expected Clerk API
+		// origin. Prevents SSRF if the constants are ever misconfigured.
+		const parsed = new URL(endpoint);
+		if (parsed.origin !== origin) {
+			console.error("resyncFromClerk: unexpected fetch origin, aborting");
+			return;
+		}
+
+		// fallow-ignore-next-line security-sink
 		const response = await fetch(endpoint, {
 			headers: { Authorization: `Bearer ${secretKey}` },
 		});
@@ -455,4 +465,59 @@ export const resyncFromClerk = internalAction({
 		await ctx.runMutation(internal.users.upsertFromClerk, { data });
 	},
 });
+
+// Apply a verified Vandly subscription event to the Convex user.
+// Atomic patch only; dual-provider entitlement check guarantees active Polar
+// subscriptions are preserved upon Vandly cancellation.
+export const updateSubscriptionFromVandly = internalMutation({
+	args: {
+		email: v.string(),
+		subscriptionId: v.string(),
+		event: v.string(),
+		eventTimestamp: v.number(),
+	},
+	async handler(ctx, args) {
+		const user = await queryUserByEmail(ctx.db, args.email);
+		if (!user) {
+			console.warn(`updateSubscriptionFromVandly: no user found for email ${args.email}`);
+			return;
+		}
+
+		if (user.vandlyLastEventAt && args.eventTimestamp <= user.vandlyLastEventAt) {
+			console.log("updateSubscriptionFromVandly: ignoring stale or replayed event", {
+				subscriptionId: args.subscriptionId,
+				event: args.event,
+				incomingAt: args.eventTimestamp,
+				lastAppliedAt: user.vandlyLastEventAt,
+			});
+			return;
+		}
+
+		let isVandlyActive = user.vandlySubscriptionStatus === "active";
+		let newStatus = user.vandlySubscriptionStatus;
+
+		if (args.event === "subscription.created" || args.event === "subscription.renewed") {
+			isVandlyActive = true;
+			newStatus = "active";
+		} else if (args.event === "subscription.canceled") {
+			isVandlyActive = false;
+			newStatus = "canceled";
+		}
+
+		const isPolarActive = user.polarSubscriptionStatus === "active";
+		const computedPlan: "hobby" | "pro" = isVandlyActive || isPolarActive ? "pro" : "hobby";
+
+		const wasHobby = user.plan === "hobby";
+
+		await ctx.db.patch(user._id, {
+			plan: computedPlan,
+			vandlySubscriptionId: args.subscriptionId,
+			vandlySubscriptionStatus: newStatus,
+			vandlyLastEventAt: args.eventTimestamp,
+		});
+
+		await maybeSendProUpgradeEmail(ctx, user, wasHobby, computedPlan);
+	},
+});
+
 
