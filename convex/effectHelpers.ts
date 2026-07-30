@@ -1,6 +1,28 @@
 import { Effect } from "effect";
 import { ConvexError, ObjectType, PropertyValidators, Value } from "convex/values";
 
+function toConvexSafeValue(value: unknown): Value {
+	if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string" || typeof value === "bigint") {
+		return value;
+	}
+	if (value instanceof ArrayBuffer) {
+		return value;
+	}
+	if (Array.isArray(value)) {
+		return value.map(toConvexSafeValue);
+	}
+	if (typeof value === "object") {
+		const obj: Record<string, Value> = {};
+		for (const [k, v] of Object.entries(value)) {
+			if (v !== undefined && typeof v !== "function" && typeof v !== "symbol") {
+				obj[k] = toConvexSafeValue(v);
+			}
+		}
+		return obj;
+	}
+	return String(value);
+}
+
 export async function runEffect<Result, Error>(
 	effect: Effect.Effect<Result, Error, never>
 ): Promise<Result> {
@@ -11,14 +33,14 @@ export async function runEffect<Result, Error>(
 			// Schema.TaggedErrorClass fields (message, etc.) are defined as
 			// non-enumerable own properties in Effect v4, so both object spread
 			// AND JSON.stringify drop them. Use getOwnPropertyNames to capture all
-			// own properties regardless of enumerability.
+			// own properties regardless of enumerability and sanitize values.
 			const tag = (error as { _tag: string })._tag;
 			const serialized: Record<string, Value> = {};
 			for (const key of Object.getOwnPropertyNames(error)) {
 				if (key !== '_tag' && key !== 'name' && key !== 'stack' && key !== 'constructor') {
-					const value = (error as Record<string, unknown>)[key];
-					if (value !== undefined) {
-						serialized[key] = value as Value;
+					const val = (error as Record<string, unknown>)[key];
+					if (val !== undefined) {
+						serialized[key] = toConvexSafeValue(val);
 					}
 				}
 			}

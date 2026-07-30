@@ -39,13 +39,13 @@ export const getInventoryAnalytics = effectAuthedQuery({
 					db
 						.query('prompts')
 						.withIndex('by_userId', (query) => query.eq('userId', viewer._id))
-						.collect(),
+						.take(1000),
 					db
 						.query('prompts')
-						.withIndex('by_userId_createdAt', (query) =>
+						.withIndex('by_userId_and_createdAt', (query) =>
 							query.eq('userId', viewer._id).gte('createdAt', startTimestamp)
 						)
-						.collect()
+						.take(1000)
 				])
 			);
 			const createdInWindow = recentPrompts.filter((prompt) => prompt.createdAt <= now);

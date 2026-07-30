@@ -135,7 +135,7 @@ describe("polar-webhook route (user-resolution branches)", () => {
 		const user = await t.run(async (ctx) =>
 			ctx.db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 				.unique(),
 		);
 		expect(user?.plan).toBe("pro");

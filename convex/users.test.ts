@@ -51,7 +51,7 @@ function clerkPayload(overrides: Record<string, unknown> = {}) {
 		id: CLERK_ID,
 		first_name: "Ada",
 		last_name: "Lovelace",
-		email_addresses: [{ email_address: "ada@example.com" }],
+		email_addresses: [{ id: "email_ada", email_address: "ada@example.com" }],
 		image_url: "https://img.example.com/ada.png",
 		...overrides,
 	};
@@ -88,7 +88,7 @@ async function readUserByClerkId(t: T) {
 	return t.run(async (ctx) => {
 		return ctx.db
 			.query("users")
-			.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 			.unique();
 	});
 }
@@ -165,7 +165,7 @@ describe("upsertFromClerk", () => {
 		expect(user?.clerkId).toBe(CLERK_ID);
 	});
 
-	test("converges on an existing user found by email when clerkId and tokenIdentifier do not match", async () => {
+	test("refuses to merge user when matching email has a different clerkId", async () => {
 		const t = convexTest(schema, modules);
 		const seededId = await t.run(async (ctx) => {
 			return ctx.db.insert("users", {
@@ -182,11 +182,9 @@ describe("upsertFromClerk", () => {
 		});
 		await flush(t);
 
-		const users = await countUsers(t);
-		expect(users).toHaveLength(1);
-		const user = await readUserByClerkId(t);
-		expect(user?._id).toBe(seededId);
-		expect(user?.clerkId).toBe(CLERK_ID);
+		// Must create a new user or refuse merge, NOT overwrite seeded user's clerkId
+		const seededUser = await t.run(async (ctx) => ctx.db.get(seededId));
+		expect(seededUser?.clerkId).toBe("different_clerk_id");
 	});
 
 	test("schedules Polar customer sync after inserting a user with an email", async () => {
