@@ -71,7 +71,7 @@ async function seedPrompts(t: AuthedT, count: number, isPublic: boolean) {
 	await t.run(async (ctx) => {
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 			.unique();
 		if (!user) throw new Error("seed user missing");
 		for (let i = 0; i < count; i++) {
@@ -149,7 +149,7 @@ describe("prompts.update — hobby quotas", () => {
 		const privateId = await t.run(async (ctx) => {
 			const user = await ctx.db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 				.unique();
 			return ctx.db.insert("prompts", {
 				userId: user!._id,
@@ -182,7 +182,7 @@ describe("prompts.update — hobby quotas", () => {
 		const privateId = await t.run(async (ctx) => {
 			const user = await ctx.db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 				.unique();
 			return ctx.db.insert("prompts", {
 				userId: user!._id,
@@ -214,11 +214,11 @@ describe("prompts.update — hobby quotas", () => {
 		const aPublicId = await t.run(async (ctx) => {
 			const user = await ctx.db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 				.unique();
 			return ctx.db
 				.query("prompts")
-				.withIndex("by_userId_isPublic", (q) => q.eq("userId", user!._id).eq("isPublic", true))
+				.withIndex("by_userId_and_isPublic", (q) => q.eq("userId", user!._id).eq("isPublic", true))
 				.first();
 		});
 
@@ -248,7 +248,7 @@ describe("prompts.getUsage", () => {
 		});
 	});
 
-	test("pro returns null limits and zero usage", async () => {
+	test("pro returns null limits and actual usage", async () => {
 		const t = authed(convexTest(schema, modules));
 		await seedUserPlan(t, "pro");
 		await seedPrompts(t, 5, false);
@@ -256,7 +256,7 @@ describe("prompts.getUsage", () => {
 		const usage = await t.query(api.authed.prompts.getUsage, {});
 		expect(usage).toMatchObject({
 			plan: "pro",
-			promptsUsed: 0,
+			promptsUsed: 5,
 			promptsLimit: null,
 			publicUsed: 0,
 			publicLimit: null,

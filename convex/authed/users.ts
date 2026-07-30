@@ -1,4 +1,4 @@
-// User management — syncs Firebase auth identity to the Convex users table.
+// User management — syncs Clerk auth identity to the Convex users table.
 //
 // This file shows the pattern for user upsert:
 // 1. Look up user by tokenIdentifier (stable across token refreshes)
@@ -38,8 +38,8 @@ async function scheduleClerkResync(
 	await scheduler.runAfter(5_000, internal.users.resyncFromClerk, { clerkId });
 }
 
-// Resolve the authed viewer by tokenIdentifier, then converge on clerkId and email so the
-// authed path and the Clerk webhook never create duplicate users.
+// Resolve the authed viewer by tokenIdentifier, then converge on clerkId.
+// Never merge users with conflicting clerkId values based only on email (F-01).
 function resolveAuthedViewer(
 	db: GenericDatabaseWriter<DataModel>,
 	identity: UserIdentity,
@@ -50,7 +50,16 @@ function resolveAuthedViewer(
 			viewer = yield* Effect.tryPromise(() => queryUserByClerkId(db, identity.subject));
 		}
 		if (!viewer && identity.email) {
-			viewer = yield* Effect.tryPromise(() => queryUserByEmail(db, identity.email!));
+			const byEmail = yield* Effect.tryPromise(() => queryUserByEmail(db, identity.email!));
+			if (byEmail) {
+				if (byEmail.clerkId && byEmail.clerkId !== identity.subject) {
+					yield* Effect.logWarning(
+						`resolveAuthedViewer: email ${identity.email} matches user ${byEmail._id} with different clerkId (${byEmail.clerkId} vs ${identity.subject}). Refusing automatic merge.`
+					);
+				} else {
+					viewer = byEmail;
+				}
+			}
 		}
 		return viewer;
 	});

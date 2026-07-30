@@ -14,9 +14,9 @@ export default defineSchema({
 		polarSubscriptionStatus: v.optional(v.string()),
 		polarLastEventAt: v.optional(v.number())
 	})
-		.index('by_token', ['tokenIdentifier'])
-		.index('by_clerk_id', ['clerkId'])
-		.index('by_polar_customer_id', ['polarCustomerId'])
+		.index('by_tokenIdentifier', ['tokenIdentifier'])
+		.index('by_clerkId', ['clerkId'])
+		.index('by_polarCustomerId', ['polarCustomerId'])
 		.index('by_email', ['email']),
 	prompts: defineTable({
 		userId: v.id('users'),
@@ -40,14 +40,20 @@ export default defineSchema({
 		updatedAt: v.optional(v.number())
 	})
 		.index('by_userId', ['userId'])
-		.index('by_userId_createdAt', ['userId', 'createdAt'])
-		.index('by_userId_isPublic', ['userId', 'isPublic'])
+		.index('by_userId_and_createdAt', ['userId', 'createdAt'])
+		.index('by_userId_and_isPublic', ['userId', 'isPublic'])
 		.index('by_isPublic', ['isPublic'])
 		.index('by_isPublic_and_category', ['isPublic', 'category'])
 		.index('by_isPublic_and_category_and_title', ['isPublic', 'category', 'title'])
 		.index('by_publicSlug', ['publicSlug'])
 		.index('by_isPublic_and_title', ['isPublic', 'title'])
 		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic', 'category'] }),
+	promptStats: defineTable({
+		userId: v.id('users'),
+		total: v.number(),
+		publicTotal: v.number(),
+		templateTotal: v.number()
+	}).index('by_userId', ['userId']),
 	pendingSubscriptions: defineTable({
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
@@ -58,5 +64,23 @@ export default defineSchema({
 		createdAt: v.number()
 	})
 		.index('by_clerkId', ['clerkId'])
-		.index('by_polarCustomerId', ['polarCustomerId'])
+		.index('by_polarCustomerId', ['polarCustomerId']),
+	webhookEvents: defineTable({
+		provider: v.literal('polar'),
+		eventId: v.string(),
+		eventType: v.string(),
+		eventTimestamp: v.number(),
+		status: v.union(
+			v.literal('processing'),
+			v.literal('applied'),
+			v.literal('ignored'),
+			v.literal('unresolved'),
+			v.literal('dead_letter')
+		),
+		processedAt: v.optional(v.number()),
+		error: v.optional(v.string())
+	})
+		.index('by_provider_and_eventId', ['provider', 'eventId'])
+		.index('by_status', ['status'])
 });
+

@@ -1,4 +1,6 @@
 import { Webhook, WebhookVerificationError as SvixVerificationError } from "svix";
+import { internalMutation } from "../_generated/server";
+import { v } from "convex/values";
 
 export interface PolarSubscriptionEventData {
   id: string;
@@ -44,7 +46,11 @@ function verifySignature(payload: string, headers: Record<string, string>, secre
   try {
     return new Webhook(btoa(secret)).verify(payload, headers);
   } catch {
-    throw new SvixVerificationError("Invalid webhook signature");
+    try {
+      return new Webhook(secret).verify(payload, headers);
+    } catch {
+      throw new SvixVerificationError("Invalid webhook signature");
+    }
   }
 }
 
@@ -110,3 +116,58 @@ export async function verifyPolarWebhook(request: Request, secret: string): Prom
   const { eventId, svixHeaders } = requireSvixHeaders(headers);
   return parseSubscriptionEvent(verifySignature(payload, svixHeaders, secret), eventId);
 }
+
+export const checkOrRecordWebhookEvent = internalMutation({
+  args: {
+    provider: v.literal("polar"),
+    eventId: v.string(),
+    eventType: v.string(),
+    eventTimestamp: v.number(),
+  },
+  async handler(ctx, args) {
+    const existing = await ctx.db
+      .query("webhookEvents")
+      .withIndex("by_provider_and_eventId", (q) =>
+        q.eq("provider", args.provider).eq("eventId", args.eventId)
+      )
+      .unique();
+
+    if (existing) {
+      return {
+        isProcessed: existing.status === "applied" || existing.status === "ignored",
+        eventDocId: existing._id,
+      };
+    }
+
+    const eventDocId = await ctx.db.insert("webhookEvents", {
+      provider: args.provider,
+      eventId: args.eventId,
+      eventType: args.eventType,
+      eventTimestamp: args.eventTimestamp,
+      status: "processing",
+      processedAt: Date.now(),
+    });
+
+    return { isProcessed: false, eventDocId };
+  },
+});
+
+export const updateWebhookEventStatus = internalMutation({
+  args: {
+    eventDocId: v.id("webhookEvents"),
+    status: v.union(
+      v.literal("applied"),
+      v.literal("ignored"),
+      v.literal("unresolved"),
+      v.literal("dead_letter")
+    ),
+    error: v.optional(v.string()),
+  },
+  async handler(ctx, args) {
+    await ctx.db.patch(args.eventDocId, {
+      status: args.status,
+      processedAt: Date.now(),
+      error: args.error,
+    });
+  },
+});

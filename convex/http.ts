@@ -228,16 +228,39 @@ http.route({
     if (!ev.ok) return ev.response;
     if (!ev.event) return new Response(null, { status: 200 });
 
-    const sub = filterRelevantSubscription(ev.event, cfg.productId);
-    if (!sub) return new Response(null, { status: 200 });
-
-    // Polar event time drives the ordering guard in applySubscription, so a
-    // redelivered or out-of-order event can never overwrite newer state.
     const eventTimestamp = ev.event.timestamp.getTime();
+
+    const { isProcessed, eventDocId } = await ctx.runMutation(
+      internal.billing.webhooks.checkOrRecordWebhookEvent,
+      {
+        provider: "polar",
+        eventId: ev.event.eventId,
+        eventType: ev.event.type,
+        eventTimestamp,
+      }
+    );
+
+    if (isProcessed) {
+      console.log("polar-webhook: duplicate event ignored", ev.event.eventId);
+      return new Response(null, { status: 200 });
+    }
+
+    const sub = filterRelevantSubscription(ev.event, cfg.productId);
+    if (!sub) {
+      await ctx.runMutation(internal.billing.webhooks.updateWebhookEventStatus, {
+        eventDocId,
+        status: "ignored",
+      });
+      return new Response(null, { status: 200 });
+    }
 
     const userResolved = await resolvePolarUser(ctx, sub.clerkId, sub.polarCustomerId);
     if (!userResolved) {
       await parkUnresolvedSubscription(ctx, ev.event, sub, eventTimestamp);
+      await ctx.runMutation(internal.billing.webhooks.updateWebhookEventStatus, {
+        eventDocId,
+        status: "unresolved",
+      });
       return new Response(null, { status: 200 });
     }
 
@@ -250,8 +273,17 @@ http.route({
         plan: sub.plan,
         eventTimestamp,
       });
+      await ctx.runMutation(internal.billing.webhooks.updateWebhookEventStatus, {
+        eventDocId,
+        status: "applied",
+      });
     } catch (error) {
       console.error("polar-webhook: transient database error", error);
+      await ctx.runMutation(internal.billing.webhooks.updateWebhookEventStatus, {
+        eventDocId,
+        status: "dead_letter",
+        error: String(error),
+      });
       return new Response("Database error", { status: 500 });
     }
 

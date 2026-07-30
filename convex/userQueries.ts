@@ -20,17 +20,17 @@ function queryUserBy(
 		case "token":
 			return db
 				.query("users")
-				.withIndex("by_token", (q) => q.eq("tokenIdentifier", lookup.tokenIdentifier))
+				.withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", lookup.tokenIdentifier))
 				.unique();
 		case "clerkId":
 			return db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", lookup.clerkId))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", lookup.clerkId))
 				.unique();
 		case "polarCustomerId":
 			return db
 				.query("users")
-				.withIndex("by_polar_customer_id", (q) => q.eq("polarCustomerId", lookup.polarCustomerId))
+				.withIndex("by_polarCustomerId", (q) => q.eq("polarCustomerId", lookup.polarCustomerId))
 				.unique();
 		case "email":
 			return db

@@ -107,11 +107,16 @@ export function ensureCustomer(
       return existingId;
     }
 
-    // 2. Reuse an existing Polar customer identified by the exact email.
-    const emailId = yield* lookupByEmail(polar, email);
-    if (emailId) {
-      yield* saveId(backend, clerkId, emailId);
-      return emailId;
+    // 2. Reuse an existing Polar customer identified by exact email ONLY if externalId matches clerkId or is null.
+    const emailMatch = yield* lookupByEmail(polar, email);
+    if (emailMatch) {
+      if (emailMatch.externalId && emailMatch.externalId !== clerkId) {
+        return yield* new PolarBillingError({
+          message: `Security Conflict: Polar customer with email ${email} has externalId ${emailMatch.externalId}, which does not match current clerkId ${clerkId}.`,
+        });
+      }
+      yield* saveId(backend, clerkId, emailMatch.id);
+      return emailMatch.id;
     }
 
     // 3. None exists — create one, recovering from concurrent/external-ID conflict.
@@ -142,7 +147,7 @@ function lookupByExternalId(
   });
 }
 
-async function findByEmail(polar: Polar, email: string) {
+async function findByEmail(polar: Polar, email: string): Promise<{ id: string; externalId: string | null } | null> {
   const page = await polar.customers.list({ email, limit: 2 });
   const normalizedEmail = email.trim().toLowerCase();
   const matches = page.result.items.filter(
@@ -153,13 +158,15 @@ async function findByEmail(polar: Polar, email: string) {
     throw new Error(`Multiple Polar customers found for email ${email}.`);
   }
 
-  return matches[0]?.id ?? null;
+  const found = matches[0];
+  if (!found) return null;
+  return { id: found.id, externalId: found.externalId ?? null };
 }
 
 function lookupByEmail(
   polar: Polar,
   email: string,
-): Effect.Effect<string | null, PolarBillingError, never> {
+): Effect.Effect<{ id: string; externalId: string | null } | null, PolarBillingError, never> {
   return Effect.tryPromise({
     try: () => findByEmail(polar, email),
     catch: (e) =>
@@ -205,7 +212,7 @@ function createCustomer(
           if (existingByExternalId) return existingByExternalId;
 
           const existingByEmail = await findByEmail(polar, email);
-          if (existingByEmail) return existingByEmail;
+          if (existingByEmail) return existingByEmail.id;
         }
         throw e;
       }

@@ -11,34 +11,25 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import { Effect } from "effect";
 import { Webhook } from "svix";
 import { convexTest } from "convex-test";
-import schema from "../schema";
-import { api } from "../_generated/api";
-import { mapSubscriptionToPlan } from "./lifecycle";
-import { verifyPolarWebhook } from "./webhooks";
+import schema from "./schema";
+import { api } from "./_generated/api";
+import { mapSubscriptionToPlan } from "./billing/lifecycle";
+import { verifyPolarWebhook } from "./billing/webhooks";
 import {
 	ensureCustomer,
 	createCheckout,
 	createPortal,
 	type BillingBackend,
-} from "./provider";
-import { ServerConfig } from "../services/ServerConfig";
+} from "./billing/provider";
+import { ServerConfig } from "./services/ServerConfig";
 
-// convex-test loads Convex function modules from the repo's convex/ root.
-// convex-test needs import.meta.glob; vite/client types are not resolvable here
-// (vite is non-hoisted under pnpm), so type the accessor locally instead of a
-// /// reference types="vite/client" directive (Convex AI guidelines: do not reference
-// uninstalled type packages).
 const modules = (
 	import.meta as unknown as {
 		glob: (pattern: string) => Record<string, () => Promise<unknown>>;
 	}
-).glob("../**/*.ts");
+).glob("./**/*.ts");
 
 // --- Polar SDK network-boundary mock ---------------------------------------
-// Every `new Polar(...)` returns an instance whose sub-clients are the shared
-// vi.fn objects below, so tests configure behaviour without touching the
-// network. vi.hoisted keeps the object reference stable across the hoisted
-// vi.mock factory.
 const polarMock = vi.hoisted(() => ({
 	customers: {
 		getExternal: vi.fn(),
@@ -78,27 +69,22 @@ const testConfig: {
 	polarServer: "sandbox",
 };
 
-// Run a provider Effect against a fixed ServerConfig (no env reads).
 function run<R, E>(eff: Effect.Effect<R, E, ServerConfig>) {
 	return Effect.runPromise(eff.pipe(Effect.provideService(ServerConfig, testConfig)));
 }
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	// Convex deployment env read by http.ts (webhook) and ServerConfig.layer (actions).
 	process.env.POLAR_WEBHOOK_SECRET = WH_SECRET;
 	process.env.POLAR_PRODUCT_ID = PRODUCT_ID;
 	process.env.SITE_URL = "https://app.example.com";
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
 	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
-	// SDK defaults: "not found" customer lookups so ensureCustomer proceeds to
-	// create only when a test opts in.
 	polarMock.customers.getExternal.mockRejectedValue({ statusCode: 404 });
 	polarMock.customers.list.mockResolvedValue({ result: { items: [] } });
 });
 
-// --- svix payload signing (mirrors verifyPolarWebhook: btoa(secret)) --------
 function signEvent(payload: unknown, secret = WH_SECRET) {
 	const wh = new Webhook(btoa(secret));
 	const msgId = `msg_${Math.random().toString(36).slice(2)}`;
@@ -135,7 +121,6 @@ function subEvent(
 	};
 }
 
-// Fresh isolated test backend with a seeded Convex user.
 async function seedUser(overrides: { plan?: "hobby" | "pro"; polarCustomerId?: string } = {}) {
 	const t = convexTest(schema, modules);
 	await t.run(async (ctx) => {
@@ -155,14 +140,13 @@ async function readUser(t: Awaited<ReturnType<typeof seedUser>>) {
 	return t.run(async (ctx) => {
 		return ctx.db
 			.query("users")
-			.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 			.unique();
 	});
 }
-// ===========================================================================
+
 describe("mapSubscriptionToPlan", () => {
 	test("active -> pro (includes scheduled-to-cancel & uncanceled)", () => {
-		// spec 3.6: uncanceled/reactivated resolves to status "active".
 		expect(mapSubscriptionToPlan("active")).toBe("pro");
 	});
 
@@ -188,9 +172,6 @@ describe("mapSubscriptionToPlan", () => {
 	});
 });
 
-// ===========================================================================
-// 2. Webhook signature verification (real svix)
-// ===========================================================================
 describe("verifyPolarWebhook", () => {
 	test("verifies a correctly signed subscription event", async () => {
 		const event = subEvent("subscription.active", "active");
@@ -230,9 +211,6 @@ describe("verifyPolarWebhook", () => {
 	});
 });
 
-// ===========================================================================
-// 3. Webhook HTTP route (product rejection, replay, downgrade, retention)
-// ===========================================================================
 describe("polar-webhook route", () => {
 	test("rejects an invalid signature with 400 and no writes", async () => {
 		const t = await seedUser();
@@ -315,9 +293,6 @@ describe("polar-webhook route", () => {
 	});
 });
 
-// ===========================================================================
-// 4. Provider: customer reuse / fallback / conflict (no real Polar)
-// ===========================================================================
 describe("ensureCustomer", () => {
 	test("reuses the stored polarCustomerId without any SDK call", async () => {
 		const backend: BillingBackend = {
@@ -407,7 +382,6 @@ describe("ensureCustomer", () => {
 			}),
 			savePolarCustomerId: vi.fn().mockResolvedValue(undefined),
 		};
-		// 1st getExternal: not found (default). 2nd: the conflict winner.
 		polarMock.customers.getExternal
 			.mockRejectedValueOnce({ statusCode: 404 })
 			.mockResolvedValueOnce({ id: "pol_winner" });
@@ -452,9 +426,6 @@ describe("ensureCustomer", () => {
 	});
 });
 
-// ===========================================================================
-// 5. Provider: checkout + portal URL validation
-// ===========================================================================
 describe("createCheckout", () => {
 	test("returns the validated Polar checkout URL", async () => {
 		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/abc" });
@@ -488,9 +459,6 @@ describe("createPortal", () => {
 	});
 });
 
-// ===========================================================================
-// 6. Authed actions: checkout/portal routing + portal authorization
-// ===========================================================================
 describe("authed billing actions", () => {
 	async function authedBackend(plan: "hobby" | "pro", polarCustomerId?: string) {
 		const t = convexTest(schema, modules).withIdentity({
@@ -514,7 +482,6 @@ describe("authed billing actions", () => {
 
 	test("Hobby routes to the checkout destination", async () => {
 		const t = await authedBackend("hobby");
-		// No stored customer, no Polar externalId or email match -> create one, then checkout.
 		polarMock.customers.create.mockResolvedValueOnce({ id: "pol_new" });
 		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/x" });
 
@@ -541,7 +508,7 @@ describe("authed billing actions", () => {
 		const user = await t.run(async (ctx) =>
 			ctx.db
 				.query("users")
-				.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+				.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 				.unique(),
 		);
 		expect(user?.polarCustomerId).toBe("pol_email");

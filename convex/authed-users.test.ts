@@ -87,7 +87,7 @@ async function readUserByClerkId(t: AuthedT) {
 	return t.run(async (ctx) => {
 		return ctx.db
 			.query("users")
-			.withIndex("by_clerk_id", (q) => q.eq("clerkId", CLERK_ID))
+			.withIndex("by_clerkId", (q) => q.eq("clerkId", CLERK_ID))
 			.unique();
 	});
 }
@@ -153,7 +153,7 @@ describe("getOrCreateUser", () => {
 		expect(user?.tokenIdentifier).toBe(TOKEN_ID);
 	});
 
-	test("converges by email when tokenIdentifier and clerkId lookups miss", async () => {
+	test("refuses email convergence when tokenIdentifier and clerkId lookups miss and clerkId conflicts", async () => {
 		const t = authed(convexTest(schema, modules));
 		const seededId = await t.run(async (ctx) => {
 			return ctx.db.insert("users", {
@@ -168,10 +168,9 @@ describe("getOrCreateUser", () => {
 		const id = await t.mutation(api.authed.users.getOrCreateUser, {});
 		await flush(t);
 
-		expect(id).toBe(seededId);
-		const user = await readUserByClerkId(t);
-		expect(user?.clerkId).toBe(CLERK_ID);
-		expect(user?.tokenIdentifier).toBe(TOKEN_ID);
+		expect(id).not.toBe(seededId);
+		const seededUser = await t.run(async (ctx) => ctx.db.get(seededId));
+		expect(seededUser?.clerkId).toBe("old_clerk_id");
 	});
 
 	test("schedules Polar customer sync after creating a user", async () => {

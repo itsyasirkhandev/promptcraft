@@ -33,20 +33,33 @@ type ClerkProfile = {
 	avatarUrl: string | undefined;
 };
 
-// ponytail: `data` is typed by the `v.any()` validator (Convex emits `any`).
-// Ceiling: keep until a typed Clerk webhook envelope replaces `v.any()`.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractClerkProfile(data: any): ClerkProfile {
+type ClerkEmailAddress = {
+	id?: string | null;
+	email_address: string;
+};
+
+function extractClerkProfile(data: {
+	id: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	image_url?: string | null;
+	primary_email_address_id?: string | null;
+	email_addresses?: ClerkEmailAddress[] | null;
+}): ClerkProfile {
+	const emailList = data.email_addresses ?? [];
+	const primaryObj = emailList.find((e) => e.id === data.primary_email_address_id);
+	const email = primaryObj?.email_address ?? emailList[0]?.email_address ?? "";
+
 	return {
 		clerkId: data.id,
-		email: data.email_addresses?.[0]?.email_address ?? "",
+		email,
 		name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-		avatarUrl: data.image_url,
+		avatarUrl: data.image_url ?? undefined,
 	};
 }
 
-// Resolve by clerkId (canonical), then converge on the reconstructed tokenIdentifier and email
-// so the webhook and the authed getOrCreateUser path never create duplicates.
+// Resolve by clerkId (canonical), then converge on the reconstructed tokenIdentifier.
+// Never merge users with conflicting clerkId values based only on email (F-01).
 async function resolveExistingUser(
 	ctx: MutationCtx,
 	profile: ClerkProfile,
@@ -59,10 +72,13 @@ async function resolveExistingUser(
 		const byEmail = await queryUserByEmail(ctx.db, profile.email);
 		if (byEmail && byEmail.clerkId && byEmail.clerkId !== profile.clerkId) {
 			console.warn(
-				`resolveExistingUser: email ${profile.email} matches user ${byEmail._id} with different clerkId (${byEmail.clerkId} vs ${profile.clerkId}); converging anyway (Clerk enforces unique emails).`,
+				`resolveExistingUser: email ${profile.email} matches user ${byEmail._id} with different clerkId (${byEmail.clerkId} vs ${profile.clerkId}). Refusing automatic merge.`,
 			);
+			return null;
 		}
-		return byEmail;
+		if (byEmail && !byEmail.clerkId) {
+			return byEmail;
+		}
 	}
 	return null;
 }
@@ -179,7 +195,7 @@ function isStaleSubscriptionEvent(
 }
 
 // Fields absent from the event fall back to the user's current values so a
-// partial event never blanks out known state.
+// partial event never blanks out known state (F-04).
 function buildSubscriptionPatch(
 	user: Doc<"users">,
 	args: SubscriptionUpdate,
@@ -187,8 +203,8 @@ function buildSubscriptionPatch(
 ) {
 	return {
 		polarCustomerId: args.polarCustomerId ?? user.polarCustomerId,
-		polarSubscriptionId: args.polarSubscriptionId,
-		polarSubscriptionStatus: args.polarSubscriptionStatus,
+		polarSubscriptionId: args.polarSubscriptionId ?? user.polarSubscriptionId,
+		polarSubscriptionStatus: args.polarSubscriptionStatus ?? user.polarSubscriptionStatus,
 		plan: args.plan,
 		polarLastEventAt: incomingAt ?? user.polarLastEventAt,
 	};
@@ -269,13 +285,13 @@ async function reconcilePendingSubscriptions(
 		? await ctx.db
 				.query("pendingSubscriptions")
 				.withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
-				.collect()
+				.take(50)
 		: [];
 	const byCustomerId = polarCustomerId
 		? await ctx.db
 				.query("pendingSubscriptions")
 				.withIndex("by_polarCustomerId", (q) => q.eq("polarCustomerId", polarCustomerId))
-				.collect()
+				.take(50)
 		: [];
 
 	const pending = dedupePending([...byClerkId, ...byCustomerId]);
@@ -295,7 +311,23 @@ async function reconcilePendingSubscriptions(
 }
 
 export const upsertFromClerk = internalMutation({
-	args: { data: v.any() }, // Using v.any() to accept the Clerk webhook event.data payload
+	args: {
+		data: v.object({
+			id: v.string(),
+			first_name: v.optional(v.union(v.string(), v.null())),
+			last_name: v.optional(v.union(v.string(), v.null())),
+			image_url: v.optional(v.union(v.string(), v.null())),
+			primary_email_address_id: v.optional(v.union(v.string(), v.null())),
+			email_addresses: v.optional(
+				v.array(
+					v.object({
+						id: v.optional(v.string()),
+						email_address: v.string(),
+					})
+				)
+			),
+		}),
+	},
 	async handler(ctx, { data }) {
 		const profile = extractClerkProfile(data);
 		const existing = await resolveExistingUser(ctx, profile);
@@ -311,24 +343,43 @@ export const upsertFromClerk = internalMutation({
 	},
 });
 
+export const deleteUserBatch = internalMutation({
+	args: { userId: v.id("users") },
+	async handler(ctx, { userId }) {
+		const prompts = await ctx.db
+			.query("prompts")
+			.withIndex("by_userId", (q) => q.eq("userId", userId))
+			.take(100);
+
+		for (const prompt of prompts) {
+			await ctx.db.delete(prompt._id);
+		}
+
+		if (prompts.length === 100) {
+			await ctx.scheduler.runAfter(0, internal.users.deleteUserBatch, { userId });
+		} else {
+			const stats = await ctx.db
+				.query("promptStats")
+				.withIndex("by_userId", (q) => q.eq("userId", userId))
+				.unique();
+			if (stats) {
+				await ctx.db.delete(stats._id);
+			}
+
+			const user = await ctx.db.get(userId);
+			if (user) {
+				await ctx.db.delete(user._id);
+			}
+		}
+	},
+});
+
 export const deleteFromClerk = internalMutation({
 	args: { clerkUserId: v.string() },
 	async handler(ctx, { clerkUserId }) {
 		const existing = await queryUserByClerkId(ctx.db, clerkUserId);
 		if (existing) {
-			// Cascade-delete all prompts belonging to this user before deleting
-			// the user document. Otherwise orphaned public prompts remain visible
-			// in the marketplace with author: 'Anonymous' (Bug #4).
-			const prompts = await ctx.db
-				.query('prompts')
-				.withIndex('by_userId', (q) => q.eq('userId', existing._id))
-				.collect();
-			for (const prompt of prompts) {
-				await ctx.db.delete(prompt._id);
-			}
-
-			// Per spec 3.7: delete only the Convex user. Never touch Polar billing records.
-			await ctx.db.delete(existing._id);
+			await ctx.scheduler.runAfter(0, internal.users.deleteUserBatch, { userId: existing._id });
 		}
 	},
 });

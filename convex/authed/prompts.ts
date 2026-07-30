@@ -28,7 +28,7 @@ function countPublicPrompts(db: GenericDatabaseReader<DataModel>, viewer: Doc<'u
 	return Effect.tryPromise(() =>
 		db
 			.query('prompts')
-			.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+			.withIndex('by_userId_and_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
 			.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
 	);
 }
@@ -47,7 +47,7 @@ function enforceHobbyQuota(
 			const existing = yield* Effect.tryPromise(() =>
 				db
 					.query('prompts')
-					.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
+					.withIndex('by_userId', (q) => q.eq('userId', viewer._id))
 					.take(HOBBY_PROMPT_LIMIT + 1)
 			);
 			if (existing.length >= HOBBY_PROMPT_LIMIT) {
@@ -270,7 +270,7 @@ export const list = effectAuthedQuery({
 				db
 					.query('prompts')
 					.withIndex('by_userId', (q) => q.eq('userId', viewer._id))
-					.collect()
+					.take(100)
 			);
 
 			return prompts;
@@ -314,29 +314,29 @@ export const getUsage = effectAuthedQuery({
 				};
 			}
 
-			if (viewer.plan === 'pro') {
-				return {
-					plan: 'pro' as const,
-					promptsUsed: 0,
-					promptsLimit: null,
-					publicUsed: 0,
-					publicLimit: null
-				};
-			}
-
 			const { db } = yield* ConvexDB;
 			const [prompts, publicPrompts] = yield* Effect.tryPromise(() =>
 				Promise.all([
 					db
 						.query('prompts')
-						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id))
+						.withIndex('by_userId', (q) => q.eq('userId', viewer._id))
 						.take(HOBBY_PROMPT_LIMIT + 1),
 					db
 						.query('prompts')
-						.withIndex('by_userId_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
+						.withIndex('by_userId_and_isPublic', (q) => q.eq('userId', viewer._id).eq('isPublic', true))
 						.take(HOBBY_PUBLIC_PROMPT_LIMIT + 1)
 				])
 			);
+
+			if (viewer.plan === 'pro') {
+				return {
+					plan: 'pro' as const,
+					promptsUsed: prompts.length,
+					promptsLimit: null,
+					publicUsed: publicPrompts.length,
+					publicLimit: null
+				};
+			}
 
 			return {
 				plan: 'hobby' as const,
