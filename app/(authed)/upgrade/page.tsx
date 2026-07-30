@@ -164,6 +164,8 @@ export default function UpgradePage() {
           action={
             <a
               href={vandlyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full text-center py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors shadow-sm"
             >
               Pay with Vandly
