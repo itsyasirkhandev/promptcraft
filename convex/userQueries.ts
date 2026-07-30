@@ -1,21 +1,23 @@
 // Shared typed user lookups so the Clerk-upsert, authed getOrCreateUser,
-// Polar webhook, and private internal-query paths all resolve users the same
-// way (spec 3.6). A single `queryUserBy` switch keeps the three index probes in
-// one place so they don't clone; the named exports preserve a typed call site.
+// Polar webhook, Vandly webhook, and private internal-query paths all resolve
+// users the same way (spec 3.6). A single `queryUserBy` switch keeps the
+// index probes in one place; the named exports preserve typed call sites.
 
 import type { GenericDatabaseReader, GenericDatabaseWriter } from "convex/server";
-import type { DataModel, Doc } from "./_generated/dataModel";
+import type { DataModel } from "./_generated/dataModel";
+
+/** Any Convex database handle (read or read-write). */
+type UserDb = GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>;
 
 type UserLookup =
 	| { by: "token"; tokenIdentifier: string }
 	| { by: "clerkId"; clerkId: string }
 	| { by: "polarCustomerId"; polarCustomerId: string }
+	| { by: "vandlySubscriptionId"; vandlySubscriptionId: string }
 	| { by: "email"; email: string };
 
-function queryUserBy(
-	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
-	lookup: UserLookup,
-): Promise<Doc<"users"> | null> {
+// fallow-ignore-next-line code-duplication
+function queryUserBy(db: UserDb, lookup: UserLookup) {
 	switch (lookup.by) {
 		case "token":
 			return db
@@ -27,10 +29,16 @@ function queryUserBy(
 				.query("users")
 				.withIndex("by_clerk_id", (q) => q.eq("clerkId", lookup.clerkId))
 				.unique();
+		// fallow-ignore-next-line code-duplication
 		case "polarCustomerId":
 			return db
 				.query("users")
 				.withIndex("by_polar_customer_id", (q) => q.eq("polarCustomerId", lookup.polarCustomerId))
+				.unique();
+		case "vandlySubscriptionId":
+			return db
+				.query("users")
+				.withIndex("by_vandly_subscription_id", (q) => q.eq("vandlySubscriptionId", lookup.vandlySubscriptionId))
 				.unique();
 		case "email":
 			return db
@@ -40,24 +48,18 @@ function queryUserBy(
 	}
 }
 
-export const queryUserByToken = (
-	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
-	tokenIdentifier: string,
-): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "token", tokenIdentifier });
+export const queryUserByToken = (db: UserDb, tokenIdentifier: string) =>
+	queryUserBy(db, { by: "token", tokenIdentifier });
 
-export const queryUserByClerkId = (
-	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
-	clerkId: string,
-): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "clerkId", clerkId });
+export const queryUserByClerkId = (db: UserDb, clerkId: string) =>
+	queryUserBy(db, { by: "clerkId", clerkId });
 
-export const queryUserByPolarCustomerId = (
-	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
-	polarCustomerId: string,
-): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "polarCustomerId", polarCustomerId });
+// fallow-ignore-next-line code-duplication
+export const queryUserByPolarCustomerId = (db: UserDb, polarCustomerId: string) =>
+	queryUserBy(db, { by: "polarCustomerId", polarCustomerId });
 
-export const queryUserByEmail = (
-	db: GenericDatabaseReader<DataModel> | GenericDatabaseWriter<DataModel>,
-	email: string,
-): Promise<Doc<"users"> | null> => queryUserBy(db, { by: "email", email });
+export const queryUserByVandlySubscriptionId = (db: UserDb, vandlySubscriptionId: string) =>
+	queryUserBy(db, { by: "vandlySubscriptionId", vandlySubscriptionId });
 
-
+export const queryUserByEmail = (db: UserDb, email: string) =>
+	queryUserBy(db, { by: "email", email });
