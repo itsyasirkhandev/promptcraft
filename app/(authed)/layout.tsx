@@ -6,7 +6,7 @@ import { UserButton, Show, useUser } from "@clerk/nextjs";
 import { CreditCard, House, List, PlusCircle, Folders } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,7 +35,8 @@ const navItems = [
 ];
 
 function PlanBadge() {
-  const user = useQuery(api.authed.users.currentUser);
+  const { isAuthenticated } = useConvexAuth();
+  const user = useQuery(api.authed.users.currentUser, isAuthenticated ? {} : "skip");
 
   if (!user) return null;
 
@@ -48,7 +49,8 @@ function PlanBadge() {
   );
 }
 function HobbyUsagePill() {
-  const usage = useQuery(api.authed.prompts.getUsage);
+  const { isAuthenticated } = useConvexAuth();
+  const usage = useQuery(api.authed.prompts.getUsage, isAuthenticated ? {} : "skip");
 
   // Only render for hobby users with loaded usage. Pro users (usage === null
   // limits) and the loading state show nothing so the pill doesn't flash.

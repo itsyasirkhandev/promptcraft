@@ -21,9 +21,18 @@ function UserSyncTrigger() {
 
     if (isAuthenticated && !isLoading && !syncedRef.current) {
       syncedRef.current = true;
-      void syncUser().catch((err) => {
+      void syncUser().catch(() => {
         syncedRef.current = false;
-        console.error("Failed to sync user to Convex:", err);
+        // Retry sync once after a short delay if initial call fails during WebSocket token handshake
+        setTimeout(() => {
+          if (!syncedRef.current) {
+            syncedRef.current = true;
+            void syncUser().catch((err) => {
+              syncedRef.current = false;
+              console.error("Failed to sync user to Convex:", err);
+            });
+          }
+        }, 1000);
       });
     }
   }, [isAuthenticated, isLoading, syncUser]);

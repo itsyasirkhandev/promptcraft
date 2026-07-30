@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, Show, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useConvexAuth } from "convex/react";
 import { useState } from "react";
 import { Spinner } from "@phosphor-icons/react";
 import { api } from "@/convex/_generated/api";
@@ -19,7 +19,7 @@ function ChevronArrow() {
       <path
         d="M5 12h14M13 6l6 6-6 6"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -98,7 +98,8 @@ function HobbyCardCta({ isPro }: { isPro: boolean }) {
 }
 
 function ProCardCta() {
-  const user = useQuery(api.authed.users.currentUser);
+  const { isAuthenticated } = useConvexAuth();
+  const user = useQuery(api.authed.users.currentUser, isAuthenticated ? {} : "skip");
   const billing = useBillingRedirect();
   const isPro = user?.plan === "pro";
   const loading = user === undefined;
@@ -191,7 +192,8 @@ function ProCardCta() {
 }
 
 function AuthedPricing() {
-  const user = useQuery(api.authed.users.currentUser);
+  const { isAuthenticated } = useConvexAuth();
+  const user = useQuery(api.authed.users.currentUser, isAuthenticated ? {} : "skip");
   const isPro = user?.plan === "pro";
   const loading = user === undefined;
 

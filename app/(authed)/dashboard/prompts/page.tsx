@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useConvexAuth } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
@@ -315,7 +315,8 @@ function PromptCard({ prompt, onDelete, formatDate }: PromptCardProps) {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function PromptsDashboardPage() {
-  const prompts = useQuery(api.authed.prompts.list);
+  const { isAuthenticated } = useConvexAuth();
+  const prompts = useQuery(api.authed.prompts.list, isAuthenticated ? {} : 'skip');
   const deletePrompt = useMutation(api.authed.prompts.remove);
   const [promptToDelete, setPromptToDelete] = useState<{ id: Id<'prompts'>; title: string } | null>(null);
 
