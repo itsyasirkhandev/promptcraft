@@ -214,4 +214,36 @@ describe("upsertFromClerk", () => {
 		const user = await readUserByClerkId(t);
 		expect(user?.polarCustomerId).toBeUndefined();
 	});
+
+	test("handles Clerk payload with extra metadata fields in email_addresses without error", async () => {
+		const t = convexTest(schema, modules);
+		await t.mutation(internal.users.upsertFromClerk, {
+			data: {
+				id: CLERK_ID,
+				first_name: "Ada",
+				last_name: "Lovelace",
+				image_url: "https://img.example.com/ada.png",
+				primary_email_address_id: "idn_1",
+				email_addresses: [
+					{
+						id: "idn_1",
+						email_address: "ada@example.com",
+						created_at: 1785413972435,
+						updated_at: 1785413983703,
+						object: "email_address",
+						reserved: false,
+						linked_to: [{ id: "idn_oauth", type: "oauth_google" }],
+						verification: { status: "verified" },
+					},
+				],
+				created_at: 1785413972435,
+				updated_at: 1785413983703,
+			},
+		});
+		await flush(t);
+
+		const user = await readUserByClerkId(t);
+		expect(user).not.toBeNull();
+		expect(user?.email).toBe("ada@example.com");
+	});
 });

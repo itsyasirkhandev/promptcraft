@@ -312,21 +312,7 @@ async function reconcilePendingSubscriptions(
 
 export const upsertFromClerk = internalMutation({
 	args: {
-		data: v.object({
-			id: v.string(),
-			first_name: v.optional(v.union(v.string(), v.null())),
-			last_name: v.optional(v.union(v.string(), v.null())),
-			image_url: v.optional(v.union(v.string(), v.null())),
-			primary_email_address_id: v.optional(v.union(v.string(), v.null())),
-			email_addresses: v.optional(
-				v.array(
-					v.object({
-						id: v.optional(v.string()),
-						email_address: v.string(),
-					})
-				)
-			),
-		}),
+		data: v.any(),
 	},
 	async handler(ctx, { data }) {
 		const profile = extractClerkProfile(data);
