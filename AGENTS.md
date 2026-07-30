@@ -1,11 +1,3 @@
-1. Ask, don't assume. If something is unclear, ask with ask_qestion tool before writing a single line. Never make silent assumptions about intent, architecture, or requirements.
-
-2. Simplest solution first. Always implement the simplest thing that could work. Do not add abstractions or flexibility that weren't explicitly requested.
-
-3. Don't touch unrelated code. If a file or function is not directly part of the current task, do not modify it, even if you think it could be improved.
-
-4. Flag uncertainty explicitly. If you are not confident about an approach or technical detail, say so before proceeding. Confidence without certainty causes more damage than admitting a gap.
-
 ## Project guidelines
 
 - use pnpm for the package manager
@@ -20,7 +12,7 @@
 - avoid 'as any' at all costs, try to infer types from functions as much as possible
 - use tailwindcss for styling whenever possible, only resort to custom css if needed
 - after making changes to convex, run 'pnpm run convex:gen' to generate the new api 
-- run 'pnpm run lint' to check for linting errors, run 'pnpm run typecheck' 
+ and run 'pnpm run lint' to check for linting errors, run 'pnpm run typecheck' 
 
 
 
