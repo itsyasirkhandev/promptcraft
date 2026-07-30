@@ -166,8 +166,6 @@ function HobbyBilling() {
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
             <a
               href={vandlyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors"
             >
               Pay with Vandly
