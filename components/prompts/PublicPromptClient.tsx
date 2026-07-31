@@ -95,7 +95,7 @@ export function PublicPromptClient({ slug }: PublicPromptClientProps) {
 					}
 					className="gap-2 rounded-xl h-8 border-slate-200 dark:border-slate-800 shadow-sm shrink-0"
 				>
-					{copiedLink ? <Check className="size-4 text-emerald-500" /> : <LinkIcon className="size-4" />}
+					{copiedLink ? <Check aria-hidden="true" className="size-4 text-emerald-500" /> : <LinkIcon aria-hidden="true" className="size-4" />}
 					<span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
 				</Button>
 			</div>

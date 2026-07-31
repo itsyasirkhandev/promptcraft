@@ -85,6 +85,7 @@ function DialogBody({
           onKeyDown={handleKeyDown}
           placeholder="New option..."
           className="flex-1"
+          aria-label="New option name"
         />
         <Button type="button" variant="outline" size="sm" onClick={addOption}>
           Add

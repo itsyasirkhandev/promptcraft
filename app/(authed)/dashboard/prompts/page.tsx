@@ -94,20 +94,20 @@ function CardHeaderBadges({ prompt }: CardHeaderBadgesProps) {
         </div>
         <div className="flex gap-1.5 shrink-0 select-none">
           {prompt.templateMode ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30">
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30">
               <Lightning className="size-3" /><span>Dynamic</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30">
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/30">
               <Notebook className="size-3" /><span>Static</span>
             </span>
           )}
           {prompt.isPublic ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
               <Globe className="size-3" /><span>Public</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-550 dark:text-slate-400 border border-slate-150/40 dark:border-white/5">
               <Lock className="size-3" /><span>Private</span>
             </span>
           )}
@@ -139,7 +139,7 @@ function highlightVariables(text: string, fields: { name: string }[]) {
         // react-doctor-disable-next-line react-doctor/no-array-index-as-key: tokens from string.split() have no stable id; position is the identity, react-doctor/no-array-index-as-key
         <span
           key={`part-${index}`}
-          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/10 dark:bg-purple-450/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-400/20 font-semibold font-sans text-[10px] select-all cursor-help"
+          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/10 dark:bg-purple-450/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-400/20 font-semibold font-sans text-xs select-all cursor-help"
           title={`Variable: ${match.name}`}
         >
           {part}
@@ -218,14 +218,14 @@ function CardFooterActions({ prompt, copied, onCopy, copiedSlug, onCopySlug, onD
             </Button>
           )}
           <Button variant="ghost" size="icon" asChild className="size-8 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-white/5">
-            <Link href={`/prompt/${prompt._id}/edit`}><PencilSimple className="size-4" /></Link>
+            <Link href={`/prompt/${prompt._id}/edit`} aria-label={`Edit prompt: ${prompt.title}`}><PencilSimple className="size-4" /></Link>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(prompt._id, prompt.title)} className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive hover:bg-destructive/10">
+          <Button variant="ghost" size="icon" onClick={() => onDelete(prompt._id, prompt.title)} aria-label={`Delete prompt: ${prompt.title}`} className="size-8 rounded-xl text-slate-400 hover:text-destructive dark:text-slate-500 dark:hover:text-destructive hover:bg-destructive/10">
             <Trash className="size-4" />
           </Button>
         </div>
       </div>
-      <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100/50 dark:border-white/5 pt-2 flex-wrap gap-1">
+      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100/50 dark:border-white/5 pt-2 flex-wrap gap-1">
         <div className="flex items-center gap-1.25">
           <Clock className="size-3 opacity-75 mr-1" />
           <span>Created {formatDate(prompt.createdAt)}</span>
@@ -424,6 +424,7 @@ export default function PromptsDashboardPage() {
               placeholder="Search title, content, or tags..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search prompts by title, content, or tags"
               className="text-sm border-0 focus-visible:ring-0"
             />
           </InputGroup>

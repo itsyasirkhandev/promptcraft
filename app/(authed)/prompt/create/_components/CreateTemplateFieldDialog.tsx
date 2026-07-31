@@ -114,8 +114,15 @@ function DialogBody({
           }}
           className="font-mono"
           placeholder="field_name"
+          aria-label="Field name"
+          aria-invalid={!!nameError}
+          aria-describedby={nameError ? 'field-name-error' : undefined}
         />
-        {nameError && <p className="text-xs text-destructive mt-1">{nameError}</p>}
+        {nameError && (
+          <p id="field-name-error" role="alert" className="text-xs text-destructive mt-1">
+            {nameError}
+          </p>
+        )}
       </Field>
 
       <Field orientation="vertical">

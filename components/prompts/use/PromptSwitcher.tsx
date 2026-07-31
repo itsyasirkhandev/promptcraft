@@ -98,9 +98,9 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
             {activePrompt ? (
               <>
                 {activePrompt.templateMode ? (
-                  <Lightning className="size-3.5 shrink-0 text-blue-500" weight="fill" />
+                  <Lightning aria-hidden="true" className="size-3.5 shrink-0 text-blue-500" weight="fill" />
                 ) : (
-                  <Article className="size-3.5 shrink-0 text-emerald-500" weight="fill" />
+                  <Article aria-hidden="true" className="size-3.5 shrink-0 text-emerald-500" weight="fill" />
                 )}
                 <span className="truncate">{activePrompt.title}</span>
               </>
@@ -108,7 +108,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
               <span className="text-muted-foreground">Select a prompt…</span>
             )}
           </span>
-          <CaretUpDown className="size-4 shrink-0 text-muted-foreground/60" />
+          <CaretUpDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground/60" />
         </Button>
       </PopoverTrigger>
 
@@ -124,6 +124,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search prompts…"
+            aria-label="Search prompts"
             className="h-8 rounded-lg border-border/40 bg-background/60 text-sm shadow-none focus-visible:ring-1"
           />
         </div>
@@ -133,16 +134,25 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
           <div className="border-b border-border/50 bg-muted/10">
             <ScrollArea className="w-full whitespace-nowrap">
               <div className="flex items-center gap-1.5 px-3 py-2">
-                <Tag className="size-3 shrink-0 text-muted-foreground/60" />
+                <Tag aria-hidden="true" className="size-3 shrink-0 text-muted-foreground/60" />
                 {allTags.map((tag) => (
                   <Badge
                     key={tag}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedTags.has(tag)}
                     variant={selectedTags.has(tag) ? 'default' : 'outline'}
                     className={cn(
                       'cursor-pointer select-none transition-all duration-150 hover:opacity-80',
                       selectedTags.has(tag) && 'shadow-sm'
                     )}
                     onClick={() => toggleTag(tag)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleTag(tag);
+                      }
+                    }}
                   >
                     {tag}
                   </Badge>
@@ -180,15 +190,15 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
                     {/* Active check */}
                     <span className="flex size-4 shrink-0 items-center justify-center">
                       {isActive ? (
-                        <Check className="size-3.5 text-primary" weight="bold" />
+                        <Check aria-hidden="true" className="size-3.5 text-primary" weight="bold" />
                       ) : null}
                     </span>
 
                     {/* Type icon */}
                     {isDynamic ? (
-                      <Lightning className="size-3.5 shrink-0 text-blue-500" weight="fill" />
+                      <Lightning aria-hidden="true" className="size-3.5 shrink-0 text-blue-500" weight="fill" />
                     ) : (
-                      <Article className="size-3.5 shrink-0 text-emerald-500" weight="fill" />
+                      <Article aria-hidden="true" className="size-3.5 shrink-0 text-emerald-500" weight="fill" />
                     )}
 
                     {/* Title */}
@@ -198,7 +208,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
                     <Badge
                       variant="outline"
                       className={cn(
-                        'shrink-0 text-[10px] font-semibold tracking-wide px-1.5 h-4',
+                        'shrink-0 text-xs font-semibold tracking-wide px-1.5 h-4',
                         isDynamic
                           ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/8'
                           : 'border-emerald-500/30 text-emerald-800 dark:text-emerald-400 bg-emerald-500/8'
@@ -215,7 +225,7 @@ export function PromptSwitcher({ prompts, activeId, onSelect }: PromptSwitcherPr
 
         {/* Footer count */}
         <div className="border-t border-border/50 px-3 py-2 bg-muted/10">
-          <p className="text-[11px] text-muted-foreground/60">
+          <p className="text-xs text-muted-foreground/60">
             {filteredPrompts.length} of {prompts.length} prompt
             {prompts.length !== 1 ? 's' : ''}
           </p>

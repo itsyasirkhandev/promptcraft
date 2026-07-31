@@ -13,9 +13,10 @@ export function ShareUrlField({ slug }: ShareUrlFieldProps) {
 
 	return (
 		<Field orientation="vertical">
-			<FieldLabel className="text-foreground">Public Link</FieldLabel>
+			<FieldLabel htmlFor="public-share-url" className="text-foreground">Public Link</FieldLabel>
 			<div className="flex items-center gap-2">
 				<Input
+					id="public-share-url"
 					readOnly
 					value={url}
 					className="font-mono text-sm"

@@ -43,23 +43,25 @@ export default function MarketplacePage() {
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
 		/>
 		<Navbar />
-		<div className="mx-auto max-w-7xl px-4 py-12">
-			<div className="mb-12 text-center">
-				<h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-heading lg:text-5xl dark:text-slate-50">
-					Public Marketplace
-				</h1>
-				<p className="mx-auto mt-4 max-w-2xl text-lg text-slate-500 dark:text-slate-400">
-					Discover, search, and copy publicly shared AI prompts created by the
-					community.
-				</p>
-			</div>
+		<main id="main-content" className="flex-1">
+			<div className="mx-auto max-w-7xl px-4 py-12">
+				<div className="mb-12 text-center">
+					<h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-heading lg:text-5xl dark:text-slate-50">
+						Public Marketplace
+					</h1>
+					<p className="mx-auto mt-4 max-w-2xl text-lg text-slate-500 dark:text-slate-400">
+						Discover, search, and copy publicly shared AI prompts created by the
+						community.
+					</p>
+				</div>
 
-			<Suspense>
-				<MarketplaceSearch />
-			</Suspense>
-		</div>
-		<Pricing />
-		<CTA />
+				<Suspense>
+					<MarketplaceSearch />
+				</Suspense>
+			</div>
+			<Pricing />
+			<CTA />
+		</main>
 		<Footer />
 	</>
 	);

@@ -8,15 +8,17 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <main id="main-content" className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-6 max-w-md text-center px-6">
         <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
-          <span className="text-2xl">⚠️</span>
+          <span className="text-2xl" role="img" aria-label="Warning">
+            ⚠️
+          </span>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
-            Something went wrong
-          </h2>
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+            Something went wrong!
+          </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {error.message || "An unexpected error occurred. Please try again."}
           </p>
@@ -34,6 +36,6 @@ export default function GlobalError({
           Try again
         </button>
       </div>
-    </div>
+    </main>
   );
 }

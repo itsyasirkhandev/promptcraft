@@ -55,7 +55,7 @@ export default function Process() {
 
               {/* Card */}
               <div className="nexto-card nexto-process-card">
-                <span className="nexto-icon nexto-gradient-text text-[34px] leading-none">
+                <span className="nexto-icon nexto-gradient-text text-[34px] leading-none" aria-hidden="true">
                   {s.icon}
                 </span>
                 <h3 className="text-[17px] font-semibold tracking-[-0.3px] text-[#0f0f0f] mt-3">

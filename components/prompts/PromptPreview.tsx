@@ -14,7 +14,7 @@ interface PromptPreviewProps {
 const TYPE_COLORS: Record<TemplateFieldType, string> = {
   text: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
   longText: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
-  number: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+  number: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20',
   singleSelect: 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20',
   multiSelect: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
 };

@@ -34,11 +34,11 @@ export function CopyButton({
 			className={cn('gap-2', className)}
 		>
 			{copied ? (
-				<Check className={cn('text-emerald-500', iconClassName)} />
+				<Check aria-hidden="true" className={cn('text-emerald-500', iconClassName)} />
 			) : (
-				<Copy className={iconClassName} />
+				<Copy aria-hidden="true" className={iconClassName} />
 			)}
-			<span>{copied ? copiedLabel : label}</span>
+			<span aria-live="polite">{copied ? copiedLabel : label}</span>
 		</Button>
 	);
 }

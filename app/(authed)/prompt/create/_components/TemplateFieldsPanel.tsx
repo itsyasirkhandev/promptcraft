@@ -159,11 +159,14 @@ function FieldCard({ field, allFields, contentValue, setValue }: FieldCardProps)
             }}
             className="h-7 text-sm flex-1 min-w-[8rem] font-mono"
             placeholder="field_name"
+            aria-label="Field name"
+            aria-invalid={!!nameError}
+            aria-describedby={nameError ? `field-name-error-${field.id}` : undefined}
           />
 
           {/* Type selector */}
           <Select value={field.type} onValueChange={(v) => handleTypeChange(v as TemplateFieldType)}>
-            <SelectTrigger size="sm" className="w-auto min-w-[8rem]">
+            <SelectTrigger size="sm" className="w-auto min-w-[8rem]" aria-label="Field type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -200,7 +203,9 @@ function FieldCard({ field, allFields, contentValue, setValue }: FieldCardProps)
 
         {/* Inline name error */}
         {nameError && (
-          <p className="text-xs text-destructive">{nameError}</p>
+          <p id={`field-name-error-${field.id}`} role="alert" className="text-xs text-destructive">
+            {nameError}
+          </p>
         )}
       </div>
 

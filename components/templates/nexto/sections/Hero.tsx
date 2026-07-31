@@ -3,7 +3,7 @@ import Link from "next/link";
 
 function ChevronArrow() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M5 12h14M13 6l6 6-6 6"
         stroke="currentColor"
@@ -19,7 +19,7 @@ const avatars = [
   { initials: "RM", style: { background: "linear-gradient(135deg,#F7B2FB,#786EF1)" } },
   { initials: "JK", style: { background: "linear-gradient(135deg,#FFE9D6,#FF9A5E)" } },
   { initials: "AT", style: { background: "linear-gradient(135deg,#DDF3FF,#5588FB)" } },
-  { initials: "+24", style: { background: "#0f0f0f", color: "#fff", fontSize: 11 } },
+  { initials: "+24", style: { background: "#0f0f0f", color: "#fff", fontSize: 12 } },
 ];
 
 export default function Hero() {
@@ -83,7 +83,7 @@ export default function Hero() {
             {avatars.map((a, i) => (
               <span
                 key={i}
-                className={`w-7 h-7 rounded-full inline-flex items-center justify-center text-white text-[11px] font-bold border-2 border-[#F5F5F5] ${i > 0 ? "-ml-2" : ""}`}
+                className={`w-7 h-7 rounded-full inline-flex items-center justify-center text-white text-xs font-bold border-2 border-[#F5F5F5] ${i > 0 ? "-ml-2" : ""}`}
                 style={a.style}
               >
                 {a.initials}
@@ -94,7 +94,7 @@ export default function Hero() {
             <strong className="text-[12.5px] font-semibold text-[#0f0f0f]">
               1,200+ prompts created
             </strong>
-            <span className="text-[11.5px] text-[#525252]">
+            <span className="text-xs text-[#525252]">
               by developers and creators worldwide.
             </span>
           </div>

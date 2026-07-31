@@ -17,8 +17,6 @@
  and run 'pnpm run lint' to check for linting errors, run 'pnpm run typecheck' 
 
 
-
-
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

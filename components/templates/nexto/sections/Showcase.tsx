@@ -90,7 +90,7 @@ export default function Showcase() {
             : visible.length === 0
             ? (
               <div className="col-span-full rounded-[22px] border border-dashed border-black/10 bg-white/50 px-6 py-16 text-center">
-                <span className="nexto-icon nexto-gradient-text text-[34px] leading-none">
+                <span className="nexto-icon nexto-gradient-text text-[34px] leading-none" aria-hidden="true">
                   storefront
                 </span>
                 <h3 className="mt-3 text-[18px] font-semibold tracking-[-0.3px] text-[#0f0f0f]">
@@ -126,7 +126,7 @@ export default function Showcase() {
 
                     {/* Content */}
                     <div className="relative z-10 flex flex-col gap-[10px] text-white">
-                      <span className="self-start text-[11px] font-medium px-[10px] py-[3px] rounded-[40px] backdrop-blur-md bg-white/[0.2]">
+                      <span className="self-start text-xs font-medium px-[10px] py-[3px] rounded-[40px] backdrop-blur-md bg-white/[0.2]">
                         {categoryLabel}
                       </span>
 
@@ -142,6 +142,7 @@ export default function Showcase() {
                           )}
                         </div>
                         <span
+                          aria-hidden="true"
                           className="nexto-icon w-[38px] h-[38px] rounded-full bg-white text-[#111] inline-flex items-center justify-center text-[20px] transition-transform duration-300 group-hover:translate-x-[3px] group-hover:-translate-y-[3px] flex-shrink-0"
                         >
                           north_east
@@ -153,7 +154,7 @@ export default function Showcase() {
                           {p.tags.slice(0, 3).map((t) => (
                             <span
                               key={t}
-                              className="text-[11px] font-medium px-[9px] py-[2px] rounded-[40px] backdrop-blur-md bg-white/[0.18]"
+                              className="text-xs font-medium px-[9px] py-[2px] rounded-[40px] backdrop-blur-md bg-white/[0.18]"
                             >
                               {t}
                             </span>
@@ -171,11 +172,11 @@ export default function Showcase() {
                             className="size-5 rounded-full border border-white/60 object-cover"
                           />
                         ) : (
-                          <span className="size-5 rounded-full bg-white/25 border border-white/40 inline-flex items-center justify-center text-[10px] font-semibold text-white">
+                          <span className="size-5 rounded-full bg-white/25 border border-white/40 inline-flex items-center justify-center text-xs font-semibold text-white">
                             {authorName.slice(0, 1).toUpperCase()}
                           </span>
                         )}
-                        <span className="text-[11.5px] font-medium text-white/90 max-w-[150px] truncate">
+                        <span className="text-xs font-medium text-white/90 max-w-[150px] truncate">
                           {authorName}
                         </span>
                       </div>

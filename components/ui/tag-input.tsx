@@ -153,7 +153,7 @@ export function TagInput({ value = [], onChange, error }: TagInputProps) {
                 className="ml-1 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors"
                 aria-label={`Remove tag ${tag}`}
               >
-                <X size={10} weight="bold" />
+                <X aria-hidden="true" size={10} weight="bold" />
               </button>
             </Badge>
           ))}
@@ -174,19 +174,25 @@ export function TagInput({ value = [], onChange, error }: TagInputProps) {
           onFocus={() => setIsDropdownOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Type a tag and press Enter or comma..."
+          aria-label="Add tag"
+          role="combobox"
+          aria-expanded={isDropdownOpen}
+          aria-controls="tag-suggestions-list"
           className={cn("pr-10", error && "border-destructive focus-visible:ring-destructive/20")}
         />
 
         {/* Suggestion Dropdown */}
         {isDropdownOpen && filteredSuggestions.length > 0 && (
           <div className="absolute z-50 w-full mt-1.5 overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 max-h-60 overflow-y-auto border border-border backdrop-blur-md">
-            <ul className="p-1">
+            <ul id="tag-suggestions-list" role="listbox" className="p-1">
               {filteredSuggestions.map((suggestion, index) => {
                 const isSelected = safeActiveIndex === index;
                 const isCreateOption = suggestion.startsWith('Create "');
                 return (
                   <li
                     key={suggestion}
+                    role="option"
+                    aria-selected={false}
                     onClick={() => addTag(suggestion)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
@@ -199,7 +205,7 @@ export function TagInput({ value = [], onChange, error }: TagInputProps) {
                       <span className="text-xs opacity-75 font-normal">Press Enter</span>
                     )}
                     {!isCreateOption && value.includes(suggestion) && (
-                      <Check size={14} className="text-primary" />
+                      <Check aria-hidden="true" size={14} className="text-primary" />
                     )}
                   </li>
                 );
@@ -227,7 +233,7 @@ export function TagInput({ value = [], onChange, error }: TagInputProps) {
                     : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >
-                {isSelected && <Check size={10} className="mr-1 inline-block" />}
+                {isSelected && <Check aria-hidden="true" size={10} className="mr-1 inline-block" />}
                 {tag}
               </button>
             );

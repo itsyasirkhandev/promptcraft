@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogOverlay,
   DialogPortal,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 function ChevronArrow() {
@@ -177,6 +178,7 @@ function ProCardCta() {
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
+            <DialogTitle className="sr-only">Checkout redirect status</DialogTitle>
             <Spinner
               className="size-8 animate-spin text-white"
               aria-hidden="true"
@@ -248,7 +250,7 @@ function PricingCard({
   return (
     <div className={cardClassName}>
       {popular && (
-        <div className="absolute top-4 right-4 bg-[#111] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
+        <div className="absolute top-4 right-4 bg-[#111] text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
           Popular
         </div>
       )}
@@ -266,7 +268,7 @@ function PricingCard({
           <div className={`text-right${priceSuffix ? " flex flex-col" : ""}`}>
             <span className="text-[32px] font-bold text-[#111]">{price}</span>
             {priceSuffix && (
-              <span className="text-[11px] text-[#525252] font-medium -mt-1">
+              <span className="text-xs text-[#525252] font-medium -mt-1">
                 {priceSuffix}
               </span>
             )}
@@ -281,7 +283,7 @@ function PricingCard({
               key={feature}
               className="flex items-center gap-3 text-[14px] text-[#1a1a1a]"
             >
-              <span className="nexto-icon text-[18px] text-emerald-800">check_circle</span>
+              <span className="nexto-icon text-[18px] text-emerald-800" aria-hidden="true">check_circle</span>
               <span>{feature}</span>
             </li>
           ))}
