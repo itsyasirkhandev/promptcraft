@@ -58,7 +58,6 @@ beforeEach(() => {
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
 	process.env.POLAR_WEBHOOK_SECRET = "whsec_test";
-	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 	delete process.env.BREVO_API_KEY;
 });
 

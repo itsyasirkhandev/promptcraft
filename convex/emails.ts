@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { internalAction } from './_generated/server';
+import { env, internalAction } from './_generated/server';
 import { Effect, Schema } from 'effect';
 import { runEffect } from './effectHelpers';
 
@@ -15,7 +15,7 @@ export const sendWelcomeEmail = internalAction({
   },
   handler: async (_ctx, args) => {
     const program = Effect.gen(function* () {
-      const brevoApiKey = process.env.BREVO_API_KEY;
+      const brevoApiKey = env.BREVO_API_KEY;
       if (!brevoApiKey) {
         yield* Effect.logWarning(
           'BREVO_API_KEY is not set. Welcome email will not be sent.',
@@ -94,7 +94,7 @@ export const sendProUpgradeEmail = internalAction({
   },
   handler: async (_ctx, args) => {
     const program = Effect.gen(function* () {
-      const brevoApiKey = process.env.BREVO_API_KEY;
+      const brevoApiKey = env.BREVO_API_KEY;
       if (!brevoApiKey) {
         yield* Effect.logWarning(
           'BREVO_API_KEY is not set. Pro upgrade email will not be sent.',
@@ -108,7 +108,7 @@ export const sendProUpgradeEmail = internalAction({
       // short-lived per-session, so the email points to the app route. SITE_URL
       // is the public Next.js app origin (Convex deployment variable); when
       // unset the link is omitted rather than emitting a broken/localhost URL.
-      const siteUrl = process.env.SITE_URL?.replace(/\/$/, '');
+      const siteUrl = env.SITE_URL?.replace(/\/$/, '');
       const billingUrl = siteUrl ? `${siteUrl}/dashboard/billing` : null;
       const manageLinkHtml = billingUrl
         ? `<p>Manage your subscription anytime from your <a href="${billingUrl}">billing dashboard</a>.</p>`

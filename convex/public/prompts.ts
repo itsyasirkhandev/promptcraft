@@ -25,7 +25,7 @@ export const getBySlug = query({
 		if (!slug || slug.length > 400) return null;
 		const prompt = await ctx.db.query('prompts').withIndex('by_publicSlug', (q) => q.eq('publicSlug', slug)).unique();
 		if (!prompt || !prompt.isPublic || !prompt.publicSlug) return null;
-		const author = await ctx.db.get(prompt.userId);
+		const author = await ctx.db.get("users", prompt.userId);
 		return { ...toPublicPromptDTO(prompt, author), templateFields: prompt.templateFields };
 	}
 });
@@ -64,6 +64,6 @@ export const listPublicPrompts = query({
 		const prompts = args.searchQuery
 			? await searchPublicPrompts(ctx.db, args.searchQuery, args.category, args.sortBy)
 			: await listPublic(ctx.db, args.category, args.sortBy);
-		return Promise.all(prompts.map(async (prompt) => ({ _id: prompt._id, ...toPublicPromptDTO(prompt, await ctx.db.get(prompt.userId)) })));
+		return Promise.all(prompts.map(async (prompt) => ({ _id: prompt._id, ...toPublicPromptDTO(prompt, await ctx.db.get("users", prompt.userId)) })));
 	}
 });

@@ -24,7 +24,7 @@ A convention-heavy starter template for building real apps.
 | **Number** | A demo entity stored in Convex — represents any simple data record |
 | **Auth Guard** | A `customCtxAndArgs` wrapper that validates the JWT and injects `ctx.identity` |
 | **Authed function** | A Convex query/mutation/action protected by the auth guard (client-facing) |
-| **Private function** | A Convex function protected by an API key guard (server-to-server) |
+| **Internal function** | A Convex function registered with `internalQuery`/`internalMutation`/`internalAction` — not internet-exposed, callable only by other Convex functions |
 | **Prompt Inventory Analytics** | Aggregate facts derived from the prompts currently owned by a Viewer, excluding usage events such as views, copies, or provider opens |
 | **UTC Daily Bucket** | A calendar day from 00:00:00 through 23:59:59 UTC used to group prompt creation timestamps consistently |
 | **Public Slug** | The URL-safe, unique, stable identifier for a public prompt; set once on the first isPublic transition, retained across toggles and title/content edits, gated by isPublic on the public read |
@@ -38,9 +38,9 @@ A convention-heavy starter template for building real apps.
 
 ### Convex Function Organization
 - `convex/authed/` — Client-facing functions protected by Clerk JWT
-- `convex/private/` — Server-to-server functions protected by API key
+- `convex/private/` — Internal functions registered with `internalQuery`/`internalMutation`/`internalAction` (Convex-to-Convex only; not internet-exposed)
 - Each feature gets its own file (e.g., `numbers.ts`, `users.ts`)
-- Demo files (`demo.ts`) are kept as AI-readable convention references
+- Convex `_generated/` output is committed; regenerate after schema/config changes
 
 ### Component Organization
 - `components/auth/` — Authentication-related UI (AuthGuard, UserProfile)

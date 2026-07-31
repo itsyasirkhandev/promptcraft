@@ -51,7 +51,7 @@ export async function runEffect<Result, Error>(
 }
 
 // Build the shared handler body for an effect-backed Convex custom function
-// (authedQuery / authedMutation / authedAction / privateQuery / ...). `provide`
+// (authedQuery / authedMutation / authedAction / ...). `provide`
 // injects the service(s) the handler's Effect requires, narrowing the requirement
 // set to `never` so the caller's `run*Effect` can execute it. Lifts the repeated
 // `run(options.handler(args).pipe(provide(ctx)))` boilerplate out of every wrapper.

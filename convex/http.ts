@@ -1,10 +1,11 @@
 import { httpRouter } from "convex/server";
-import { httpAction, type ActionCtx } from "./_generated/server";
+import { httpAction, env, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { verifyPolarWebhook, type PolarSubscriptionEvent } from "./billing/webhooks";
 import { mapSubscriptionToPlan, type Plan } from "./billing/lifecycle";
+import { pruneClerkWebhookData } from "./clerkWebhookValidation";
 
 const http = httpRouter();
 
@@ -26,7 +27,7 @@ http.route({
       "svix-signature": svixSignature,
     };
 
-    const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+    const webhookSecret = env.CLERK_WEBHOOK_SECRET;
     if (!webhookSecret) {
       console.error("Missing CLERK_WEBHOOK_SECRET environment variable");
       return new Response("Missing webhook secret", { status: 500 });
@@ -49,7 +50,7 @@ http.route({
       case "user.created":
       case "user.updated":
         await ctx.runMutation(internal.users.upsertFromClerk, {
-          data: event.data,
+          data: pruneClerkWebhookData(event.data),
         });
         break;
 
@@ -88,12 +89,12 @@ function getPolarConfig(): {
   webhookSecret: string;
   productId: string;
 } | null {
-  const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
+  const webhookSecret = env.POLAR_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.error("polar-webhook: missing POLAR_WEBHOOK_SECRET");
     return null;
   }
-  const productId = process.env.POLAR_PRODUCT_ID;
+  const productId = env.POLAR_PRODUCT_ID;
   if (!productId) {
     console.error("polar-webhook: missing POLAR_PRODUCT_ID");
     return null;

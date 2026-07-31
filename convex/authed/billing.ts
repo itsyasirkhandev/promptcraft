@@ -7,6 +7,7 @@ import { ConvexActions } from "../services/ConvexDB";
 import { ServerConfig } from "../services/ServerConfig";
 import { internal } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
+import { env } from "../_generated/server";
 import { ensureCustomer, createCheckout, createPortal, PolarBillingError, type BillingBackend } from "../billing/provider";
 
 export type BillingUrlResult = { destination: "checkout" | "portal"; url: string };
@@ -26,17 +27,36 @@ function makeBillingBackend(actions: ActionAccessors): BillingBackend {
   };
 }
 
-function checkoutConfig() {
-  const productId = process.env.POLAR_PRODUCT_ID;
-  const siteUrlValue = process.env.SITE_URL;
-  if (!productId || !siteUrlValue) {
+// [Phase 12.3] checkoutConfig honors client-provided productId/successUrl args
+// (generated from the caller's browser origin), falling back to the typed env
+// values. A client success URL is only validated as an absolute http(s) URL.
+function checkoutConfig(args: { productId?: string; successUrl?: string }) {
+  const productId = args.productId ?? env.POLAR_PRODUCT_ID;
+  if (!productId) {
+    return Effect.fail(new PolarBillingError({ message: "Billing is not fully configured." }));
+  }
+
+  if (args.successUrl) {
+    try {
+      const successUrl = new URL(args.successUrl);
+      if (!["http:", "https:"].includes(successUrl.protocol)) {
+        return Effect.fail(new PolarBillingError({ message: "Invalid success URL." }));
+      }
+      return Effect.succeed({ productId, successUrl: successUrl.toString() });
+    } catch {
+      return Effect.fail(new PolarBillingError({ message: "Invalid success URL." }));
+    }
+  }
+
+  const siteUrlValue = env.SITE_URL;
+  if (!siteUrlValue) {
     return Effect.fail(new PolarBillingError({ message: "Billing is not fully configured." }));
   }
   try {
     const siteUrl = new URL(siteUrlValue);
     const isLocal = siteUrl.hostname === "localhost" || siteUrl.hostname === "127.0.0.1";
     if (isLocal) {
-      if (process.env.POLAR_SERVER !== "sandbox" || !["http:", "https:"].includes(siteUrl.protocol)) {
+      if (env.POLAR_SERVER !== "sandbox" || !["http:", "https:"].includes(siteUrl.protocol)) {
         return Effect.fail(new PolarBillingError({ message: "Invalid production application URL." }));
       }
     } else if (siteUrl.protocol !== "https:") {
@@ -56,7 +76,7 @@ export const generateCheckoutUrl = effectAuthedAction({
     productId: v.optional(v.string()),
     successUrl: v.optional(v.string()),
   },
-  handler: () => Effect.gen(function* () {
+  handler: (args) => Effect.gen(function* () {
     const { identity } = yield* AuthedContext;
     const clerkId = identity.subject;
     if (!clerkId) return yield* new PolarBillingError({ message: "Missing Clerk identity." });
@@ -73,7 +93,7 @@ export const generateCheckoutUrl = effectAuthedAction({
 
     const email = user?.email || identity.email || "";
     if (!email) return yield* new PolarBillingError({ message: "An account email is required to start checkout." });
-    const config = yield* checkoutConfig();
+    const config = yield* checkoutConfig(args);
     const customerId = yield* ensureCustomer(makeBillingBackend(actions), clerkId, email, user?.name ?? identity.name ?? undefined);
     return { destination: "checkout" as const, url: yield* createCheckout(customerId, config.productId, config.successUrl) };
   }).pipe(Effect.provide(ServerConfig.layer)),
