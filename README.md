@@ -14,18 +14,34 @@ A prompt management app for creating, editing, and using AI prompts. Built on Ne
 
 ## Tech Stack
 
-| Technology | Purpose | Description |
-| :--- | :--- | :--- |
-| **Next.js** | Frontend Framework | React-based framework for page routing and server-side rendering. |
-| **Convex** | Backend Database & Server | Real-time cloud database and serverless functions backend. |
-| **Clerk Auth** | Client Authentication | Manages user sign-in flows and sessions. |
-| **Effect-TS** | Functional Programming | Used for robust error handling, config parsing, and standard services. |
-| **Zustand** | Client State Management | Minimalist, client-side React state management. |
-| **TailwindCSS** | Component Styling | Utility-first CSS framework for modern responsive styles. |
-| **shadcn/ui** | Component Primitives | Accessible, customizable UI components built on Radix and Base UI. |
-| **react-hook-form** | Forms | Performant form handling with schema-driven validation. |
-| **Zod** | Validation | Schema validation for forms and Convex function inputs. |
-| **Recharts** | Analytics Charts | Composable charting library for the dashboard analytics views. |
+| Category | Technology Name | NPM Package | Version | Primary Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **Framework** | Next.js | `next` | `16.2.10` | App Router full-stack web framework |
+| **UI Library** | React | `react` / `react-dom` | `19.2.7` | UI rendering engine |
+| **Backend & Database** | Convex | `convex` | `1.42.1` | Real-time database & backend platform |
+| **Backend Helpers** | Convex Helpers | `convex-helpers` | `0.1.120` | Server & client utility functions |
+| **Functional Backend** | Effect-TS | `effect` | `4.0.0-beta.78` | Typed functional programming for backend logic |
+| **Authentication** | Clerk | `@clerk/nextjs` | `7.5.14` | User authentication & session management |
+| **CSS Engine** | Tailwind CSS | `tailwindcss` | `4.3.2` | Utility-first styling framework |
+| **UI Primitives** | Radix UI | `radix-ui` | `1.6.2` | Headless accessible components |
+| **Component System** | shadcn/ui | `shadcn` | `4.13.0` | UI component builder & CLI |
+| **Theme Management** | Next Themes | `next-themes` | `0.4.6` | Dark mode and theme toggling |
+| **Global State** | Zustand | `zustand` | `5.0.14` | Client-side state store |
+| **Form Handling** | React Hook Form | `react-hook-form` | `7.81.0` | Performant form state management |
+| **Schema Validation** | Zod | `zod` | `3.25.76` | Type-safe runtime schema checking |
+| **URL State** | Nuqs | `nuqs` | `2.9.0` | URL query parameter state manager |
+| **Immutability** | Immer | `immer` | `11.1.11` | Immutable state mutations |
+| **Payments & Billing** | Polar | `@polar-sh/sdk` | `0.48.1` | Billing & subscription management |
+| **Webhooks** | Svix | `svix` | `1.96.1` | Webhook verification service |
+| **Data Visualization** | Recharts | `recharts` | `3.8.0` | React charting library |
+| **Notifications** | Sonner | `sonner` | `2.0.7` | Toast notification engine |
+| **Icons** | Phosphor Icons | `@phosphor-icons/react` | `2.1.10` | React icon components |
+| **Icons** | Iconify | `@iconify/react` | `6.0.2` | Flexible multi-pack icon loader |
+| **Unit Testing** | Vitest | `vitest` | `4.1.10` | Fast unit test runner |
+| **Backend Testing** | Convex Test | `convex-test` | `0.0.54` | Convex backend integration testing |
+| **Code Health** | Fallow | `fallow` | `3.2.0` | Static analysis & unused code audit |
+| **React Auditing** | React Doctor | `react-doctor` | `0.8.1` | React performance & lint diagnostics |
+| **Package Manager** | pnpm | — | Workspace | Monorepo/Workspace package manager |
 
 ## Getting Started
 

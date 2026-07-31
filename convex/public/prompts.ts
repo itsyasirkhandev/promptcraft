@@ -31,7 +31,8 @@ export const getBySlug = query({
 });
 
 async function searchPublicPrompts(db: GenericDatabaseReader<DataModel>, searchQuery: string, category: string | undefined, sortBy: MarketplaceSort) {
-	const normalized = searchQuery.trim().slice(0, 200);
+	// Standardize search input: trim leading/trailing whitespace, collapse internal spaces, and limit length.
+	const normalized = searchQuery.trim().replace(/\s+/g, ' ').slice(0, 200);
 	if (!normalized) return [];
 	const hasCategory = Boolean(category && category !== 'all');
 	const search = db.query('prompts').withSearchIndex('search_all', (q) => {
