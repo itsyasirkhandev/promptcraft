@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "reactDoctor": {
-    "ignoreDependencies": ["immer", "@testing-library/react"]
+    "ignoreDependencies": [
+      "immer",
+      "@testing-library/react"
+    ]
   },
   "scripts": {
     "dev": "convex dev --start \"next dev\"",
@@ -20,7 +23,6 @@
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
-    "@base-ui/react": "^1.6.0",
     "@clerk/nextjs": "^7.5.14",
     "@hookform/resolvers": "^5.4.0",
     "@iconify/react": "^6.0.2",
@@ -54,9 +56,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@effect/language-service": "^0.86.4",
     "@tailwindcss/postcss": "^4.3.2",
-    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -72,6 +72,9 @@
     "vitest": "^4.1.10"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@tailwindcss/oxide"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide"
+    ]
   }
 }
