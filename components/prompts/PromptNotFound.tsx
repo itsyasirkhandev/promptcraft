@@ -18,7 +18,7 @@ export function PromptNotFound({
       <p className="text-muted-foreground mb-4">{message}</p>
       <Button asChild>
         <Link href="/dashboard/prompts">
-          <ArrowLeft className="mr-2 size-4" />
+          <ArrowLeft aria-hidden="true" className="mr-2 size-4" />
           Back to Dashboard
         </Link>
       </Button>

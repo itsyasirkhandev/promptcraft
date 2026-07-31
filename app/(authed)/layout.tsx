@@ -77,7 +77,7 @@ function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border/50 py-4">
         <Link href="/dashboard" className="flex items-center gap-3 px-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="Logo" className="h-6 w-6" />
+          <img src="/logo.svg" alt="" aria-hidden="true" className="h-6 w-6" />
           {!isCollapsed && (
             <span className="font-bold text-sm text-slate-800 dark:text-slate-200 tracking-tight transition-colors duration-200">
               Prompt Crafts
@@ -140,7 +140,7 @@ function Header() {
     <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
-        <h1 className="text-lg font-bold font-heading">Dashboard</h1>
+        <p className="text-lg font-bold font-heading">Dashboard</p>
         <PlanBadge />
         <HobbyUsagePill />
       </div>
@@ -167,7 +167,7 @@ export default function AuthedLayout({
         <SidebarInset>
           <div className="flex-1 flex flex-col h-screen overflow-hidden">
             <Header />
-            <main className="flex-1 overflow-auto p-6">{children}</main>
+            <main id="main-content" className="flex-1 overflow-auto p-6">{children}</main>
           </div>
         </SidebarInset>
       </SidebarProvider>

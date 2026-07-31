@@ -42,7 +42,7 @@ export default function UsePromptPage({ params }: PageProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button asChild variant="outline" size="icon" className="rounded-xl size-9">
-            <Link href="/dashboard/prompts">
+            <Link href="/dashboard/prompts" aria-label="Back to prompts library">
               <ArrowLeft className="size-4" />
             </Link>
           </Button>

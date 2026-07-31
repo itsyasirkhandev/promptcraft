@@ -17,7 +17,7 @@ function handleScroll(e: React.MouseEvent<HTMLAnchorElement>, targetId: string) 
 
 function ChevronArrow() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M5 12h14M13 6l6 6-6 6"
         stroke="currentColor"
@@ -76,7 +76,7 @@ export default function Navbar() {
                 <Link
                   href={item === "Marketplace" ? "/marketplace" : `/#${item.toLowerCase().replace(/\s/g, "-")}`}
                   onClick={item === "Marketplace" ? undefined : (e) => handleScroll(e, item.toLowerCase().replace(/\s/g, "-"))}
-                  className="text-[14px] font-normal text-[#1a1a1a] opacity-65 hover:opacity-100 transition-opacity"
+                  className="text-[14px] font-normal text-[#1a1a1a] opacity-80 hover:opacity-100 transition-opacity"
                 >
                   {item}
                 </Link>
@@ -126,6 +126,8 @@ export default function Navbar() {
             type="button"
             className="flex md:hidden flex-col gap-[6px] w-6 h-6 justify-center items-center cursor-pointer z-[61] relative"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-menu"
             onClick={() => setMenuOpen((o) => !o)}
           >
             <span
@@ -143,7 +145,14 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       <div
-        className={`fixed inset-0 bg-[#F5F5F5] z-[60] flex flex-col px-8 pt-[90px] pb-10 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
+        id="mobile-nav-menu"
+        aria-hidden={!menuOpen}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setMenuOpen(false);
+        }}
+        className={`fixed inset-0 bg-[#F5F5F5] z-[60] flex flex-col px-8 pt-[90px] pb-10 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)] ${
+          menuOpen ? "translate-x-0" : "translate-x-full invisible pointer-events-none"
+        }`}
       >
         {["Marketplace", "Pricing", "Process"].map((item) => (
           <Link

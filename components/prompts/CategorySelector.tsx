@@ -80,12 +80,13 @@ export function CategorySelector({ value, onChange, error }: CategorySelectorPro
               {/* Checkmark in the corner for premium active state */}
               {isSelected && (
                 <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-                  <Check className="size-2.5 stroke-[3.5]" />
+                  <Check aria-hidden="true" className="size-2.5 stroke-[3.5]" />
                 </span>
               )}
 
               {/* Category Icon */}
               <Icon 
+                aria-hidden="true"
                 className={cn(
                   "size-6 transition-transform group-hover:scale-110 duration-200",
                   isSelected ? "text-primary" : "text-muted-foreground group-hover:text-foreground"

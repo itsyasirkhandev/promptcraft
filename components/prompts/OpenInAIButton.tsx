@@ -119,9 +119,9 @@ export function OpenInAIButton({ content }: OpenInAIButtonProps) {
         className="h-8 gap-2 rounded-l-xl rounded-r-none border-slate-200 dark:border-slate-800 shadow-sm border-r-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
       >
         {copied ? (
-          <Check className="size-4 text-emerald-500" />
+          <Check aria-hidden="true" className="size-4 text-emerald-500" />
         ) : (
-          <Icon icon={activeProvider.icon} className="size-4 text-slate-600 dark:text-slate-400" />
+          <Icon aria-hidden="true" icon={activeProvider.icon} className="size-4 text-slate-600 dark:text-slate-400" />
         )}
         <span>Open in {activeProvider.name}</span>
       </Button>
@@ -135,7 +135,7 @@ export function OpenInAIButton({ content }: OpenInAIButtonProps) {
             className="h-8 px-2 rounded-r-xl rounded-l-none border-slate-200 dark:border-slate-800 shadow-sm border-l-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             aria-label="Select AI provider"
           >
-            <CaretDown className="size-3.5 text-slate-500" />
+            <CaretDown aria-hidden="true" className="size-3.5 text-slate-500" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-lg">
@@ -145,7 +145,7 @@ export function OpenInAIButton({ content }: OpenInAIButtonProps) {
               onClick={() => handleAction(provider)}
               className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
             >
-              <Icon icon={provider.icon} className="size-4 text-slate-500 dark:text-slate-300 shrink-0" />
+              <Icon aria-hidden="true" icon={provider.icon} className="size-4 text-slate-500 dark:text-slate-300 shrink-0" />
               <span>{provider.name}</span>
             </DropdownMenuItem>
           ))}

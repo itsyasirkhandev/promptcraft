@@ -11,7 +11,9 @@ export default function DashboardError({
     <div className="flex items-center justify-center py-20">
       <div className="flex flex-col items-center gap-4 max-w-sm text-center">
         <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
-          <span className="text-lg">⚠️</span>
+          <span className="text-lg" role="img" aria-label="Warning">
+            ⚠️
+          </span>
         </div>
         <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
           Dashboard error

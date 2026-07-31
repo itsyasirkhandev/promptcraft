@@ -97,7 +97,7 @@ export default function EditPromptPage({ params }: PageProps) {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Button asChild variant="outline" size="icon" className="rounded-xl size-9">
-          <Link href="/dashboard/prompts">
+          <Link href="/dashboard/prompts" aria-label="Back to prompts library">
             <ArrowLeft className="size-4" />
           </Link>
         </Button>

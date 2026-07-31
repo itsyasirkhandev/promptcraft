@@ -68,9 +68,15 @@ function TitleField({
   return (
     <Field orientation="vertical">
       <FieldLabel htmlFor="title" className="text-foreground">Title</FieldLabel>
-      <Input id="title" {...register('title')} placeholder="Enter a title..." aria-invalid={!!errors.title} />
-      <p className={charCountClass(watchedTitle.length, 300)}>{watchedTitle.length}/300</p>
-      <FieldError errors={[errors.title]} />
+      <Input
+        id="title"
+        {...register('title')}
+        placeholder="Enter a title..."
+        aria-invalid={!!errors.title}
+        aria-describedby="title-error title-count"
+      />
+      <p id="title-count" className={charCountClass(watchedTitle.length, 300)}>{watchedTitle.length}/300</p>
+      <FieldError id="title-error" errors={[errors.title]} />
     </Field>
   );
 }
@@ -102,10 +108,11 @@ function ContentField({
         placeholder="Write your prompt..."
         className="min-h-48"
         aria-invalid={!!errors.content}
+        aria-describedby="content-error content-count"
         onPointerUp={(e) => onSelectionChange(e.currentTarget)}
         onKeyUp={(e) => onSelectionChange(e.currentTarget)}
       />
-      <p className={charCountClass(watchedContent.length, 10000)}>{watchedContent.length}/10,000</p>
+      <p id="content-count" className={charCountClass(watchedContent.length, 10000)}>{watchedContent.length}/10,000</p>
       {showConvertButton && (
         <Button type="button" variant="outline" size="sm" onClick={onConvertClick} className="self-start text-xs">
           {trimmed
@@ -113,7 +120,7 @@ function ContentField({
             : 'Add Dynamic Field'}
         </Button>
       )}
-      <FieldError errors={[errors.content]} />
+      <FieldError id="content-error" errors={[errors.content]} />
     </Field>
   );
 }
@@ -136,7 +143,7 @@ function ToggleField({
         <FieldDescription>{description}</FieldDescription>
       </FieldContent>
       <Controller control={control} name={name} render={({ field }) => (
-        <Switch checked={field.value} onCheckedChange={field.onChange} />
+        <Switch checked={field.value} onCheckedChange={field.onChange} aria-label={title} />
       )} />
     </Field>
   );

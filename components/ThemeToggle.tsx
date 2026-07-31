@@ -26,6 +26,7 @@ export default function ThemeToggle() {
       <Sun
         size={20}
         weight="duotone"
+        aria-hidden="true"
         className={`absolute transition-all duration-300 ${
           theme === "dark"
             ? "rotate-90 scale-0 opacity-0"
@@ -35,6 +36,7 @@ export default function ThemeToggle() {
       <Moon
         size={20}
         weight="duotone"
+        aria-hidden="true"
         className={`transition-all duration-300 ${
           theme === "dark"
             ? "rotate-0 scale-100 opacity-100"

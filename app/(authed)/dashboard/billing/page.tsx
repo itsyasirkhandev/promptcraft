@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogOverlay,
   DialogPortal,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 export default function BillingPage() {
@@ -231,6 +232,7 @@ function HobbyBilling() {
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
               >
+                <DialogTitle className="sr-only">Checkout status</DialogTitle>
                 <Spinner
                   className="size-8 animate-spin text-white"
                   aria-hidden="true"
@@ -301,6 +303,7 @@ function ProBilling() {
               onInteractOutside={(e) => e.preventDefault()}
               onEscapeKeyDown={(e) => e.preventDefault()}
             >
+              <DialogTitle className="sr-only">Checkout status</DialogTitle>
               <Spinner
                 className="size-8 animate-spin text-white"
                 aria-hidden="true"

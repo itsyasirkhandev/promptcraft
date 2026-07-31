@@ -91,7 +91,7 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <span className="flex-shrink-0 rounded-lg bg-slate-50 p-1.5 text-slate-500 ring-1 ring-slate-100/80 dark:bg-white/5 dark:text-slate-400 dark:ring-white/5">
-              <CategoryIcon className="size-3.5 animate-in fade-in duration-200" />
+              <CategoryIcon aria-hidden="true" className="size-3.5 animate-in fade-in duration-200" />
             </span>
             <CardTitle className="line-clamp-2 text-base font-semibold leading-tight text-slate-900 transition-colors group-hover:text-primary dark:text-slate-100">
               {prompt.title}
@@ -99,13 +99,13 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
           </div>
           <div className="flex shrink-0 select-none">
             {prompt.templateMode ? (
-              <span className="inline-flex items-center gap-1 rounded-lg border border-purple-100/50 bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-600 dark:border-purple-900/30 dark:bg-purple-950/20 dark:text-purple-400">
-                <Lightning className="size-3" />
+              <span className="inline-flex items-center gap-1 rounded-lg border border-purple-100/50 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600 dark:border-purple-900/30 dark:bg-purple-950/20 dark:text-purple-400">
+                <Lightning aria-hidden="true" className="size-3" />
                 <span>Template</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-lg border border-blue-100/50 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-blue-400">
-                <Notebook className="size-3" />
+              <span className="inline-flex items-center gap-1 rounded-lg border border-blue-100/50 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-blue-400">
+                <Notebook aria-hidden="true" className="size-3" />
                 <span>Static</span>
               </span>
             )}
@@ -127,14 +127,14 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
               />
             ) : (
               <span className="flex size-5 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                <User className="size-3 text-slate-500 dark:text-slate-400" />
+                <User aria-hidden="true" className="size-3 text-slate-500 dark:text-slate-400" />
               </span>
             )}
             <span className="max-w-[120px] truncate font-medium text-slate-700 dark:text-slate-300">
               {prompt.author.name || 'Anonymous'}
             </span>
             <span className="ml-auto flex items-center gap-1">
-              <Clock className="size-3 opacity-75" />
+              <Clock aria-hidden="true" className="size-3 opacity-75" />
               <span>{formatDate(prompt._creationTime)}</span>
             </span>
           </div>
@@ -151,9 +151,9 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
             {prompt.tags.map((tag) => (
               <span
                 key={tag}
-                className="flex items-center gap-1 rounded-md border border-slate-150/40 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-400"
+                className="flex items-center gap-1 rounded-md border border-slate-150/40 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-400"
               >
-                <Tag className="size-2.5 opacity-60" />
+                <Tag aria-hidden="true" className="size-2.5 opacity-60" />
                 {tag}
               </span>
             ))}
@@ -173,9 +173,9 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
             )}
           >
             {copied ? (
-              <Check className="size-3.5 text-emerald-500" />
+              <Check aria-hidden="true" className="size-3.5 text-emerald-500" />
             ) : (
-              <Copy className="size-3.5" />
+              <Copy aria-hidden="true" className="size-3.5" />
             )}
             <span>{copied ? 'Copied' : 'Copy'}</span>
           </Button>
@@ -186,8 +186,9 @@ export function MarketplacePromptCard({ prompt }: MarketplacePromptCardProps) {
               onClick={handleUse}
               className="h-9 flex-1 gap-1.5 rounded-xl bg-purple-600 text-xs text-white shadow-sm transition-colors hover:bg-purple-700 active:scale-[0.98] dark:bg-purple-600 dark:hover:bg-purple-500"
             >
-              <ArrowSquareOut className="size-3.5" />
+              <ArrowSquareOut aria-hidden="true" className="size-3.5" />
               <span>Use</span>
+              <span className="sr-only">(opens in a new tab)</span>
             </Button>
           )}
         </div>

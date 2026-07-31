@@ -92,7 +92,7 @@ export function MarketplaceSearch() {
     <div className="flex w-full animate-in fade-in flex-col gap-6 duration-500">
       {/* Search input */}
       <div className="relative mx-auto w-full max-w-md md:max-w-2xl">
-        <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+        <MagnifyingGlass aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search prompts by title, content, or tags..."
@@ -102,7 +102,7 @@ export function MarketplaceSearch() {
           className="h-12 rounded-full border-2 bg-background pl-10 text-base shadow-sm focus-visible:border-primary"
         />
         {isSearchPending && (
-          <CircleNotch className="absolute right-4 top-1/2 size-5 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <CircleNotch aria-hidden="true" className="absolute right-4 top-1/2 size-5 -translate-y-1/2 animate-spin text-muted-foreground" />
         )}
       </div>
 
@@ -126,6 +126,7 @@ export function MarketplaceSearch() {
                 )}
               >
                 <Icon
+                  aria-hidden="true"
                   className={cn(
                     'size-4 transition-transform duration-300',
                     isActive && 'scale-110 rotate-3',
@@ -147,7 +148,7 @@ export function MarketplaceSearch() {
             onClick={handleResetFilters}
             className="mr-auto text-muted-foreground hover:text-foreground"
           >
-            <X className="mr-2 size-4" />
+            <X aria-hidden="true" className="mr-2 size-4" />
             Reset Filters
           </Button>
         )}
@@ -176,15 +177,15 @@ export function MarketplaceSearch() {
       {/* Grid / loading / empty states */}
       <div className="min-h-[400px]">
         {isLoading ? (
-          <div className="flex h-40 items-center justify-center">
+          <div className="flex h-40 items-center justify-center" role="status" aria-live="polite">
             <p className="flex items-center gap-2 text-muted-foreground">
-              <CircleNotch className="size-4 animate-spin" /> Loading prompts...
+              <CircleNotch aria-hidden="true" className="size-4 animate-spin" /> Loading prompts...
             </p>
           </div>
         ) : prompts.length === 0 ? (
           <div className="mt-4 animate-in fade-in zoom-in-95 rounded-3xl border border-dashed border-slate-300 bg-muted/30 py-20 text-center duration-300 dark:border-slate-800">
             <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <EmptyStateIcon className="size-8 text-muted-foreground opacity-60" />
+              <EmptyStateIcon aria-hidden="true" className="size-8 text-muted-foreground opacity-60" />
             </div>
             <h3 className="text-lg font-bold text-foreground">
               {activeCategory === 'all'

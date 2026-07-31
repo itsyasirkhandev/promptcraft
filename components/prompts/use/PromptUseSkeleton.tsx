@@ -13,7 +13,8 @@ export function PromptUseSkeleton({
 	subtitleWidth = 'w-72',
 }: PromptUseSkeletonProps) {
 	return (
-		<div className="flex flex-col gap-6 max-w-6xl mx-auto p-1 animate-pulse">
+		<div className="flex flex-col gap-6 max-w-6xl mx-auto p-1 animate-pulse" role="status" aria-live="polite" aria-busy="true">
+			<span className="sr-only">Loading template data...</span>
 			<div className="flex items-center gap-3">
 				<div className={headerIconClassName}></div>
 				<div>
