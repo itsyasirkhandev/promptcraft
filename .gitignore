@@ -28,6 +28,11 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# pi session artifacts
+.pi/
+.pi-subagents/
+docs/PLAN-convex-guidelines-compliance.md
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)

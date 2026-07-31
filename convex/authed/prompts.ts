@@ -132,7 +132,7 @@ export const create = effectAuthedMutation({
 				})
 			);
 
-			const prompt = yield* Effect.tryPromise(() => writerDb.get(promptId));
+			const prompt = yield* Effect.tryPromise(() => writerDb.get("prompts", promptId));
 			if (!prompt) {
 				return yield* Effect.fail(new NotFoundError({ message: 'Failed to retrieve newly created prompt' }));
 			}
@@ -160,7 +160,7 @@ export const update = effectAuthedMutation({
 			const writerDb = db as GenericDatabaseWriter<DataModel>;
 
 			// Verify existance
-			const prompt = yield* Effect.tryPromise(() => writerDb.get(args.id));
+			const prompt = yield* Effect.tryPromise(() => writerDb.get("prompts", args.id));
 			if (!prompt) {
 				return yield* Effect.fail(new NotFoundError({ message: 'Prompt not found' }));
 			}
@@ -226,7 +226,7 @@ export const update = effectAuthedMutation({
 				}
 			}
 
-			const updatedPrompt = yield* Effect.tryPromise(() => writerDb.get(args.id));
+			const updatedPrompt = yield* Effect.tryPromise(() => writerDb.get("prompts", args.id));
 			return updatedPrompt;
 		})
 });
@@ -243,7 +243,7 @@ export const remove = effectAuthedMutation({
 			const writerDb = db as GenericDatabaseWriter<DataModel>;
 
 			// Verify existence
-			const prompt = yield* Effect.tryPromise(() => writerDb.get(args.id));
+			const prompt = yield* Effect.tryPromise(() => writerDb.get("prompts", args.id));
 			if (!prompt) {
 				return yield* Effect.fail(new NotFoundError({ message: 'Prompt not found' }));
 			}
@@ -286,7 +286,7 @@ export const get = effectAuthedQuery({
 			const viewer = yield* requireViewer()
 
 			const { db } = yield* ConvexDB;
-			const prompt = yield* Effect.tryPromise(() => db.get(args.id));
+			const prompt = yield* Effect.tryPromise(() => db.get("prompts", args.id));
 			if (!prompt) {
 				return yield* Effect.fail(new NotFoundError({ message: 'Prompt not found' }));
 			}

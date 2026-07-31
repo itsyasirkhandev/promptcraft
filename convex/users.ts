@@ -1,7 +1,12 @@
-import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
+import { env, internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
+import {
+	clerkWebhookDataValidator,
+	pruneClerkWebhookData,
+	type ClerkWebhookData,
+} from "./clerkWebhookValidation";
 import {
 	queryUserByClerkId,
 	queryUserByEmail,
@@ -22,7 +27,7 @@ const CLERK_API_SCHEME = "https";
 const CLERK_API_HOST = "api.clerk.com";
 
 function reconstructTokenIdentifier(clerkId: string): string {
-	const issuer = process.env.CLERK_JWT_ISSUER_DOMAIN;
+	const issuer = env.CLERK_JWT_ISSUER_DOMAIN;
 	return issuer ? `${issuer}|${clerkId}` : `clerk|${clerkId}`;
 }
 
@@ -33,19 +38,10 @@ type ClerkProfile = {
 	avatarUrl: string | undefined;
 };
 
-type ClerkEmailAddress = {
-	id?: string | null;
-	email_address: string;
-};
-
-function extractClerkProfile(data: {
-	id: string;
-	first_name?: string | null;
-	last_name?: string | null;
-	image_url?: string | null;
-	primary_email_address_id?: string | null;
-	email_addresses?: ClerkEmailAddress[] | null;
-}): ClerkProfile {
+// [Phase 11] extractClerkProfile consumes the strictly-validated webhook data
+// (see clerkWebhookValidation.ts); the inferred type replaces the old implicit
+// any that flowed through the v.any() args validator.
+function extractClerkProfile(data: ClerkWebhookData): ClerkProfile {
 	const emailList = data.email_addresses ?? [];
 	const primaryObj = emailList.find((e) => e.id === data.primary_email_address_id);
 	const email = primaryObj?.email_address ?? emailList[0]?.email_address ?? "";
@@ -312,7 +308,7 @@ async function reconcilePendingSubscriptions(
 
 export const upsertFromClerk = internalMutation({
 	args: {
-		data: v.any(),
+		data: clerkWebhookDataValidator,
 	},
 	async handler(ctx, { data }) {
 		const profile = extractClerkProfile(data);
@@ -344,15 +340,7 @@ export const deleteUserBatch = internalMutation({
 		if (prompts.length === 100) {
 			await ctx.scheduler.runAfter(0, internal.users.deleteUserBatch, { userId });
 		} else {
-			const stats = await ctx.db
-				.query("promptStats")
-				.withIndex("by_userId", (q) => q.eq("userId", userId))
-				.unique();
-			if (stats) {
-				await ctx.db.delete(stats._id);
-			}
-
-			const user = await ctx.db.get(userId);
+			const user = await ctx.db.get("users", userId);
 			if (user) {
 				await ctx.db.delete(user._id);
 			}
@@ -465,7 +453,7 @@ export const recordPendingSubscription = internalMutation({
 export const resyncFromClerk = internalAction({
 	args: { clerkId: v.string() },
 	handler: async (ctx, { clerkId }) => {
-		const secretKey = process.env.CLERK_SECRET_KEY;
+		const secretKey = env.CLERK_SECRET_KEY;
 		if (!secretKey) {
 			console.log("resyncFromClerk: CLERK_SECRET_KEY not configured, skipping");
 			return;
@@ -489,7 +477,11 @@ export const resyncFromClerk = internalAction({
 		}
 
 		const data = await response.json();
-		await ctx.runMutation(internal.users.upsertFromClerk, { data });
+		// Clerk Backend API user objects carry the same extra metadata fields as
+		// webhook payloads — prune to the validated subset before calling in.
+		await ctx.runMutation(internal.users.upsertFromClerk, {
+			data: pruneClerkWebhookData(data),
+		});
 	},
 });
 

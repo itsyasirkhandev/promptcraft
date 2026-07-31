@@ -58,14 +58,10 @@ const CLERK_ID = "clerk_123";
 const SUCCESS_URL = "https://app.example.com/success";
 
 const testConfig: {
-	convexPrivateBridgeKey: string;
 	polarAccessToken: string | null;
-	polarWebhookSecret: string | null;
 	polarServer: "sandbox" | "production" | null;
 } = {
-	convexPrivateBridgeKey: "test_bridge",
 	polarAccessToken: "test_token",
-	polarWebhookSecret: WH_SECRET,
 	polarServer: "sandbox",
 };
 
@@ -80,7 +76,6 @@ beforeEach(() => {
 	process.env.SITE_URL = "https://app.example.com";
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
-	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 	polarMock.customers.getExternal.mockRejectedValue({ statusCode: 404 });
 	polarMock.customers.list.mockResolvedValue({ result: { items: [] } });
 });
@@ -512,6 +507,24 @@ describe("authed billing actions", () => {
 				.unique(),
 		);
 		expect(user?.polarCustomerId).toBe("pol_email");
+	});
+
+	test("honors client-provided productId and successUrl over env defaults", async () => {
+		const t = await authedBackend("hobby");
+		polarMock.customers.create.mockResolvedValueOnce({ id: "pol_new" });
+		polarMock.checkouts.create.mockResolvedValueOnce({ url: "https://checkout.polar.sh/x" });
+
+		await t.action(api.authed.billing.generateCheckoutUrl, {
+			productId: "prod_client",
+			successUrl: "https://custom.example.com/thanks",
+		});
+
+		expect(polarMock.checkouts.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				products: ["prod_client"],
+				successUrl: "https://custom.example.com/thanks",
+			}),
+		);
 	});
 
 	test("Pro routes to the portal destination (no second checkout)", async () => {

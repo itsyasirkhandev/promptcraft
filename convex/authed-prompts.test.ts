@@ -23,7 +23,6 @@ const TOKEN_ID = "tok_clerk_prompts";
 
 beforeEach(() => {
 	process.env.CLERK_JWT_ISSUER_DOMAIN = "https://clerk.example.com";
-	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 });
 
 type T = TestConvex<typeof schema>;

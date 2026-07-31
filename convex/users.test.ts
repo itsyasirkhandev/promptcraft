@@ -11,6 +11,7 @@ import { describe, expect, test, vi, beforeEach } from "vitest";
 import { convexTest, type TestConvex } from "convex-test";
 import schema from "./schema";
 import { internal } from "./_generated/api";
+import { pruneClerkWebhookData } from "./clerkWebhookValidation";
 
 // convex-test loads Convex function modules from the repo's convex/ root.
 // vite/client types are not resolvable here (vite is non-hoisted under pnpm),
@@ -68,7 +69,6 @@ beforeEach(() => {
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
 	process.env.POLAR_WEBHOOK_SECRET = "whsec_test";
-	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 	// Welcome email skips itself when BREVO_API_KEY is unset (no fetch boundary).
 	delete process.env.BREVO_API_KEY;
 });
@@ -218,32 +218,43 @@ describe("upsertFromClerk", () => {
 	test("handles Clerk payload with extra metadata fields in email_addresses without error", async () => {
 		const t = convexTest(schema, modules);
 		await t.mutation(internal.users.upsertFromClerk, {
-			data: {
-				id: CLERK_ID,
-				first_name: "Ada",
-				last_name: "Lovelace",
-				image_url: "https://img.example.com/ada.png",
-				primary_email_address_id: "idn_1",
-				email_addresses: [
-					{
-						id: "idn_1",
-						email_address: "ada@example.com",
-						created_at: 1785413972435,
-						updated_at: 1785413983703,
-						object: "email_address",
-						reserved: false,
-						linked_to: [{ id: "idn_oauth", type: "oauth_google" }],
-						verification: { status: "verified" },
-					},
-				],
-				created_at: 1785413972435,
-				updated_at: 1785413983703,
-			},
+			// Production callers (http route / resyncFromClerk) prune real Clerk
+			// payloads to the validated subset before calling the mutation.
+			data: pruneClerkWebhookData(
+				clerkPayload({
+					primary_email_address_id: "idn_1",
+					email_addresses: [
+						{
+							id: "idn_1",
+							email_address: "ada@example.com",
+							created_at: 1785413972435,
+							updated_at: 1785413983703,
+							object: "email_address",
+							reserved: false,
+							linked_to: [{ id: "idn_oauth", type: "oauth_google" }],
+							verification: { status: "verified" },
+						},
+					],
+					created_at: 1785413972435,
+					updated_at: 1785413983703,
+				}),
+			),
 		});
 		await flush(t);
 
 		const user = await readUserByClerkId(t);
 		expect(user).not.toBeNull();
 		expect(user?.email).toBe("ada@example.com");
+	});
+
+	test("rejects payloads that fail the strict validator", async () => {
+		const t = convexTest(schema, modules);
+		// Missing required `id` — must be rejected at the arg validator, not
+		// silently coerced.
+		await expect(
+			t.mutation(internal.users.upsertFromClerk, {
+				data: pruneClerkWebhookData({ email_addresses: [] }),
+			}),
+		).rejects.toThrow();
 	});
 });

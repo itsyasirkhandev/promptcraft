@@ -6,9 +6,11 @@
 - use modern React and Nextjs patterns and primitives
 - when defining convex actions, queries, and mutations that are exposed to the client use the
   authed' setup in 'convex/authed'
-- when defining convex actions, queries, and mutations that are called from the backend use the
-  'private' setup in 'convex/private
-- use the convex service for calling convex queries, actions, and mutations from the backend
+- when defining convex actions, queries, and mutations that are only called from other Convex
+  functions use the internal* setup (internalQuery/internalMutation/internalAction), e.g. in
+  'convex/private'
+- when the backend (Next.js server) needs to call convex, expose httpAction routes or use the
+  authed setup — never register API-key-guarded functions as public
 - avoid 'as any' at all costs, try to infer types from functions as much as possible
 - use tailwindcss for styling whenever possible, only resort to custom css if needed
 - after making changes to convex, run 'pnpm run convex:gen' to generate the new api 

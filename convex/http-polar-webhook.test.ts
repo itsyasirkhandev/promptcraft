@@ -55,7 +55,6 @@ beforeEach(() => {
 	process.env.POLAR_PRODUCT_ID = PRODUCT_ID;
 	process.env.POLAR_ACCESS_TOKEN = "test_token";
 	process.env.POLAR_SERVER = "sandbox";
-	process.env.CONVEX_PRIVATE_BRIDGE_KEY = "test_bridge";
 });
 
 function signEvent(payload: unknown, secret = WH_SECRET) {

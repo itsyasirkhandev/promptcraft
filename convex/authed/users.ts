@@ -92,7 +92,7 @@ function patchViewerUpdates(
 
 		if (Object.keys(updates).length > 0) {
 			yield* Effect.tryPromise(() => db.patch(viewer._id, updates));
-			return (yield* Effect.tryPromise(() => db.get(viewer._id)))!;
+			return (yield* Effect.tryPromise(() => db.get("users", viewer._id)))!;
 		}
 		return viewer;
 	});
@@ -114,7 +114,7 @@ function insertNewViewer(
 				plan: 'hobby',
 			})
 		);
-		return (yield* Effect.tryPromise(() => db.get(userId)))!;
+		return (yield* Effect.tryPromise(() => db.get("users", userId)))!;
 	});
 }
 

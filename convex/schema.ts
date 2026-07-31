@@ -48,12 +48,6 @@ export default defineSchema({
 		.index('by_publicSlug', ['publicSlug'])
 		.index('by_isPublic_and_title', ['isPublic', 'title'])
 		.searchIndex('search_all', { searchField: 'searchableText', filterFields: ['isPublic', 'category'] }),
-	promptStats: defineTable({
-		userId: v.id('users'),
-		total: v.number(),
-		publicTotal: v.number(),
-		templateTotal: v.number()
-	}).index('by_userId', ['userId']),
 	pendingSubscriptions: defineTable({
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
