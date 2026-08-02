@@ -2,6 +2,10 @@ import * as React from 'react';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { PublicPromptClient } from '@/components/prompts/PublicPromptClient';
+import Navbar from '@/components/templates/nexto/sections/Navbar';
+import Pricing from '@/components/templates/nexto/sections/Pricing';
+import CTA from '@/components/templates/nexto/sections/CTA';
+import Footer from '@/components/templates/nexto/sections/Footer';
 
 interface PageProps {
 	params: Promise<{ slug: string }>;
@@ -47,5 +51,15 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default function Page({ params }: PageProps) {
 	const { slug } = React.use(params);
-	return <PublicPromptClient slug={slug} />;
+	return (
+		<>
+			<Navbar />
+			<main id="main-content" className="flex-1">
+				<PublicPromptClient slug={slug} />
+				<Pricing />
+				<CTA />
+			</main>
+			<Footer />
+		</>
+	);
 }
