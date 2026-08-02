@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
-import { cn } from "@/lib/utils";
+import { cn, getSiteUrl } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
-const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || "https://promptcrafts.com";
+const defaultUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  metadataBase: URL.canParse(defaultUrl) ? new URL(defaultUrl) : new URL("https://promptcrafts.com"),
+  metadataBase: new URL(defaultUrl),
   title: {
     default: "Prompt Crafts — Better AI Inputs, Better AI Outputs",
     template: "%s | Prompt Crafts",

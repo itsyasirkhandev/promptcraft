@@ -75,10 +75,10 @@ export default function CTA() {
                 </Link>
               </Show>
               <a
-                href="mailto:hello@promptcrafts.com"
+                href="mailto:hello@promptcrafts.vercel.app"
                 className="inline-flex items-center gap-2 text-[13.5px] opacity-70 hover:opacity-100 transition-opacity text-white"
               >
-                or write to hello@promptcrafts.com
+                or write to hello@promptcrafts.vercel.app
                 <ChevronArrow />
               </a>
             </div>

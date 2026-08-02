@@ -1,8 +1,9 @@
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
+import { getSiteUrl } from '@/lib/utils';
 
 export async function GET() {
-	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promptcrafts.com';
+	const baseUrl = getSiteUrl();
 
 	let dynamicPromptLines = '';
 	try {
