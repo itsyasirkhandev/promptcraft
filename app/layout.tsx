@@ -46,6 +46,9 @@ export const metadata: Metadata = {
     shortcut: "/logo.svg",
     apple: "/logo.svg",
   },
+  verification: {
+    google: "kQ7PZlZ7QCByXW6mAYsITxSn41HcHYlZroeTF-neGcY",
+  },
 };
 
 const dmSans = DM_Sans({
