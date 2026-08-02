@@ -303,8 +303,16 @@
 /* Material Symbols Rounded icon font helper */
 .nexto-icon {
   font-family: "Material Symbols Rounded";
+  font-style: normal;
+  font-weight: normal;
   font-variation-settings: "'FILL' 1";
   line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
   user-select: none;
   pointer-events: none;
 }
