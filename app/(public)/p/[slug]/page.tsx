@@ -2,7 +2,7 @@ import * as React from 'react';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { PublicPromptClient } from '@/components/prompts/PublicPromptClient';
-import Navbar from '@/components/templates/nexto/sections/Navbar';
+import { PublicPromptHeader } from '@/components/prompts/PublicPromptHeader';
 import Pricing from '@/components/templates/nexto/sections/Pricing';
 import CTA from '@/components/templates/nexto/sections/CTA';
 import Footer from '@/components/templates/nexto/sections/Footer';
@@ -53,8 +53,8 @@ export default function Page({ params }: PageProps) {
 	const { slug } = React.use(params);
 	return (
 		<>
-			<Navbar />
-			<main id="main-content" className="flex-1">
+			<PublicPromptHeader />
+			<main id="main-content" className="flex-1 pt-8">
 				<PublicPromptClient slug={slug} />
 				<Pricing />
 				<CTA />
