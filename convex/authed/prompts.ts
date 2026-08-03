@@ -87,6 +87,7 @@ export const create = effectAuthedMutation({
 		content: v.string(),
 		templateMode: v.boolean(),
 		isPublic: v.boolean(),
+		usageType: v.optional(v.string()),
 		tags: v.array(v.string()),
 		templateFields: templateFieldsValidator,
 		category: v.optional(v.string())
@@ -123,6 +124,7 @@ export const create = effectAuthedMutation({
 					content: args.content,
 					templateMode: args.templateMode,
 					isPublic: args.isPublic,
+					usageType: args.usageType,
 					tags: args.tags,
 					templateFields: args.templateFields,
 					category: args.category,
@@ -148,6 +150,7 @@ export const update = effectAuthedMutation({
 		content: v.string(),
 		templateMode: v.boolean(),
 		isPublic: v.boolean(),
+		usageType: v.optional(v.string()),
 		tags: v.array(v.string()),
 		templateFields: templateFieldsValidator,
 		category: v.optional(v.string())
@@ -200,6 +203,7 @@ export const update = effectAuthedMutation({
 					content: args.content,
 					templateMode: args.templateMode,
 					isPublic: args.isPublic,
+					usageType: args.usageType,
 					tags: args.tags,
 					templateFields: args.templateFields,
 					category: args.category,

@@ -45,6 +45,7 @@ export default function EditPromptPage({ params }: PageProps) {
         content: prompt.content,
         templateMode: prompt.templateMode,
         isPublic: prompt.isPublic,
+        usageType: prompt.usageType ?? undefined,
         category: prompt.category ?? (prompt.isPublic ? 'other' : undefined),
         tags: prompt.tags ?? [],
         templateFields: prompt.templateFields ?? [],

@@ -28,6 +28,7 @@ const basePromptSchema = z.object({
     .max(10_000, 'Content must be 10,000 characters or less'),
   templateMode: z.boolean(),
   isPublic: z.boolean(),
+  usageType: z.string().max(500, 'Usage type must be 500 characters or less').optional(),
   tags: z
     .array(
       z.string().min(1, 'Tag cannot be empty').max(30, 'Tag must be 30 characters or less')

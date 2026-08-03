@@ -24,6 +24,7 @@ export default defineSchema({
 		content: v.string(),
 		templateMode: v.boolean(),
 		isPublic: v.boolean(),
+		usageType: v.optional(v.string()),
 		tags: v.array(v.string()),
 		templateFields: v.array(
 			v.object({

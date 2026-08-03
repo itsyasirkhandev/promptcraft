@@ -18,6 +18,7 @@ export interface PromptInput {
 	content: string;
 	templateMode: boolean;
 	isPublic: boolean;
+	usageType?: string;
 	tags: string[];
 	templateFields: TemplateField[];
 	category?: string;
@@ -135,6 +136,13 @@ function validateCategory(input: PromptInput): Effect.Effect<void, ValidationErr
 	return Effect.void;
 }
 
+function validateUsageType(input: PromptInput): Effect.Effect<void, ValidationError> {
+	if (input.usageType && input.usageType.length > 500) {
+		return fail('Usage type must be 500 characters or less', 'usageType');
+	}
+	return Effect.void;
+}
+
 export function validatePrompt(input: PromptInput): Effect.Effect<void, ValidationError> {
 	return Effect.gen(function* () {
 		yield* validateTitle(input);
@@ -142,5 +150,6 @@ export function validatePrompt(input: PromptInput): Effect.Effect<void, Validati
 		yield* validateTags(input);
 		yield* validateTemplateFields(input);
 		yield* validateCategory(input);
+		yield* validateUsageType(input);
 	});
 }

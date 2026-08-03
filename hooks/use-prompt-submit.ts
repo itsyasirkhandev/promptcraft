@@ -9,6 +9,7 @@ export function toPromptMutationArgs(data: PromptFormValues) {
 		content: data.content,
 		templateMode: data.templateMode,
 		isPublic: data.isPublic,
+		usageType: data.usageType || undefined,
 		category: data.category || undefined,
 		tags: data.tags,
 		templateFields: data.templateFields,

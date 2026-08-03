@@ -114,6 +114,18 @@ export function PublicPromptClient({ slug }: PublicPromptClientProps) {
 				</div>
 			)}
 
+			{/* Usage terms */}
+			{prompt.usageType && (
+				<div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 px-4 py-3">
+					<p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+						Usage
+					</p>
+					<p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+						{prompt.usageType}
+					</p>
+				</div>
+			)}
+
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 				{/* Left Column: Form Controls */}
 				{prompt.templateMode && (

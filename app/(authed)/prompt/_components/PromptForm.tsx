@@ -224,6 +224,7 @@ function PromptForm({
   const watchedTemplateMode = useWatch({ control, name: 'templateMode', defaultValue: false });
   const watchedTemplateFields = useWatch({ control, name: 'templateFields', defaultValue: [] });
   const watchedIsPublic = useWatch({ control, name: 'isPublic', defaultValue: false });
+  const watchedUsageType = useWatch({ control, name: 'usageType', defaultValue: '' });
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
@@ -291,6 +292,23 @@ function PromptForm({
               <Controller control={control} name="category" render={({ field }) => (
                 <CategorySelector value={field.value} onChange={field.onChange} error={errors.category?.message} />
               )} />
+            </Field>
+          )}
+
+          {watchedIsPublic && (
+            <Field orientation="vertical">
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="usageType" className="text-foreground">How can this prompt be used?</FieldLabel>
+              </div>
+              <Input
+                id="usageType"
+                {...register('usageType')}
+                placeholder="e.g. Free for personal and commercial use, attribution required..."
+                aria-invalid={!!errors.usageType}
+                aria-describedby="usageType-error usageType-count"
+              />
+              <p id="usageType-count" className={charCountClass((watchedUsageType ?? '').length, 500)}>{(watchedUsageType ?? '').length}/500</p>
+              <FieldError id="usageType-error" errors={[errors.usageType]} />
             </Field>
           )}
 

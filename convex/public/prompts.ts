@@ -14,6 +14,7 @@ function toPublicPromptDTO(prompt: Doc<'prompts'>, author: Doc<'users'> | null) 
 		tags: prompt.tags,
 		templateMode: prompt.templateMode,
 		category: prompt.category,
+		usageType: prompt.usageType,
 		publicSlug: prompt.publicSlug,
 		author: { name: author?.name ?? 'Anonymous', avatarUrl: author?.avatarUrl ?? null }
 	};

@@ -7,6 +7,7 @@ const DEFAULT_PROMPT_FORM_VALUES: PromptFormValues = {
   content: '',
   templateMode: false,
   isPublic: false,
+  usageType: undefined,
   category: undefined,
   tags: [],
   templateFields: [],
