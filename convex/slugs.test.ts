@@ -64,6 +64,7 @@ describe("generateUniqueSlug — collision handling", () => {
 				name: "Ada",
 				email: "ada@example.com",
 				tokenIdentifier: "tok_slugs",
+				clerkId: "clerk_slugs",
 				plan: "hobby",
 			})
 		);
@@ -78,6 +79,7 @@ describe("generateUniqueSlug — collision handling", () => {
 				templateFields: [],
 				category: "other",
 				publicSlug: "hello-world-zzzzzz",
+				searchableText: "hello world c",
 				createdAt: 1,
 			});
 		});

@@ -149,6 +149,7 @@ describe("upsertFromClerk", () => {
 				name: "Pre-existing",
 				email: "ada@example.com",
 				tokenIdentifier: `${ISSUER}|${CLERK_ID}`,
+				clerkId: CLERK_ID,
 				plan: "hobby",
 			});
 		});

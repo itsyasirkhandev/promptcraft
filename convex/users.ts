@@ -400,8 +400,8 @@ export const updateSubscriptionFromPolar = internalMutation({
 	args: {
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
-		polarSubscriptionId: v.optional(v.string()),
-		polarSubscriptionStatus: v.optional(v.string()),
+		polarSubscriptionId: v.string(),
+		polarSubscriptionStatus: v.string(),
 		plan: v.union(v.literal("hobby"), v.literal("pro")),
 		// Polar event timestamp in ms. Optional for backwards compatibility with
 		// any already-scheduled calls; when absent the ordering guard is skipped.
@@ -423,8 +423,8 @@ export const recordPendingSubscription = internalMutation({
 	args: {
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
-		polarSubscriptionId: v.optional(v.string()),
-		polarSubscriptionStatus: v.optional(v.string()),
+		polarSubscriptionId: v.string(),
+		polarSubscriptionStatus: v.string(),
 		plan: v.union(v.literal("hobby"), v.literal("pro")),
 		eventTimestamp: v.number(),
 	},

@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Info } from '@phosphor-icons/react';
+import { Info, ClipboardText } from '@phosphor-icons/react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import type { TemplateField } from '@/lib/schemas/prompt.schema';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -122,14 +124,6 @@ function FieldMultiSelect({ field, currentValue, isWorkspace, setValue }: FieldC
           : 'border-slate-100 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-950/10'
       )}
     >
-      <legend
-        className={cn(
-          'text-xs font-semibold uppercase tracking-wider mb-2',
-          isWorkspace ? 'text-muted-foreground' : 'text-slate-700 dark:text-slate-300'
-        )}
-      >
-        {field.name.replace(/_/g, ' ')}
-      </legend>
       {field.options && field.options.length > 0 ? (
         field.options.map((opt) => {
           const isChecked = listSet.has(opt);
@@ -191,11 +185,63 @@ function FieldItem({
     setValue,
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        toast.info('Clipboard is empty');
+        return;
+      }
+
+      const formattedFieldName = field.name.replace(/_/g, ' ');
+
+      if (field.type === 'multiSelect') {
+        const items = text.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+        if (field.options && field.options.length > 0) {
+          const matched = field.options.filter((opt) =>
+            items.some((item) => item.toLowerCase() === opt.toLowerCase())
+          );
+          if (matched.length > 0) {
+            setValue(field.name, matched);
+            toast.success(`Pasted ${matched.length} option(s) into ${formattedFieldName}`);
+            return;
+          }
+        }
+        setValue(field.name, items);
+        toast.success(`Pasted into ${formattedFieldName}`);
+        return;
+      }
+
+      if (field.type === 'singleSelect' && field.options && field.options.length > 0) {
+        const matched = field.options.find(
+          (opt) => opt.toLowerCase() === text.trim().toLowerCase()
+        );
+        if (matched) {
+          setValue(field.name, matched);
+          toast.success(`Pasted "${matched}" into ${formattedFieldName}`);
+          return;
+        }
+      }
+
+      if (field.type === 'number') {
+        const parsed = Number(text.trim());
+        setValue(field.name, isNaN(parsed) ? text.trim() : parsed);
+        toast.success(`Pasted into ${formattedFieldName}`);
+        return;
+      }
+
+      setValue(field.name, text);
+      toast.success(`Pasted into ${formattedFieldName}`);
+    } catch {
+      toast.error('Failed to read from clipboard. Please allow clipboard permissions.');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
-      {field.type !== 'multiSelect' && (
+      <div className="flex items-center justify-between">
         <Label
-          htmlFor={field.id}
+          htmlFor={field.type === 'multiSelect' ? undefined : field.id}
           className={cn(
             'text-xs font-semibold uppercase tracking-wider',
             isWorkspace ? 'text-muted-foreground' : 'text-slate-700 dark:text-slate-300'
@@ -203,7 +249,18 @@ function FieldItem({
         >
           {field.name.replace(/_/g, ' ')}
         </Label>
-      )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground gap-1"
+          onClick={handlePaste}
+          title={`Paste from clipboard into ${field.name}`}
+        >
+          <ClipboardText className="size-3.5" />
+          Paste
+        </Button>
+      </div>
 
       {(field.type === 'text' || field.type === 'number') && <FieldInput {...controlProps} />}
       {field.type === 'longText' && <FieldLongText {...controlProps} />}

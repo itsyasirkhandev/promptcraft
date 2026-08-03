@@ -83,6 +83,7 @@ async function seedPrompts(t: AuthedT, count: number, isPublic: boolean) {
 				tags: [],
 				templateFields: [],
 				category: isPublic ? "other" : undefined,
+				searchableText: `seed ${i} seed`,
 				createdAt: i,
 			});
 		}
@@ -158,6 +159,7 @@ describe("prompts.update — hobby quotas", () => {
 				isPublic: false,
 				tags: [],
 				templateFields: [],
+				searchableText: "private c",
 				createdAt: 1000,
 			});
 		});
@@ -191,6 +193,7 @@ describe("prompts.update — hobby quotas", () => {
 				isPublic: false,
 				tags: [],
 				templateFields: [],
+				searchableText: "private c",
 				createdAt: 1000,
 			});
 		});

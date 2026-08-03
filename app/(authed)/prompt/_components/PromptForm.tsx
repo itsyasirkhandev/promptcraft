@@ -7,7 +7,10 @@ import type {
   UseFormRegister,
   FieldErrors,
   UseFormReturn,
+  UseFormSetValue,
 } from 'react-hook-form';
+import { toast } from 'sonner';
+import { ClipboardText } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -60,14 +63,43 @@ function TitleField({
   register,
   errors,
   watchedTitle,
+  setValue,
 }: {
   register: UseFormRegister<PromptFormValues>;
   errors: FieldErrors<PromptFormValues>;
   watchedTitle: string;
+  setValue: UseFormSetValue<PromptFormValues>;
 }) {
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        toast.info('Clipboard is empty');
+        return;
+      }
+      setValue('title', text, { shouldValidate: true, shouldDirty: true });
+      toast.success('Pasted clipboard text into title');
+    } catch {
+      toast.error('Failed to read from clipboard. Please allow clipboard permissions.');
+    }
+  };
+
   return (
     <Field orientation="vertical">
-      <FieldLabel htmlFor="title" className="text-foreground">Title</FieldLabel>
+      <div className="flex items-center justify-between">
+        <FieldLabel htmlFor="title" className="text-foreground">Title</FieldLabel>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+          onClick={handlePaste}
+          title="Paste from clipboard"
+        >
+          <ClipboardText className="size-3.5" />
+          Paste
+        </Button>
+      </div>
       <Input
         id="title"
         {...register('title')}
@@ -85,6 +117,7 @@ function ContentField({
   register,
   errors,
   watchedContent,
+  setValue,
   showConvertButton,
   selection,
   onSelectionChange,
@@ -93,15 +126,44 @@ function ContentField({
   register: UseFormRegister<PromptFormValues>;
   errors: FieldErrors<PromptFormValues>;
   watchedContent: string;
+  setValue: UseFormSetValue<PromptFormValues>;
   showConvertButton: boolean;
   selection: Selection | null;
   onSelectionChange: (textarea: HTMLTextAreaElement) => void;
   onConvertClick: () => void;
 }) {
   const trimmed = selection ? selection.text.trim() : '';
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        toast.info('Clipboard is empty');
+        return;
+      }
+      setValue('content', text, { shouldValidate: true, shouldDirty: true });
+      toast.success('Pasted clipboard text into content');
+    } catch {
+      toast.error('Failed to read from clipboard. Please allow clipboard permissions.');
+    }
+  };
+
   return (
     <Field orientation="vertical">
-      <FieldLabel htmlFor="content" className="text-foreground">Content</FieldLabel>
+      <div className="flex items-center justify-between">
+        <FieldLabel htmlFor="content" className="text-foreground">Content</FieldLabel>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+          onClick={handlePaste}
+          title="Paste from clipboard"
+        >
+          <ClipboardText className="size-3.5" />
+          Paste
+        </Button>
+      </div>
       <Textarea
         id="content"
         {...register('content')}
@@ -193,11 +255,12 @@ function PromptForm({
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <FieldGroup>
-          <TitleField register={register} errors={errors} watchedTitle={watchedTitle} />
+          <TitleField register={register} errors={errors} watchedTitle={watchedTitle} setValue={setValue} />
           <ContentField
             register={register}
             errors={errors}
             watchedContent={watchedContent}
+            setValue={setValue}
             showConvertButton={showConvertButton}
             selection={selection}
             onSelectionChange={updateSelection}

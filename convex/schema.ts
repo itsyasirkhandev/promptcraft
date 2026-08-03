@@ -7,7 +7,7 @@ export default defineSchema({
 		email: v.string(),
 		avatarUrl: v.optional(v.string()),
 		tokenIdentifier: v.string(),
-		clerkId: v.optional(v.string()),
+		clerkId: v.string(),
 		plan: v.union(v.literal('hobby'), v.literal('pro')),
 		polarCustomerId: v.optional(v.string()),
 		polarSubscriptionId: v.optional(v.string()),
@@ -35,7 +35,7 @@ export default defineSchema({
 		),
 		category: v.optional(v.string()),
 		publicSlug: v.optional(v.string()),
-		searchableText: v.optional(v.string()),
+		searchableText: v.string(),
 		createdAt: v.number(),
 		updatedAt: v.optional(v.number())
 	})
@@ -51,8 +51,8 @@ export default defineSchema({
 	pendingSubscriptions: defineTable({
 		clerkId: v.optional(v.string()),
 		polarCustomerId: v.optional(v.string()),
-		polarSubscriptionId: v.optional(v.string()),
-		polarSubscriptionStatus: v.optional(v.string()),
+		polarSubscriptionId: v.string(),
+		polarSubscriptionStatus: v.string(),
 		plan: v.union(v.literal('hobby'), v.literal('pro')),
 		eventTimestamp: v.number(),
 		createdAt: v.number()

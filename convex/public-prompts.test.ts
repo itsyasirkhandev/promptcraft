@@ -47,6 +47,7 @@ async function seed(t: ReturnType<typeof convexTest>) {
 			templateFields: [{ id: "f1", name: "name", type: "text" }],
 			category: "coding",
 			publicSlug: "public-prompt-abc123",
+			searchableText: "public prompt hello {{name}} coding testing",
 			createdAt: 10,
 		});
 		// Private with a retained slug -> must NOT resolve.
@@ -60,6 +61,7 @@ async function seed(t: ReturnType<typeof convexTest>) {
 			templateFields: [],
 			createdAt: 20,
 			publicSlug: "toggled-private-def456",
+			searchableText: "toggled private secret",
 		});
 		// Public but no slug (created before the feature) -> must NOT resolve.
 		await ctx.db.insert("prompts", {
@@ -71,6 +73,7 @@ async function seed(t: ReturnType<typeof convexTest>) {
 			tags: [],
 			templateFields: [],
 			category: "other",
+			searchableText: "legacy public legacy",
 			createdAt: 30,
 		});
 	});
